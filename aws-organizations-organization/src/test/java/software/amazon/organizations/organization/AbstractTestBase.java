@@ -1,5 +1,7 @@
 package software.amazon.organizations.organization;
 
+import software.amazon.awssdk.services.organizations.OrganizationsClient;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import software.amazon.awssdk.awscore.AwsRequest;
@@ -21,10 +23,10 @@ public class AbstractTestBase {
     MOCK_CREDENTIALS = new Credentials("accessKey", "secretKey", "token");
     logger = new LoggerProxy();
   }
-  static ProxyClient<SdkClient> MOCK_PROXY(
+  static ProxyClient<OrganizationsClient> MOCK_PROXY(
     final AmazonWebServicesClientProxy proxy,
-    final SdkClient sdkClient) {
-    return new ProxyClient<SdkClient>() {
+    final OrganizationsClient orgsClient) {
+    return new ProxyClient<OrganizationsClient>() {
       @Override
       public <RequestT extends AwsRequest, ResponseT extends AwsResponse> ResponseT
       injectCredentialsAndInvokeV2(RequestT request, Function<RequestT, ResponseT> requestFunction) {
@@ -58,8 +60,8 @@ public class AbstractTestBase {
       }
 
       @Override
-      public SdkClient client() {
-        return sdkClient;
+      public OrganizationsClient client() {
+        return orgsClient;
       }
     };
   }

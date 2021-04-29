@@ -1,7 +1,8 @@
 package software.amazon.organizations.organization;
 
+import software.amazon.awssdk.services.organizations.OrganizationsClient;
+
 import java.time.Duration;
-import software.amazon.awssdk.core.SdkClient;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -27,22 +28,22 @@ public class ReadHandlerTest extends AbstractTestBase {
     private AmazonWebServicesClientProxy proxy;
 
     @Mock
-    private ProxyClient<SdkClient> proxyClient;
+    private ProxyClient<OrganizationsClient> proxyClient;
 
     @Mock
-    SdkClient sdkClient;
+    OrganizationsClient orgsClient;
 
     @BeforeEach
     public void setup() {
         proxy = new AmazonWebServicesClientProxy(logger, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
-        sdkClient = mock(SdkClient.class);
-        proxyClient = MOCK_PROXY(proxy, sdkClient);
+        orgsClient = mock(OrganizationsClient.class);
+        proxyClient = MOCK_PROXY(proxy, orgsClient);
     }
 
     @AfterEach
     public void tear_down() {
-        verify(sdkClient, atLeastOnce()).serviceName();
-        verifyNoMoreInteractions(sdkClient);
+        verify(orgsClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(orgsClient);
     }
 
     @Test

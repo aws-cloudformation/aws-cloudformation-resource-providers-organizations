@@ -1,10 +1,6 @@
 package software.amazon.organizations.organization;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.CreateOrganizationRequest;
-import software.amazon.awssdk.services.organizations.model.CreateOrganizationResponse;
-import software.amazon.awssdk.services.organizations.model.DescribeOrganizationRequest;
-import software.amazon.awssdk.services.organizations.model.DescribeOrganizationResponse;
 
 import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
