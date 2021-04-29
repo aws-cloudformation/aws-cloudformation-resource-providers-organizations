@@ -1,0 +1,78 @@
+{
+    "typeName": "AWS::Organizations::Organization",
+    "description": "Resource schema for AWS::Organizations::Organization",
+    "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-organizations.git",
+    "properties": {
+        "Arn": {
+            "description": "The Amazon Resource Name (ARN) of an organization.",
+            "type": "string",
+            "pattern": "arn:aws[-a-z]*",
+            "minLength": 10,
+            "maxLength": 32
+        },
+        "FeatureSet": {
+            "description": "Specifies the functionality that currently is available to the organization.",
+            "type": "string",
+            "enum": [
+                "ALL",
+                "CONSOLIDATED_BILLING"
+            ]
+        },
+        "OrgId": {
+            "description": "The unique identifier (ID) of an organization.",
+            "type": "string",
+            "pattern": "^o-[a-z0-9]{10,32}$",
+            "minLength": 10,
+            "maxLength": 32
+        },
+        "MasterAccountArn": {
+            "description": "The Amazon Resource Name (ARN) of the account that is designated as the management account for the organization.\n\n",
+            "type": "string",
+            "pattern": "arn:aws[-a-z]*",
+            "minLength": 10,
+            "maxLength": 32
+        },
+        "MasterAccountEmail": {
+            "description": "The email address that is associated with the AWS account that is designated as the management account for the organization.",
+            "type": "string",
+            "pattern": "[^\\s@]+@[^\\s@]+\\.[^\\s@]+",
+            "minLength": 6,
+            "maxLength": 64
+        },
+        "MasterAccountId": {
+            "description": "The unique identifier (ID) of the management account of an organization.",
+            "type": "string",
+            "pattern": "^\\d{12}$",
+            "minLength": 12,
+            "maxLength": 12
+        }
+    },
+    "handlers": {
+        "create": {
+            "permissions": [
+                "organizations:CreateOrganization",
+                "organizations:DescribeOrganization"
+            ]
+        },
+        "read": {
+            "permissions": [
+                "organizations:DescribeOrganization"
+            ]
+        },
+        "delete": {
+            "permissions": [
+                "organizations:DeleteOrganization",
+                "organizations:DescribeOrganization"
+            ]
+        }
+    },
+    "readOnlyProperties": [
+        "/properties/OrgId",
+        "/properties/Arn",
+        "/properties/MasterAccountArn",
+        "/properties/MasterAccountEmail",
+        "/properties/MasterAccountId"
+    ],
+    "primaryIdentifier" : [ "/properties/OrgId" ],
+    "additionalProperties": false
+}
