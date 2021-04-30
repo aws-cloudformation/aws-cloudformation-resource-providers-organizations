@@ -1,0 +1,14 @@
+{
+  "credentials": {
+    "accessKeyId": "<Use account credentials here>",
+    "secretAccessKey": "<Use account credentials here>",
+    "sessionToken": "<Use account credentials here>"
+  },
+  "action": "READ",
+  "request": {
+    "clientRequestToken": "<Random UUID>",
+    "desiredResourceState": {},
+    "logicalResourceIdentifier": "MyResource"
+  },
+  "callbackContext": null
+}
