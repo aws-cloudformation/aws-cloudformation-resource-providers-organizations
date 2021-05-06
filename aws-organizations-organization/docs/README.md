@@ -43,7 +43,7 @@ _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormati
 
 ### Ref
 
-When you pass the logical ID of this resource to the intrinsic `Ref` function, Ref returns the OrgId.
+When you pass the logical ID of this resource to the intrinsic `Ref` function, Ref returns the Id.
 
 ### Fn::GetAtt
 
@@ -51,7 +51,7 @@ The `Fn::GetAtt` intrinsic function returns a value for a specified attribute of
 
 For more information about using the `Fn::GetAtt` intrinsic function, see [Fn::GetAtt](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getatt.html).
 
-#### OrgId
+#### Id
 
 The unique identifier (ID) of an organization.
 
@@ -65,10 +65,10 @@ The Amazon Resource Name (ARN) of the account that is designated as the manageme
 
 
 
-#### MasterAccountEmail
-
-The email address that is associated with the AWS account that is designated as the management account for the organization.
-
 #### MasterAccountId
 
 The unique identifier (ID) of the management account of an organization.
+
+#### MasterAccountEmail
+
+The email address that is associated with the AWS account that is designated as the management account for the organization.

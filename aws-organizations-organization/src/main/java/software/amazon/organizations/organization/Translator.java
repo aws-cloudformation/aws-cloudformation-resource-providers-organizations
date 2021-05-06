@@ -1,5 +1,6 @@
 package software.amazon.organizations.organization;
 
+import software.amazon.awssdk.services.organizations.model.CreateOrganizationRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationResponse;
 import software.amazon.awssdk.services.organizations.model.Organization;
@@ -22,41 +23,25 @@ import java.util.stream.Stream;
 
 public class Translator {
 
-  /**
-   * Request to create a resource
-   * @param model resource model
-   * @return awsRequest the aws service request to create a resource
-   */
-  static AwsRequest translateToCreateRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L39-L43
-    return awsRequest;
+  static CreateOrganizationRequest translateToCreateRequest(final ResourceModel model) {
+    return CreateOrganizationRequest.builder()
+            .featureSet(model.getFeatureSet())
+            .build();
   }
 
-  /**
-   * Request to read a resource
-   * @param model resource model
-   * @return awsRequest the aws service request to describe a resource
-   */
   static DescribeOrganizationRequest translateToReadRequest(final ResourceModel model) {
     return DescribeOrganizationRequest.builder().build();
   }
 
-  /**
-   * Translates resource object from sdk into a resource model
-   * @param describeOrganizationResponse the organization's service describe resource response
-   * @return model resource model
-   */
   static ResourceModel translateFromReadResponse(final DescribeOrganizationResponse describeOrganizationResponse) {
     Organization organization = describeOrganizationResponse.organization();
     return ResourceModel.builder()
+      .id(organization.id())
       .arn(organization.arn())
       .featureSet(organization.featureSetAsString())
-      .orgId(organization.id())
       .masterAccountArn(organization.masterAccountArn())
-      .masterAccountEmail(organization.masterAccountEmail())
       .masterAccountId(organization.masterAccountId())
+      .masterAccountEmail(organization.masterAccountEmail())
       .build();
   }
 

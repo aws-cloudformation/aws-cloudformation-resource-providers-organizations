@@ -38,7 +38,7 @@ public class ReadHandler extends BaseHandlerStd {
             logger.log(String.format("%s has successfully been read.", ResourceModel.TYPE_NAME));
             return response;
         } catch(AwsOrganizationsNotInUseException e) {
-            throw new CfnNotFoundException(ResourceModel.TYPE_NAME, ResourceModel.IDENTIFIER_KEY_ORGID);
+            throw new CfnNotFoundException(ResourceModel.TYPE_NAME, ResourceModel.IDENTIFIER_KEY_ID);
         }
     }
 }

@@ -3,6 +3,13 @@
   "description": "Resource schema for AWS::Organizations::Organization",
   "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-organizations.git",
   "properties": {
+    "Id": {
+      "description": "The unique identifier (ID) of an organization.",
+      "type": "string",
+      "pattern": "^o-[a-z0-9]{10,32}$",
+      "minLength": 10,
+      "maxLength": 32
+    },
     "Arn": {
       "description": "The Amazon Resource Name (ARN) of an organization.",
       "type": "string",
@@ -18,13 +25,6 @@
         "CONSOLIDATED_BILLING"
       ]
     },
-    "OrgId": {
-      "description": "The unique identifier (ID) of an organization.",
-      "type": "string",
-      "pattern": "^o-[a-z0-9]{10,32}$",
-      "minLength": 10,
-      "maxLength": 32
-    },
     "MasterAccountArn": {
       "description": "The Amazon Resource Name (ARN) of the account that is designated as the management account for the organization.\n\n",
       "type": "string",
@@ -32,19 +32,19 @@
       "minLength": 10,
       "maxLength": 32
     },
-    "MasterAccountEmail": {
-      "description": "The email address that is associated with the AWS account that is designated as the management account for the organization.",
-      "type": "string",
-      "pattern": "[^\\s@]+@[^\\s@]+\\.[^\\s@]+",
-      "minLength": 6,
-      "maxLength": 64
-    },
     "MasterAccountId": {
       "description": "The unique identifier (ID) of the management account of an organization.",
       "type": "string",
       "pattern": "^\\d{12}$",
       "minLength": 12,
       "maxLength": 12
+    },
+    "MasterAccountEmail": {
+      "description": "The email address that is associated with the AWS account that is designated as the management account for the organization.",
+      "type": "string",
+      "pattern": "[^\\s@]+@[^\\s@]+\\.[^\\s@]+",
+      "minLength": 6,
+      "maxLength": 64
     }
   },
   "handlers": {
@@ -67,14 +67,14 @@
     }
   },
   "readOnlyProperties": [
-    "/properties/OrgId",
+    "/properties/Id",
     "/properties/Arn",
     "/properties/MasterAccountArn",
-    "/properties/MasterAccountEmail",
-    "/properties/MasterAccountId"
+    "/properties/MasterAccountId",
+    "/properties/MasterAccountEmail"
   ],
   "primaryIdentifier": [
-    "/properties/OrgId"
+    "/properties/Id"
   ],
   "additionalProperties": false
 }

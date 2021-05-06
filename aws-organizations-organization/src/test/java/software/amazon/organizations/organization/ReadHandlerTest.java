@@ -7,7 +7,6 @@ import software.amazon.awssdk.services.organizations.model.DescribeOrganizationR
 import software.amazon.awssdk.services.organizations.model.Organization;
 
 import java.time.Duration;
-
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -54,8 +53,12 @@ public class ReadHandlerTest extends AbstractTestBase {
     public void handleRequest_SimpleSuccess() {
         final ReadHandler handler = new ReadHandler();
 
-        final ResourceModel model = ResourceModel.builder().arn("arn:aws:organizations:us-east-1:111111111111:i-1234567890abcdef0").featureSet("ALL").orgId("o-2222222222222")
-                .masterAccountArn("arn:aws:organizations:us-east-1:333333333333:i-1234567890abcdef0").masterAccountEmail("testEmail000@email.com")
+        final ResourceModel model = ResourceModel.builder()
+                .arn("arn:aws:organizations:us-east-1:111111111111:i-1234567890abcdef0")
+                .featureSet("ALL")
+                .id("o-2222222222222")
+                .masterAccountArn("arn:aws:organizations:us-east-1:333333333333:i-1234567890abcdef0")
+                .masterAccountEmail("testEmail000@email.com")
                 .masterAccountId("555555555555")
                 .build();
 
@@ -88,8 +91,12 @@ public class ReadHandlerTest extends AbstractTestBase {
     protected void handleRequest_Fails_With_CfnNotFoundException() {
         final ReadHandler handler = new ReadHandler();
 
-        final ResourceModel model = ResourceModel.builder().arn("arn:aws:organizations:us-east-1:111111111111:i-1234567890abcdef0").featureSet("ALL").orgId("o-2222222222222")
-                .masterAccountArn("arn:aws:organizations:us-east-1:333333333333:i-1234567890abcdef0").masterAccountEmail("testEmail000@email.com")
+        final ResourceModel model = ResourceModel.builder()
+                .arn("arn:aws:organizations:us-east-1:111111111111:i-1234567890abcdef0")
+                .id("o-2222222222222")
+                .featureSet("ALL")
+                .masterAccountArn("arn:aws:organizations:us-east-1:333333333333:i-1234567890abcdef0")
+                .masterAccountEmail("testEmail000@email.com")
                 .masterAccountId("555555555555")
                 .build();
 
