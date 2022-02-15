@@ -1,7 +1,10 @@
 package software.amazon.organizations.organization;
 
+import com.diffplug.common.collect.ImmutableList;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import software.amazon.awssdk.awscore.AwsRequest;
@@ -15,6 +18,15 @@ import software.amazon.cloudformation.proxy.LoggerProxy;
 import software.amazon.cloudformation.proxy.ProxyClient;
 
 public class AbstractTestBase {
+  protected static final String TEST_ORG_ID = "o-1231231231";
+  protected static final String TEST_ORG_ARN = "arn:org:test::555555555555:organization/o-2222222222";
+  protected static final String TEST_FEATURE_SET = "ALL";
+  protected static final String TEST_MANAGEMENT_ACCOUNT_ARN = "arn:account:test::555555555555:organization/o-2222222222";
+  protected static final String TEST_MANAGEMENT_ACCOUNT_EMAIL = "testEmail@test.com";
+  protected static final String TEST_MANAGEMENT_ACCOUNT_ID = "000000000000";
+  protected static final String TEST_ROOT_ID = "r-12345";
+  protected static final List<String> TEST_ROOT_IDs = ImmutableList.of(TEST_ROOT_ID);
+
   protected static final Credentials MOCK_CREDENTIALS;
   protected static final LoggerProxy logger;
 

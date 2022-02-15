@@ -6,15 +6,18 @@ import software.amazon.awssdk.services.organizations.model.CreateOrganizationReq
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationResponse;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationResponse;
+import software.amazon.awssdk.services.organizations.model.ListRootsRequest;
+import software.amazon.awssdk.services.organizations.model.ListRootsResponse;
 import software.amazon.awssdk.services.organizations.model.Organization;
 
 import java.time.Duration;
-import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
+
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +26,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.atLeastOnce;
@@ -33,13 +35,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateHandlerTest extends AbstractTestBase {
-
-    private final String TEST_ORG_ID = "o-1231231231";
-    private final String TEST_ORG_ARN = "arn:org:test::555555555555:organization/o-2222222222";
-    private final String TEST_FEATURE_SET = "ALL";
-    private final String TEST_MANAGEMENT_ACCOUNT_ARN = "arn:account:test::555555555555:organization/o-2222222222";
-    private final String TEST_MANAGEMENT_ACCOUNT_EMAIL = "testEmail@test.com";
-    private final String TEST_MANAGEMENT_ACCOUNT_ID = "000000000000";
 
     @Mock
     private AmazonWebServicesClientProxy mockAwsClientProxy;
@@ -69,32 +64,50 @@ public class CreateHandlerTest extends AbstractTestBase {
     @Test
     public void handleRequest_SimpleSuccess() {
         final ResourceModel model = ResourceModel.builder()
+            .featureSet(TEST_FEATURE_SET)
+            .id(TEST_ORG_ID)
+            .arn(TEST_ORG_ARN)
+            .managementAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
+            .managementAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
+            .managementAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
+            .rootIds(TEST_ROOT_IDs)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        final CreateOrganizationResponse createOrganizationResponse = CreateOrganizationResponse.builder()
+            .organization(Organization.builder()
                 .id(TEST_ORG_ID)
                 .arn(TEST_ORG_ARN)
                 .featureSet(TEST_FEATURE_SET)
                 .masterAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
                 .masterAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
                 .masterAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
-                .build();
-
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
-
-        final CreateOrganizationResponse createOrganizationResponse = CreateOrganizationResponse.builder().build();
+                .build()
+            )
+        .build();
         when(mockProxyClient.client().createOrganization(any(CreateOrganizationRequest.class))).thenReturn(createOrganizationResponse);
 
+        final ListRootsResponse listRootsResponse = ListRootsResponse.builder().roots(
+            software.amazon.awssdk.services.organizations.model.Root.builder()
+                .id(TEST_ROOT_ID)
+                .build()).build();
+
+        when(mockProxyClient.client().listRoots(any(ListRootsRequest.class))).thenReturn(listRootsResponse);
+
         final DescribeOrganizationResponse describeOrganizationResponse = DescribeOrganizationResponse.builder()
-                .organization(Organization.builder()
-                        .id(TEST_ORG_ID)
-                        .arn(TEST_ORG_ARN)
-                        .featureSet(TEST_FEATURE_SET)
-                        .masterAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
-                        .masterAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
-                        .masterAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
-                        .build()
-                )
-                .build();
+            .organization(Organization.builder()
+                .id(TEST_ORG_ID)
+                .arn(TEST_ORG_ARN)
+                .featureSet(TEST_FEATURE_SET)
+                .masterAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
+                .masterAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
+                .masterAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
+                .build()
+            )
+            .build();
         when(mockProxyClient.client().describeOrganization(any(DescribeOrganizationRequest.class))).thenReturn(describeOrganizationResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
@@ -102,7 +115,11 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNotNull();
         assertThat(response.getResourceModel()).isEqualTo(request.getDesiredResourceState());
+        assertThat(response.getResourceModel().getRootIds().get(0)).isEqualTo(TEST_ROOT_ID);
+        assertThat(response.getResourceModel().getManagementAccountArn()).isEqualTo(TEST_MANAGEMENT_ACCOUNT_ARN);
+        assertThat(response.getResourceModel().getFeatureSet()).isEqualTo(TEST_FEATURE_SET);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
@@ -113,16 +130,25 @@ public class CreateHandlerTest extends AbstractTestBase {
     @Test
     public void handleRequest_Fails_With_CfnAlreadyExistsException() {
         final ResourceModel model = ResourceModel.builder()
-                .featureSet(TEST_FEATURE_SET)
-                .build();
+            .featureSet(TEST_FEATURE_SET)
+            .id(TEST_ORG_ID)
+            .arn(TEST_ORG_ARN)
+            .managementAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
+            .managementAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
+            .managementAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
+            .rootIds(TEST_ROOT_IDs)
+            .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
+            .desiredResourceState(model)
+            .build();
 
         when(mockProxyClient.client().createOrganization(any(CreateOrganizationRequest.class))).thenThrow(AlreadyInOrganizationException.class);
 
-        assertThrows(CfnAlreadyExistsException.class,
-                () -> createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger));
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AlreadyExists);
     }
 }

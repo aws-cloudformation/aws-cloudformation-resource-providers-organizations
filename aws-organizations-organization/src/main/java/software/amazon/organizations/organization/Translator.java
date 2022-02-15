@@ -4,7 +4,12 @@ import software.amazon.awssdk.services.organizations.model.CreateOrganizationReq
 import software.amazon.awssdk.services.organizations.model.DeleteOrganizationRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationResponse;
+import software.amazon.awssdk.services.organizations.model.ListRootsRequest;
+import software.amazon.awssdk.services.organizations.model.ListRootsResponse;
 import software.amazon.awssdk.services.organizations.model.Organization;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class is a centralized placeholder for
@@ -25,15 +30,35 @@ public class Translator {
     return DescribeOrganizationRequest.builder().build();
   }
 
-  static ResourceModel translateFromReadResponse(final DescribeOrganizationResponse describeOrganizationResponse) {
+  static ListRootsRequest translateToListRootsRequest() {
+    return ListRootsRequest.builder().build();
+  }
+
+  static ResourceModel translateFromListRootsResponse(final ListRootsResponse listRootsResponse, final ResourceModel model){
+    if (!listRootsResponse.hasRoots()){
+      return model;
+    }
+    List<String> rootIds = new ArrayList<>();
+    String nextToken = null;
+    do {
+      listRootsResponse.roots().forEach(root -> rootIds.add(root.id()));
+      nextToken = listRootsResponse.nextToken();
+    } while (nextToken != null);
+    model.setRootIds(rootIds);
+    return model;
+  }
+
+
+  static ResourceModel translateFromReadResponse(final DescribeOrganizationResponse describeOrganizationResponse, final ResourceModel model) {
     Organization organization = describeOrganizationResponse.organization();
     return ResourceModel.builder()
       .id(organization.id())
       .arn(organization.arn())
       .featureSet(organization.featureSetAsString())
-      .masterAccountArn(organization.masterAccountArn())
-      .masterAccountId(organization.masterAccountId())
-      .masterAccountEmail(organization.masterAccountEmail())
+      .managementAccountArn(organization.masterAccountArn())
+      .managementAccountId(organization.masterAccountId())
+      .managementAccountEmail(organization.masterAccountEmail())
+      .rootIds(model.getRootIds())
       .build();
   }
 

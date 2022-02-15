@@ -1,11 +1,11 @@
 package software.amazon.organizations.organization;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationResponse;
 
-import software.amazon.cloudformation.exceptions.CfnNotFoundException;
+import software.amazon.awssdk.services.organizations.model.ListRootsRequest;
+import software.amazon.awssdk.services.organizations.model.ListRootsResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -23,22 +23,38 @@ public class ReadHandler extends BaseHandlerStd {
         final Logger logger) {
 
         this.logger = logger;
+        logger.log(String.format("Entered %s read handler for Organization resource type with account Id [%s].", ResourceModel.TYPE_NAME, request.getAwsAccountId()));
 
         final ResourceModel model = request.getDesiredResourceState();
-
-        return awsClientProxy.initiate("AWS-Organizations-Organization::Read", orgsClient, model, callbackContext)
-            .translateToServiceRequest(t -> Translator.translateToReadRequest())
-            .makeServiceCall(this::describeOrganization)
-            .done(describeOrganizationResponse -> ProgressEvent.defaultSuccessHandler(Translator.translateFromReadResponse(describeOrganizationResponse)));
+        return ProgressEvent.progress(model, callbackContext)
+            .then(progress -> awsClientProxy.initiate("AWS-Organizations-Organization::Read::GetRootIds", orgsClient, model, callbackContext)
+                  .translateToServiceRequest(t -> Translator.translateToListRootsRequest())
+                  .makeServiceCall(this::listRoots)
+                  .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
+                      organizationsRequest, e, proxyClient1, model1, context, logger))
+                  .done(listRootsResponse -> {
+                      Translator.translateFromListRootsResponse(listRootsResponse, model);
+                        return ProgressEvent.progress(model, callbackContext);
+                  })
+             )
+            .then(progress -> awsClientProxy.initiate("AWS-Organizations-Organization::Read::DescribeOrganization", orgsClient, model, callbackContext)
+                 .translateToServiceRequest(t -> Translator.translateToReadRequest())
+                 .makeServiceCall(this::describeOrganization)
+                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
+                     organizationsRequest, e, proxyClient1, model1, context, logger))
+                 .done(describeOrganizationResponse -> ProgressEvent.defaultSuccessHandler(Translator.translateFromReadResponse(describeOrganizationResponse, model)))
+            );
     }
 
     protected DescribeOrganizationResponse describeOrganization(final DescribeOrganizationRequest describeOrganizationRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        try {
-            final DescribeOrganizationResponse response = orgsClient.injectCredentialsAndInvokeV2(describeOrganizationRequest, orgsClient.client()::describeOrganization);
-            logger.log(String.format("%s has successfully been read.", ResourceModel.TYPE_NAME));
-            return response;
-        } catch(AwsOrganizationsNotInUseException e) {
-            throw new CfnNotFoundException(ResourceModel.TYPE_NAME, ResourceModel.IDENTIFIER_KEY_ID);
-        }
+        logger.log(String.format("Retrieving organization details."));
+        final DescribeOrganizationResponse response = orgsClient.injectCredentialsAndInvokeV2(describeOrganizationRequest, orgsClient.client()::describeOrganization);
+        return response;
+    }
+
+    protected ListRootsResponse listRoots(final ListRootsRequest listRootsRequest, final ProxyClient<OrganizationsClient> orgsClient) {
+        logger.log(String.format("Retrieving root ids."));
+        final ListRootsResponse response = orgsClient.injectCredentialsAndInvokeV2(listRootsRequest, orgsClient.client()::listRoots);
+        return response;
     }
 }

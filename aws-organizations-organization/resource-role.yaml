@@ -23,9 +23,11 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                - "iam:CreateServiceLinkedRole"
                 - "organizations:CreateOrganization"
                 - "organizations:DeleteOrganization"
                 - "organizations:DescribeOrganization"
+                - "organizations:ListRoots"
                 Resource: "*"
 Outputs:
   ExecutionRoleArn:
