@@ -1,7 +1,7 @@
 {
   "typeName": "AWS::Organizations::Organization",
   "description": "Resource schema for AWS::Organizations::Organization",
-  "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-rpdk.git",
+  "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-organizations.git",
   "properties": {
     "Id": {
       "description": "The unique identifier (ID) of an organization.",
