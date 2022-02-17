@@ -3,7 +3,6 @@ package software.amazon.organizations.organization;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationResponse;
-
 import software.amazon.awssdk.services.organizations.model.ListRootsRequest;
 import software.amazon.awssdk.services.organizations.model.ListRootsResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;

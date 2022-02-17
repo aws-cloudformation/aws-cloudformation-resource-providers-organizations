@@ -59,15 +59,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
     @Test
     public void deleteHandleRequest_SimpleSuccess() {
-        final ResourceModel model = ResourceModel.builder()
-            .arn(TEST_ORG_ARN)
-            .featureSet(TEST_FEATURE_SET)
-            .id(TEST_ORG_ID)
-            .managementAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
-            .managementAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
-            .managementAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
-            .rootIds(TEST_ROOT_IDs)
-            .build();
+        final ResourceModel model = generateResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                 .desiredResourceState(model)
@@ -93,15 +85,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
     @Test
     public void deleteHandleRequest_Fails_With_CfnNotFoundException() {
-        final ResourceModel model = ResourceModel.builder()
-            .arn(TEST_ORG_ARN)
-            .featureSet(TEST_FEATURE_SET)
-            .id(TEST_ORG_ID)
-            .managementAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
-            .managementAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
-            .managementAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
-            .rootIds(TEST_ROOT_IDs)
-            .build();
+        final ResourceModel model = generateResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                 .desiredResourceState(model)
@@ -117,15 +101,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
     @Test
     public void deleteHandleRequest_Fails_With_OrganizationNotEmptyException() {
-        final ResourceModel model = ResourceModel.builder()
-            .arn(TEST_ORG_ARN)
-            .featureSet(TEST_FEATURE_SET)
-            .id(TEST_ORG_ID)
-            .managementAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
-            .managementAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
-            .managementAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
-            .rootIds(TEST_ROOT_IDs)
-            .build();
+        final ResourceModel model = generateResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)

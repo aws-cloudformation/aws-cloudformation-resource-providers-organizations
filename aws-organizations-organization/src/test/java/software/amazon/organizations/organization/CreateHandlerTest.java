@@ -63,15 +63,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_SimpleSuccess() {
-        final ResourceModel model = ResourceModel.builder()
-            .featureSet(TEST_FEATURE_SET)
-            .id(TEST_ORG_ID)
-            .arn(TEST_ORG_ARN)
-            .managementAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
-            .managementAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
-            .managementAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
-            .rootIds(TEST_ROOT_IDs)
-            .build();
+        final ResourceModel model = generateResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                 .desiredResourceState(model)
@@ -129,15 +121,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_Fails_With_CfnAlreadyExistsException() {
-        final ResourceModel model = ResourceModel.builder()
-            .featureSet(TEST_FEATURE_SET)
-            .id(TEST_ORG_ID)
-            .arn(TEST_ORG_ARN)
-            .managementAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
-            .managementAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
-            .managementAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
-            .rootIds(TEST_ROOT_IDs)
-            .build();
+        final ResourceModel model = generateResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)

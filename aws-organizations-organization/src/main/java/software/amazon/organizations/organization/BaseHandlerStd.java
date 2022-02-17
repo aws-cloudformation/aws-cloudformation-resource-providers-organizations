@@ -9,15 +9,17 @@ import software.amazon.awssdk.services.organizations.model.ConstraintViolationEx
 import software.amazon.awssdk.services.organizations.model.InvalidInputException;
 import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
+import software.amazon.awssdk.services.organizations.model.AlreadyInOrganizationException;
+import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
+import software.amazon.awssdk.services.organizations.model.OrganizationsRequest;
+
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
-import software.amazon.awssdk.services.organizations.model.AlreadyInOrganizationException;
-import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
-import software.amazon.awssdk.services.organizations.model.OrganizationsRequest;
+
 
 // Placeholder for the functionality that could be shared across Create/Read/Update/Delete/List Handlers
 

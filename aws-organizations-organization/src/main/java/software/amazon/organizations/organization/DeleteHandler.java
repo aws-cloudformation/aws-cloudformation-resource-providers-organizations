@@ -26,7 +26,7 @@ public class DeleteHandler extends BaseHandlerStd {
 
         return ProgressEvent.progress(model, callbackContext)
             .then(progress ->
-                awsClientProxy.initiate("AWS-Organizations-Organization::Delete", orgsClient, model, progress.getCallbackContext())
+                awsClientProxy.initiate("AWS-Organizations-Organization::DeleteOrganization", orgsClient, model, progress.getCallbackContext())
                 .translateToServiceRequest(t -> Translator.translateToDeleteRequest())
                 .makeServiceCall(this::deleteOrganization)
                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(

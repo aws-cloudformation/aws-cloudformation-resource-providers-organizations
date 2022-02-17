@@ -30,6 +30,19 @@ public class AbstractTestBase {
   protected static final Credentials MOCK_CREDENTIALS;
   protected static final LoggerProxy logger;
 
+  protected ResourceModel generateResourceModel(){
+    ResourceModel model = ResourceModel.builder()
+      .featureSet(TEST_FEATURE_SET)
+      .id(TEST_ORG_ID)
+      .arn(TEST_ORG_ARN)
+      .managementAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
+      .managementAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
+      .managementAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
+      .rootIds(TEST_ROOT_IDs)
+      .build();
+    return model;
+  }
+
   static {
     MOCK_CREDENTIALS = new Credentials("accessKey", "secretKey", "token");
     logger = new LoggerProxy();

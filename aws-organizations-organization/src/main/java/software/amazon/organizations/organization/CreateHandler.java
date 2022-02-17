@@ -22,14 +22,14 @@ public class CreateHandler extends BaseHandlerStd {
 
         this.logger = logger;
         final ResourceModel model = request.getDesiredResourceState();
-        if (request.getDesiredResourceState().getFeatureSet() == null){
+        if (request.getDesiredResourceState().getFeatureSet() == null) {
             model.setFeatureSet("ALL");
         }
         logger.log(String.format("Entered %s create handler with account Id [%s] and feature set: [%s]", ResourceModel.TYPE_NAME, request.getAwsAccountId(), model.getFeatureSet()));
 
         return ProgressEvent.progress(model, callbackContext)
             .then(progress ->
-                awsClientProxy.initiate("AWS-Organizations-Organization::Create", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
+                awsClientProxy.initiate("AWS-Organizations-Organization::CreateOrganization", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                 .translateToServiceRequest(Translator::translateToCreateRequest)
                 .makeServiceCall(this::createOrganization)
                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
