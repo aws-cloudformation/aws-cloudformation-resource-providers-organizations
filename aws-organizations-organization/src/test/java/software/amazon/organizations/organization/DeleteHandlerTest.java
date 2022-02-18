@@ -7,6 +7,7 @@ import software.amazon.awssdk.services.organizations.model.DeleteOrganizationReq
 import software.amazon.awssdk.services.organizations.model.DeleteOrganizationResponse;
 
 import java.time.Duration;
+
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -33,14 +34,11 @@ import static org.mockito.Mockito.when;
 public class DeleteHandlerTest extends AbstractTestBase {
 
     @Mock
+    OrganizationsClient mockOrgsClient;
+    @Mock
     private AmazonWebServicesClientProxy mockAwsClientProxy;
-
     @Mock
     private ProxyClient<OrganizationsClient> mockProxyClient;
-
-    @Mock
-    OrganizationsClient mockOrgsClient;
-
     private DeleteHandler deleteHandler;
 
     @BeforeEach
@@ -62,8 +60,8 @@ public class DeleteHandlerTest extends AbstractTestBase {
         final ResourceModel model = generateResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
+            .desiredResourceState(model)
+            .build();
 
 
         final DeleteOrganizationResponse deleteOrganizationResponse = DeleteOrganizationResponse.builder().build();
@@ -88,8 +86,8 @@ public class DeleteHandlerTest extends AbstractTestBase {
         final ResourceModel model = generateResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
+            .desiredResourceState(model)
+            .build();
 
         when(mockProxyClient.client().deleteOrganization(any(DeleteOrganizationRequest.class))).thenThrow(AwsOrganizationsNotInUseException.class);
         final ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);

@@ -35,14 +35,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class ReadHandlerTest extends AbstractTestBase {
     @Mock
+    OrganizationsClient mockOrgsClient;
+    @Mock
     private AmazonWebServicesClientProxy mockAwsClientProxy;
-
     @Mock
     private ProxyClient<OrganizationsClient> mockProxyClient;
-
-    @Mock
-    OrganizationsClient mockOrgsClient;
-
     private ReadHandler readHandler;
 
     @BeforeEach
@@ -85,7 +82,7 @@ public class ReadHandlerTest extends AbstractTestBase {
                 .masterAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
                 .masterAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
                 .masterAccountId(TEST_MANAGEMENT_ACCOUNT_ID).build())
-                .build();
+            .build();
 
         when(mockProxyClient.client().describeOrganization(any(DescribeOrganizationRequest.class))).thenReturn(describeOrganizationResponse);
 
@@ -117,8 +114,8 @@ public class ReadHandlerTest extends AbstractTestBase {
             .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
+            .desiredResourceState(model)
+            .build();
 
         final ListRootsResponse listRootsResponse = ListRootsResponse.builder().roots(
             software.amazon.awssdk.services.organizations.model.Root.builder()
