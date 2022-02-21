@@ -1,0 +1,148 @@
+{
+  "typeName": "AWS::Organizations::Policy",
+  "description": "Policies in AWS Organizations enable you to manage different features of the AWS accounts in your organization.",
+  "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-organizations.git",
+  "properties": {
+    "Name": {
+      "description": "Name of the Policy",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "Type": {
+      "description": "The type of policy to create. You can specify one of the following values: AISERVICES_OPT_OUT_POLICY, BACKUP_POLICY, SERVICE_CONTROL_POLICY, TAG_POLICY",
+      "type": "string",
+      "default": "SERVICE_CONTROL_POLICY",
+      "enum": [
+        "SERVICE_CONTROL_POLICY",
+        "AISERVICES_OPT_OUT_POLICY",
+        "BACKUP_POLICY",
+        "TAG_POLICY"
+      ]
+    },
+    "Content": {
+      "description": "The Policy text content",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000000
+    },
+    "Description": {
+      "description": "Human readable description of the policy",
+      "type": "string",
+      "maxLength": 512
+    },
+    "TargetIds": {
+      "description": "List of unique identifiers (IDs) of the root, OU, or account that you want to attach the policy to",
+      "type": "array",
+      "insertionOrder": false,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "Tags": {
+      "description": "A list of tags that you want to attach to the newly created policy. For each tag in the list, you must specify both a tag key and a value. You can set the value to an empty string, but you can't set it to null.",
+      "type": "array",
+      "uniqueItems": true,
+      "insertionOrder": false,
+      "items": {
+        "$ref": "#/definitions/Tag"
+      }
+    },
+    "Id": {
+      "description": "Id of the Policy",
+      "type": "string",
+      "maxLength": 130
+    },
+    "Arn": {
+      "description": "ARN of the Policy",
+      "type": "string",
+      "pattern": "^arn:aws.*:organizations::[0-9]{12}:policy/o-[a-z0-9]{10}/(service_control|tag|backup|aiservices_opt_out)_policy/p-[a-z0-9]{8}"
+    }
+  },
+  "definitions": {
+    "Tag": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "Value": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "Value",
+        "Key"
+      ]
+    }
+  },
+  "tagging": {
+    "taggable": true,
+    "tagOnCreate": true,
+    "tagUpdatable": false,
+    "cloudFormationSystemTags": false,
+    "tagProperty": "/properties/Tags"
+  },
+  "required": [
+    "Name",
+    "Type",
+    "Content"
+  ],
+  "primaryIdentifier": [
+    "/properties/Id"
+  ],
+  "readOnlyProperties": [
+    "/properties/Id",
+    "/properties/Arn"
+  ],
+  "writeOnlyProperties": [
+    "/properties/Content"
+  ],
+  "createOnlyProperties": [
+    "/properties/Type"
+  ],
+  "additionalProperties": false,
+  "handlers": {
+    "create": {
+      "permissions": [
+        "organizations:CreatePolicy",
+        "organizations:DescribePolicy",
+        "organizations:AttachPolicy",
+        "organizations:ListTargetsForPolicy"
+      ]
+    },
+    "read": {
+      "permissions": [
+        "organizations:DescribePolicy",
+        "organizations:ListTargetsForPolicy",
+        "organizations:ListTagsForResource"
+      ]
+    },
+    "update": {
+      "permissions": [
+        "organizations:UpdatePolicy",
+        "organizations:ListTagsForResource",
+        "organizations:TagResource",
+        "organizations:UntagResource"
+      ]
+    },
+    "delete": {
+      "permissions": [
+        "organizations:DetachPolicy",
+        "organizations:DeletePolicy"
+      ]
+    },
+    "list": {
+      "permissions": [
+        "organizations:ListPolicies",
+        "organizations:ListTargetsForPolicy"
+      ]
+    }
+  }
+}
