@@ -1,0 +1,105 @@
+{
+  "typeName": "AWS::Organizations::OrganizationalUnit",
+  "description": "Resource schema for AWS::Organizations::OrganizationalUnit",
+  "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-organizations.git",
+  "properties": {
+    "Arn": {
+      "description": "The Amazon Resource Name (ARN) of this OU.",
+      "type": "string",
+      "pattern": "^arn:aws.*:organizations::\\d{12}:ou\/o-[a-z0-9]{10,32}\/ou-[0-9a-z]{4,32}-[0-9a-z]{8,32}"
+    },
+    "Id": {
+      "description": "The unique identifier (ID) associated with this OU.",
+      "type": "string",
+      "pattern": "^ou-[0-9a-z]{4,32}-[a-z0-9]{8,32}$",
+      "maxLength": 68
+    },
+    "Name": {
+      "description": "The friendly name of this OU.",
+      "type": "string",
+      "pattern": "[\\s\\S]*",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "ParentId": {
+      "description": "The unique identifier (ID) of the parent root or OU that you want to create the new OU in.",
+      "type": "string",
+      "pattern": "^(r-[0-9a-z]{4,32})|(ou-[0-9a-z]{4,32}-[a-z0-9]{8,32})$",
+      "maxLength": 100
+    },
+    "Tags" : {
+      "description" : "A list of tags that you want to attach to the newly created OU.",
+      "type" : "array",
+      "uniqueItems" : true,
+      "insertionOrder": false,
+      "items" : {
+          "$ref" : "#/definitions/Tag"
+      }
+    }
+  },
+  "definitions": {
+    "Tag" : {
+      "description": "A custom key-value pair associated with a resource within your organization.",
+      "type" : "object",
+      "properties" : {
+          "Key" : {
+              "type" : "string",
+              "description" : "The key identifier, or name, of the tag.",
+              "minLength" : 1,
+              "maxLength" : 128
+          },
+          "Value" : {
+              "type" : "string",
+              "description" : "The string value that's associated with the key of the tag. You can set the value of a tag to an empty string, but you can't set the value of a tag to null.",
+              "minLength" : 0,
+              "maxLength" : 256
+          }
+      },
+      "required" : [
+          "Key",
+          "Value"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "handlers": {
+    "create": {
+      "permissions": [
+        "organizations:CreateOrganizationalUnit",
+        "organizations:DescribeOrganizationalUnit",
+        "organizations:TagResource"
+      ]
+    },
+    "read": {
+      "permissions": [
+        "organizations:DescribeOrganizationalUnit"
+      ]
+    },
+    "update": {
+      "permissions": [
+        "organizations:UpdateOrganizationalUnit"
+      ]
+    },
+    "delete": {
+      "permissions": [
+        "organizations:DeleteOrganizationalUnit",
+        "organizations:DescribeOrganizationalUnit",
+        "organizations:UntagResource"
+      ]
+    },
+    "list": {
+      "permissions": [
+        "organizations:DescribeOrganizationalUnit",
+        "organizations:ListOrganizationalUnitsForParent"
+      ]
+    }
+  },
+  "readOnlyProperties": [
+    "/properties/Arn",
+    "/properties/Id"
+  ],
+  "primaryIdentifier": [
+    "/properties/Id"
+  ],
+  "additionalProperties": false
+}
