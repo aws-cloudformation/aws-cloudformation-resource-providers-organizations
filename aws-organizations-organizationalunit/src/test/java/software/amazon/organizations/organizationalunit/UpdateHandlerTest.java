@@ -1,12 +1,18 @@
 package software.amazon.organizations.organizationalunit;
 
 import java.time.Duration;
+import java.util.HashSet;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitRequest;
+import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitResponse;
 import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitResponse;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnitNotFoundException;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
+import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -47,26 +53,62 @@ public class UpdateHandlerTest extends AbstractTestBase {
         mockProxyClient = MOCK_PROXY(mockAwsClientProxy, mockOrgsClient);
     }
 
-    @Test
-    public void handleRequest_SimpleSuccess() {
-        final ResourceModel model = ResourceModel.builder()
+    protected ResourceModel generatePreviousResourceModel() {
+        return ResourceModel.builder()
             .name(TEST_OU_NAME)
             .id(TEST_OU_ID)
+            .tags(TagTestResources.translateTags(TagTestResources.defaultTags))
             .build();
+    }
 
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-            .desiredResourceState(model)
+    protected ResourceModel generateResourceModel() {
+        return ResourceModel.builder()
+            .name(TEST_OU_UPDATED_NAME)
+            .id(TEST_OU_ID)
+            .tags(TagTestResources.translateTags(TagTestResources.defaultTags))
             .build();
+    }
 
-        final UpdateOrganizationalUnitResponse updateOrganizationalUnitResponse = UpdateOrganizationalUnitResponse.builder()
+    protected UpdateOrganizationalUnitResponse getUpdateOrganizationalUnitResponse() {
+        return UpdateOrganizationalUnitResponse.builder()
             .organizationalUnit(OrganizationalUnit.builder()
-                .name(TEST_OU_NAME)
+                .name(TEST_OU_UPDATED_NAME)
                 .arn(TEST_OU_ARN)
                 .id(TEST_OU_ID)
                 .build()
             ).build();
+    }
+
+    protected DescribeOrganizationalUnitResponse getDescribeOrganizationalUnitResponse() {
+        return DescribeOrganizationalUnitResponse.builder()
+            .organizationalUnit(OrganizationalUnit.builder()
+                .name(TEST_OU_UPDATED_NAME)
+                .arn(TEST_OU_ARN)
+                .id(TEST_OU_ID)
+                .build()
+            ).build();
+    }
+
+    @Test
+    public void handleRequest_SimpleSuccess() {
+        final ResourceModel previousResourceModel = generatePreviousResourceModel();
+
+        final ResourceModel model = generateResourceModel();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceState(previousResourceModel)
+            .desiredResourceState(model)
+            .build();
+
+        final UpdateOrganizationalUnitResponse updateOrganizationalUnitResponse = getUpdateOrganizationalUnitResponse();
+
+        final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = getDescribeOrganizationalUnitResponse();
+
+        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResources.buildDefaultTagsResponse();
 
         when(mockProxyClient.client().updateOrganizationalUnit(any(UpdateOrganizationalUnitRequest.class))).thenReturn(updateOrganizationalUnitResponse);
+        when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
 
@@ -74,7 +116,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel().getName()).isEqualTo(TEST_OU_NAME);
+        assertThat(response.getResourceModel().getName()).isEqualTo(TEST_OU_UPDATED_NAME);
         assertThat(response.getResourceModel().getArn()).isEqualTo(TEST_OU_ARN);
         assertThat(response.getResourceModel().getId()).isEqualTo(TEST_OU_ID);
         assertThat(response.getResourceModels()).isNull();
@@ -85,10 +127,47 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_Fails_With_CfnNotFoundException() {
+    public void handleRequestWithoutTags_SimpleSuccess() {
+         final ResourceModel previousResourceModel = generatePreviousResourceModel();
+
         final ResourceModel model = generateResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceState(previousResourceModel)
+            .desiredResourceState(model)
+            .build();
+
+        final UpdateOrganizationalUnitResponse updateOrganizationalUnitResponse = getUpdateOrganizationalUnitResponse();
+
+        final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = getDescribeOrganizationalUnitResponse();
+
+        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResources.buildEmptyTagsResponse();
+
+        when(mockProxyClient.client().updateOrganizationalUnit(any(UpdateOrganizationalUnitRequest.class))).thenReturn(updateOrganizationalUnitResponse);
+        when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+
+        assertThat(response.getResourceModel().getTags()).isEqualTo(new HashSet<Tag>());
+
+        verify(mockProxyClient.client()).updateOrganizationalUnit(any(UpdateOrganizationalUnitRequest.class));
+    }
+
+    @Test
+    public void handleRequest_Fails_With_CfnNotFoundException() {
+        final ResourceModel previousResourceModel = ResourceModel.builder()
+            .name(TEST_OU_NAME)
+            .id(TEST_OU_ID)
+            .build();
+
+        final ResourceModel model = ResourceModel.builder()
+            .name(TEST_OU_UPDATED_NAME)
+            .id(TEST_OU_ID)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceState(previousResourceModel)
             .desiredResourceState(model)
             .build();
 

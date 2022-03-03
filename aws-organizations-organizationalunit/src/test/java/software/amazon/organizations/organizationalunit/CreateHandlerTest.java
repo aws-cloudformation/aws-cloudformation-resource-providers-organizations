@@ -1,14 +1,18 @@
 package software.amazon.organizations.organizationalunit;
 
 import java.time.Duration;
+import java.util.HashSet;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitResponse;
+import software.amazon.awssdk.services.organizations.model.DuplicateOrganizationalUnitException;
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitResponse;
-import software.amazon.awssdk.services.organizations.model.DuplicateOrganizationalUnitException;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
+import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -49,23 +53,54 @@ public class CreateHandlerTest extends AbstractTestBase {
         mockProxyClient = MOCK_PROXY(mockAwsClientProxy, mockOrgsClient);
     }
 
-    @Test
-    public void handleRequest_SimpleSuccess() {
-        final ResourceModel model = generateResourceModel();
-
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-            .desiredResourceState(model)
+    protected ResourceModel generateCreateResourceModel() {
+        ResourceModel model = ResourceModel.builder()
+            .name(TEST_OU_NAME)
+            .parentId(TEST_PARENT_ID)
+            .tags(TagTestResources.translateTags(TagTestResources.defaultTags))
             .build();
+        return model;
+    }
 
-        final CreateOrganizationalUnitResponse createOrganizationalUnitResponse = CreateOrganizationalUnitResponse.builder()
+    protected ResourceModel generateCreateResourceModelWithoutTags() {
+        ResourceModel model = ResourceModel.builder()
+            .name(TEST_OU_NAME)
+            .arn(TEST_OU_ARN)
+            .id(TEST_OU_ID)
+            .tags(TagTestResources.translateTags(new HashSet<Tag>()))
+            .build();
+        return model;
+    }
+
+    protected CreateOrganizationalUnitResponse getCreateOrganizationalUnitResponse() {
+        return CreateOrganizationalUnitResponse.builder()
             .organizationalUnit(OrganizationalUnit.builder()
                 .name(TEST_OU_NAME)
                 .arn(TEST_OU_ARN)
                 .id(TEST_OU_ID)
                 .build()
             ).build();
+    }
 
-        when(mockProxyClient.client().createOrganizationalUnit(any(CreateOrganizationalUnitRequest.class))).thenReturn(createOrganizationalUnitResponse);
+    protected DescribeOrganizationalUnitResponse getDescribeOrganizationalUnitResponse() {
+        return DescribeOrganizationalUnitResponse.builder()
+            .organizationalUnit(OrganizationalUnit.builder()
+                .name(TEST_OU_NAME)
+                .arn(TEST_OU_ARN)
+                .id(TEST_OU_ID)
+                .build()
+            ).build();
+    }
+
+    @Test
+    public void handleRequest_SimpleSuccess() {
+        final ResourceModel model = generateCreateResourceModel();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        final CreateOrganizationalUnitResponse createOrganizationalUnitResponse = getCreateOrganizationalUnitResponse();
 
         final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = DescribeOrganizationalUnitResponse.builder()
             .organizationalUnit(OrganizationalUnit.builder()
@@ -75,7 +110,11 @@ public class CreateHandlerTest extends AbstractTestBase {
                 .build()
             ).build();
 
+        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResources.buildDefaultTagsResponse();
+
+        when(mockProxyClient.client().createOrganizationalUnit(any(CreateOrganizationalUnitRequest.class))).thenReturn(createOrganizationalUnitResponse);
         when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
 
@@ -83,7 +122,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel()).isEqualTo(request.getDesiredResourceState());
         assertThat(response.getResourceModel().getName()).isEqualTo(TEST_OU_NAME);
         assertThat(response.getResourceModel().getArn()).isEqualTo(TEST_OU_ARN);
         assertThat(response.getResourceModel().getId()).isEqualTo(TEST_OU_ID);
@@ -95,8 +133,39 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
+    public void handleRequestWithoutTags_SimpleSuccess() {
+        final ResourceModel model = generateCreateResourceModelWithoutTags();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        final CreateOrganizationalUnitResponse createOrganizationalUnitResponse = getCreateOrganizationalUnitResponse();
+
+        final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = DescribeOrganizationalUnitResponse.builder()
+            .organizationalUnit(OrganizationalUnit.builder()
+                .name(TEST_OU_NAME)
+                .arn(TEST_OU_ARN)
+                .id(TEST_OU_ID)
+                .build()
+            ).build();
+
+        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResources.buildEmptyTagsResponse();
+
+        when(mockProxyClient.client().createOrganizationalUnit(any(CreateOrganizationalUnitRequest.class))).thenReturn(createOrganizationalUnitResponse);
+        when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+
+        assertThat(response.getResourceModel().getTags()).isEqualTo(new HashSet<Tag>());
+
+        verify(mockProxyClient.client()).createOrganizationalUnit(any(CreateOrganizationalUnitRequest.class));
+    }
+
+    @Test
     public void handleRequest_Fails_With_CfnAlreadyExistsException() {
-        final ResourceModel model = generateResourceModel();
+        final ResourceModel model = generateCreateResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)

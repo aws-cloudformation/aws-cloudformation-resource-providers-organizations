@@ -48,11 +48,16 @@ public class DeleteHandlerTest extends AbstractTestBase {
         mockProxyClient = MOCK_PROXY(mockAwsClientProxy, mockOrgsClient);
     }
 
-    @Test
-    public void handleRequest_SimpleSuccess() {
-        final ResourceModel model = ResourceModel.builder()
+    protected ResourceModel generateDeleteResourceModel() {
+        ResourceModel model = ResourceModel.builder()
             .id(TEST_OU_ID)
             .build();
+        return model;
+    }
+
+    @Test
+    public void handleRequest_SimpleSuccess() {
+        final ResourceModel model = generateDeleteResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
@@ -77,7 +82,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_Fails_With_CfnNotFoundException() {
-        final ResourceModel model = generateResourceModel();
+        final ResourceModel model = generateDeleteResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
@@ -95,7 +100,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
     @Test
     public void deleteHandleRequest_Fails_With_OrganizationalUnitNotEmptyException() {
-        final ResourceModel model = generateResourceModel();
+        final ResourceModel model = generateDeleteResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)

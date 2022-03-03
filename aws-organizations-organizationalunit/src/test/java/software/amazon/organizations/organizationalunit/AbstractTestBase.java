@@ -1,6 +1,7 @@
 package software.amazon.organizations.organizationalunit;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.HashSet;
 import java.util.function.Function;
 
 import software.amazon.awssdk.awscore.AwsRequest;
@@ -9,6 +10,7 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.Tag;
 
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Credentials;
@@ -17,8 +19,10 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 
 public class AbstractTestBase {
     protected static final String TEST_OU_NAME = "test_ou_name";
+    protected static final String TEST_OU_UPDATED_NAME = "test_ou_updated_name";
     protected static final String TEST_OU_ARN = "arn:aws:organizations::111111111111:ou/o-0101010101/ou-abc1-abcd1234";
     protected static final String TEST_OU_ID = "abcd1234";
+    protected static final String TEST_PARENT_ID = "r-hhhu";
 
     protected static final Credentials MOCK_CREDENTIALS;
     protected static final LoggerProxy logger;
@@ -69,14 +73,5 @@ public class AbstractTestBase {
                 return orgsClient;
             }
         };
-    }
-
-    protected ResourceModel generateResourceModel() {
-        ResourceModel model = ResourceModel.builder()
-            .name(TEST_OU_NAME)
-            .arn(TEST_OU_ARN)
-            .id(TEST_OU_ID)
-            .build();
-        return model;
     }
 }

@@ -54,6 +54,20 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final CallbackContext callbackContext,
         final Logger logger
     ) {
+        return handleErrorTranslation(e, logger);
+    }
+
+    public ProgressEvent<ResourceModel, CallbackContext> handleError(
+        final Exception e,
+        final Logger logger
+    ) {
+        return handleErrorTranslation(e, logger);
+    }
+
+    public ProgressEvent<ResourceModel, CallbackContext> handleErrorTranslation(
+        final Exception e,
+        final Logger logger
+    ) {
         HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
 
         if (e instanceof DuplicateOrganizationalUnitException) {

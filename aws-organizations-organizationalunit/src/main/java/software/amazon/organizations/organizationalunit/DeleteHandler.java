@@ -35,12 +35,12 @@ public class DeleteHandler extends BaseHandlerStd {
                 .makeServiceCall(this::deleteOrganizationalUnit)
                 .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
                     organizationsRequest, e, orgsClient1, model1, context, logger))
-                .done((deleteRequest) -> ProgressEvent.<ResourceModel, CallbackContext>builder().status(OperationStatus.SUCCESS).build())
+                .done((deleteRequest) ->  ProgressEvent.defaultSuccessHandler(null))
             );
     }
 
     protected DeleteOrganizationalUnitResponse deleteOrganizationalUnit(final DeleteOrganizationalUnitRequest deleteOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log(String.format("Calling deleteOrganizationalUnit API."));
+        logger.log("Calling deleteOrganizationalUnit API.");
 	    final DeleteOrganizationalUnitResponse deleteOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(deleteOrganizationalUnitRequest, orgsClient.client()::deleteOrganizationalUnit);
 	    return deleteOrganizationalUnitResponse;
 	}

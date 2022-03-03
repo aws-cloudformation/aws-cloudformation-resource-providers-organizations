@@ -5,8 +5,11 @@ import java.time.Duration;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitResponse;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnitNotFoundException;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
+import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -65,7 +68,10 @@ public class ReadHandlerTest extends AbstractTestBase {
                 .build()
             ).build();
 
+        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResources.buildDefaultTagsResponse();
+
         when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
 
@@ -85,7 +91,9 @@ public class ReadHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_Fails_With_CfnNotFoundException() {
-        final ResourceModel model = generateResourceModel();
+        final ResourceModel model = ResourceModel.builder()
+            .id(TEST_OU_ID)
+            .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)

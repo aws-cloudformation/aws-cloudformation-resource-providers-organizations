@@ -27,12 +27,12 @@ public class ListHandler extends BaseHandlerStd {
         this.logger = logger;
 
         // Call ListOrganizationalUnitsForParent API
-        logger.log(String.format("Requesting ListOrganizationalUnitsForParent"));
+        logger.log("Requesting ListOrganizationalUnitsForParent");
         final ListOrganizationalUnitsForParentResponse listOrganizationalUnitsForParentResponse = awsClientProxy.injectCredentialsAndInvokeV2(
                 Translator.translateToListOrganizationalUnitsForParentRequest(request.getNextToken(), request.getDesiredResourceState()), orgsClient.client()::listOrganizationalUnitsForParent);
 
-        final List<ResourceModel> models = listOrganizationalUnitsForParentResponse.organizationalUnits().stream().map(organizatiionalUnit ->
-                Translator.getResourceModelFromOrganizationalUnit(request, awsClientProxy, orgsClient, organizatiionalUnit)).collect(Collectors.toList());
+        final List<ResourceModel> models = listOrganizationalUnitsForParentResponse.organizationalUnits().stream().map(organizationalUnit ->
+                Translator.getResourceModelFromOrganizationalUnit(request, awsClientProxy, orgsClient, organizationalUnit)).collect(Collectors.toList());
 
         return ProgressEvent.<ResourceModel, CallbackContext>builder()
                 .resourceModels(models)
