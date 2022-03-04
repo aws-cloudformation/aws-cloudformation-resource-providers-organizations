@@ -1,4 +1,4 @@
-package software.amazon.organizations.organization;
+package software.amazon.organizations.policy;
 
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;

@@ -58,6 +58,10 @@
       "description": "ARN of the Policy",
       "type": "string",
       "pattern": "^arn:aws.*:organizations::[0-9]{12}:policy/o-[a-z0-9]{10}/(service_control|tag|backup|aiservices_opt_out)_policy/p-[a-z0-9]{8}"
+    },
+    "AwsManaged": {
+      "description": "A boolean value that indicates whether the specified policy is an AWS managed policy. If true, then you can attach the policy to roots, OUs, or accounts, but you cannot edit it.",
+      "type": "boolean"
     }
   },
   "definitions": {
@@ -92,14 +96,16 @@
   "required": [
     "Name",
     "Type",
-    "Content"
+    "Content",
+    "Description"
   ],
   "primaryIdentifier": [
     "/properties/Id"
   ],
   "readOnlyProperties": [
     "/properties/Id",
-    "/properties/Arn"
+    "/properties/Arn",
+    "/properties/AwsManaged"
   ],
   "writeOnlyProperties": [
     "/properties/Content"
@@ -114,7 +120,8 @@
         "organizations:CreatePolicy",
         "organizations:DescribePolicy",
         "organizations:AttachPolicy",
-        "organizations:ListTargetsForPolicy"
+        "organizations:ListTargetsForPolicy",
+        "organizations:TagResource"
       ]
     },
     "read": {

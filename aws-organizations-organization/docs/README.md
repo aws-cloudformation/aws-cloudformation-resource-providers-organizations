@@ -29,7 +29,7 @@ Properties:
 
 #### FeatureSet
 
-Specifies the functionality that currently is available to the organization.
+Specifies the feature set supported by the new organization. Each feature set supports different levels of functionality.
 
 _Required_: No
 
@@ -59,14 +59,18 @@ The unique identifier (ID) of an organization.
 
 The Amazon Resource Name (ARN) of an organization.
 
-#### MasterAccountArn
+#### ManagementAccountArn
 
 The Amazon Resource Name (ARN) of the account that is designated as the management account for the organization.
 
-#### MasterAccountId
+#### ManagementAccountId
 
 The unique identifier (ID) of the management account of an organization.
 
-#### MasterAccountEmail
+#### ManagementAccountEmail
 
 The email address that is associated with the AWS account that is designated as the management account for the organization.
+
+#### RootIds
+
+A list of root Ids that are in an organization.

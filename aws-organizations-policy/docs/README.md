@@ -83,7 +83,7 @@ _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormati
 
 Human readable description of the policy
 
-_Required_: No
+_Required_: Yes
 
 _Type_: String
 
@@ -130,3 +130,7 @@ Id of the Policy
 #### Arn
 
 ARN of the Policy
+
+#### AwsManaged
+
+A boolean value that indicates whether the specified policy is an AWS managed policy. If true, then you can attach the policy to roots, OUs, or accounts, but you cannot edit it.

@@ -1,9 +1,9 @@
-package software.amazon.organizations.organization;
+package software.amazon.organizations.policy;
 
-import com.diffplug.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -18,14 +18,14 @@ import software.amazon.cloudformation.proxy.LoggerProxy;
 import software.amazon.cloudformation.proxy.ProxyClient;
 
 public class AbstractTestBase {
-    protected static final String TEST_ORG_ID = "o-1231231231";
-    protected static final String TEST_ORG_ARN = "arn:org:test::555555555555:organization/o-2222222222";
-    protected static final String TEST_FEATURE_SET = "ALL";
-    protected static final String TEST_MANAGEMENT_ACCOUNT_ARN = "arn:account:test::555555555555:organization/o-2222222222";
-    protected static final String TEST_MANAGEMENT_ACCOUNT_EMAIL = "testEmail@test.com";
-    protected static final String TEST_MANAGEMENT_ACCOUNT_ID = "000000000000";
-    protected static final String TEST_ROOT_ID = "r-12345";
-    protected static final List<String> TEST_ROOT_IDs = ImmutableList.of(TEST_ROOT_ID);
+    protected static final String TEST_POLICY_ID = "p-1231231231";
+    protected static final String TEST_POLICY_ARN = "arn:aws:organizations:555555555555:policy/p-1231231231";
+    protected static final String TEST_POLICY_CONTENT = "{\\\"Version\\\":\\\"2012-10-17\\\",\\\"Statement\\\":[{\\\"Effect\\\":\\\"Allow\\\",\\\"Action\\\":[\\\"s3:*\\\"],\\\"Resource\\\":[\\\"*\\\"]}]}";
+    protected static final String TEST_POLICY_NAME = "AllowAllS3Actions";
+    protected static final String TEST_POLICY_DESCRIPTION = "Allow All S3 Actions";
+    protected static final String TEST_TYPE = "SERVICE_CONTROL_POLICY";
+    protected static final Boolean TEST_AWSMANAGED = false;
+    protected static final Set<String> TEST_TARGET_IDS = ImmutableSet.of("r-11111");
 
     protected static final Credentials MOCK_CREDENTIALS;
     protected static final LoggerProxy logger;
@@ -78,16 +78,39 @@ public class AbstractTestBase {
         };
     }
 
-    protected ResourceModel generateResourceModel() {
-        ResourceModel model = ResourceModel.builder()
-            .featureSet(TEST_FEATURE_SET)
-            .id(TEST_ORG_ID)
-            .arn(TEST_ORG_ARN)
-            .managementAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
-            .managementAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
-            .managementAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
-            .rootIds(TEST_ROOT_IDs)
+    static ResourceModel generateInitialResourceModel() {
+        return ResourceModel.builder()
+            .targetIds(TEST_TARGET_IDS)
+            .description(TEST_POLICY_DESCRIPTION)
+            .content(TEST_POLICY_CONTENT)
+            .name(TEST_POLICY_NAME)
+            .type(TEST_TYPE)
             .build();
-        return model;
     }
+
+    static ResourceModel generateFinalResourceModel() {
+        return ResourceModel.builder()
+            .targetIds(TEST_TARGET_IDS)
+            .arn(TEST_POLICY_ARN)
+            .description(TEST_POLICY_DESCRIPTION)
+            .content(TEST_POLICY_CONTENT)
+            .id(TEST_POLICY_ID)
+            .name(TEST_POLICY_NAME)
+            .type(TEST_TYPE)
+            .awsManaged(TEST_AWSMANAGED)
+            .build();
+    }
+
+//    static ResourceModel generateResourceModel() {
+//        return ResourceModel.builder()
+//            .targetIds(TEST_TARGET_IDS)
+//            .arn(TEST_POLICY_ARN)
+//            .description(TEST_POLICY_DESCRIPTION)
+//            .content(TEST_POLICY_CONTENT)
+//            .id(TEST_POLICY_ID)
+//            .name(TEST_POLICY_NAME)
+//            .type(TEST_TYPE)
+//            .awsManaged(TEST_AWSMANAGED)
+//            .build();
+//    }
 }
