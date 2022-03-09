@@ -32,12 +32,13 @@ public class ListHandler extends BaseHandlerStd {
                 Translator.translateToListOrganizationalUnitsForParentRequest(request.getNextToken(), request.getDesiredResourceState()), orgsClient.client()::listOrganizationalUnitsForParent);
 
         final List<ResourceModel> models = listOrganizationalUnitsForParentResponse.organizationalUnits().stream().map(organizationalUnit ->
-                Translator.getResourceModelFromOrganizationalUnit(request, awsClientProxy, orgsClient, organizationalUnit)).collect(Collectors.toList());
+                Translator.getResourceModelFromOrganizationalUnit(organizationalUnit)).collect(Collectors.toList());
 
         return ProgressEvent.<ResourceModel, CallbackContext>builder()
                 .resourceModels(models)
                 .nextToken(listOrganizationalUnitsForParentResponse.nextToken())
                 .status(OperationStatus.SUCCESS)
                 .build();
+
     }
 }

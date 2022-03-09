@@ -63,7 +63,7 @@ public class ReadHandler extends BaseHandlerStd {
                 .makeServiceCall(this::listTagsForResource)
                 .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
                     organizationsRequest, e, orgsClient1, model1, context, logger))
-                .done(listTagsForResourceResponse -> ProgressEvent.defaultSuccessHandler(Translator.translateFromDescribeOrganizationalUnitResponse(model, listTagsForResourceResponse)));
+                .done(listTagsForResourceResponse -> ProgressEvent.defaultSuccessHandler(Translator.translateFromDescribeResponse(model, listTagsForResourceResponse)));
     }
 
     protected DescribeOrganizationalUnitResponse describeOrganizationalUnit(final DescribeOrganizationalUnitRequest describeOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {

@@ -65,7 +65,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         return ResourceModel.builder()
             .name(TEST_OU_UPDATED_NAME)
             .id(TEST_OU_ID)
-            .tags(TagTestResources.translateTags(TagTestResources.defaultTags))
+            .tags(TagTestResources.translateTags(TagTestResources.updatedTags))
             .build();
     }
 
@@ -104,7 +104,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = getDescribeOrganizationalUnitResponse();
 
-        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResources.buildDefaultTagsResponse();
+        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResources.buildUpdatedTagsResponse();
 
         when(mockProxyClient.client().updateOrganizationalUnit(any(UpdateOrganizationalUnitRequest.class))).thenReturn(updateOrganizationalUnitResponse);
         when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
@@ -179,5 +179,30 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
+    }
+
+    @Test
+    public void handleRequest_Fails_With_CfnNotUpdatableException() {
+        final ResourceModel previousResourceModel = ResourceModel.builder()
+            .name(TEST_OU_NAME)
+            .id(TEST_OU_ID)
+            .build();
+
+        final ResourceModel model = ResourceModel.builder()
+            .name(TEST_OU_UPDATED_NAME)
+            .id(TEST_OU_ID_CHANGED)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceState(previousResourceModel)
+            .desiredResourceState(model)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotUpdatable);
     }
 }

@@ -6,7 +6,7 @@
     "Arn": {
       "description": "The Amazon Resource Name (ARN) of this OU.",
       "type": "string",
-      "pattern": "^arn:aws.*:organizations::\\d{12}:ou\/o-[a-z0-9]{10,32}\/ou-[0-9a-z]{4,32}-[0-9a-z]{8,32}"
+      "pattern": "^arn:aws.*:organizations::\\d{12}:ou/o-[a-z0-9]{10,32}/ou-[0-9a-z]{4,32}-[0-9a-z]{8,32}"
     },
     "Id": {
       "description": "The unique identifier (ID) associated with this OU.",
@@ -27,37 +27,37 @@
       "pattern": "^(r-[0-9a-z]{4,32})|(ou-[0-9a-z]{4,32}-[a-z0-9]{8,32})$",
       "maxLength": 100
     },
-    "Tags" : {
-      "description" : "A list of tags that you want to attach to the newly created OU.",
-      "type" : "array",
-      "uniqueItems" : true,
+    "Tags": {
+      "description": "A list of tags that you want to attach to the newly created OU.",
+      "type": "array",
+      "uniqueItems": true,
       "insertionOrder": false,
-      "items" : {
-          "$ref" : "#/definitions/Tag"
+      "items": {
+        "$ref": "#/definitions/Tag"
       }
     }
   },
   "definitions": {
-    "Tag" : {
+    "Tag": {
       "description": "A custom key-value pair associated with a resource within your organization.",
-      "type" : "object",
-      "properties" : {
-          "Key" : {
-              "type" : "string",
-              "description" : "The key identifier, or name, of the tag.",
-              "minLength" : 1,
-              "maxLength" : 128
-          },
-          "Value" : {
-              "type" : "string",
-              "description" : "The string value that's associated with the key of the tag. You can set the value of a tag to an empty string, but you can't set the value of a tag to null.",
-              "minLength" : 0,
-              "maxLength" : 256
-          }
+      "type": "object",
+      "properties": {
+        "Key": {
+          "type": "string",
+          "description": "The key identifier, or name, of the tag.",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "Value": {
+          "type": "string",
+          "description": "The string value that's associated with the key of the tag. You can set the value of a tag to an empty string, but you can't set the value of a tag to null.",
+          "minLength": 0,
+          "maxLength": 256
+        }
       },
-      "required" : [
-          "Key",
-          "Value"
+      "required": [
+        "Key",
+        "Value"
       ],
       "additionalProperties": false
     }

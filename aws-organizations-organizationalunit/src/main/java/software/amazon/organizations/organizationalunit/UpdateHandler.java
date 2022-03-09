@@ -1,7 +1,5 @@
 package software.amazon.organizations.organizationalunit;
 
-import org.apache.commons.collections.MapUtils;
-
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitResponse;
@@ -10,15 +8,18 @@ import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
 import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.utils.CollectionUtils;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,13 +36,19 @@ public class UpdateHandler extends BaseHandlerStd {
         final Logger logger) {
 
         this.logger = logger;
+        final ResourceModel previousModel = request.getPreviousResourceState();
         final ResourceModel model = request.getDesiredResourceState();
 
         String ouId = model.getId();
         String name = model.getName();
 
+        if (previousModel != null && !ouId.equals(previousModel.getId())) {
+            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotUpdatable,
+                    "Organizational unit cannot be updated as the id was changed");
+        }
+
         // Call UpdateOrganizationalUnit API
-        logger.log(String.format("Requesting UpdateOrganizationalUnit w/ id: %s and new name: %s.\n", ouId, name));
+        logger.log(String.format("Requesting UpdateOrganizationalUnit w/ id: %s and name: %s.\n", ouId, name));
         return ProgressEvent.progress(model, callbackContext)
             .then(progress ->
                 awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::UpdateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
@@ -78,28 +85,24 @@ public class UpdateHandler extends BaseHandlerStd {
                 convertOrganizationalUnitTagToOrganizationTag(previousTags);
 
         // Includes all old tags that do not exist in new tag list
-        final List<String> tagsToRemove = existingTags.stream()
-                .filter(tag -> !newTags.contains(tag))
-                .map(tag -> tag.key())
-                .collect(Collectors.toList());
+        final List<String> tagsToRemove = getTagsToRemove(existingTags, newTags);
 
         // Excluded all old tags that do exist in new tag list
-        final Collection<Tag> tagsToAdd = newTags.stream()
-                .filter(tag -> !existingTags.contains(tag))
-                .collect(Collectors.toList());
+        final Collection<Tag> tagsToAddOrUpdate = getTagsToAddOrUpdate(existingTags, newTags);
 
         // Deletes tags only if tagsToRemove is not empty
         if (!CollectionUtils.isNullOrEmpty(tagsToRemove)) awsClientProxy.injectCredentialsAndInvokeV2(
                 Translator.translateToUntagResourceRequest(tagsToRemove, organizationalUnitId), orgsClient.client()::untagResource);
 
-        // Adds tags only if tagsToAdd is not empty.
-        if (!CollectionUtils.isNullOrEmpty(tagsToAdd)) awsClientProxy.injectCredentialsAndInvokeV2(
-                Translator.translateToTagResourceRequest(tagsToAdd, organizationalUnitId), orgsClient.client()::tagResource);
+        // Adds tags only if tagsToAddOrUpdate is not empty.
+        if (!CollectionUtils.isNullOrEmpty(tagsToAddOrUpdate)) awsClientProxy.injectCredentialsAndInvokeV2(
+                Translator.translateToTagResourceRequest(tagsToAddOrUpdate, organizationalUnitId), orgsClient.client()::tagResource);
+
         return ProgressEvent.progress(model, callbackContext);
     }
 
     static Set<Tag> convertOrganizationalUnitTagToOrganizationTag(final Set<software.amazon.organizations.organizationalunit.Tag> tags) {
-        final Set<Tag> tagsToReturn = new HashSet<>();
+        final Set<Tag> tagsToReturn = new HashSet<Tag>();
         for (software.amazon.organizations.organizationalunit.Tag inputTags : tags) {
             Tag tag = Tag.builder()
                         .key(inputTags.getKey())
@@ -109,5 +112,55 @@ public class UpdateHandler extends BaseHandlerStd {
         }
 
         return tagsToReturn;
+    }
+
+    static List<String> getTagsToRemove(Set<Tag> existingTags, Set<Tag> newTags) {
+        List<String> tagsToRemove = new ArrayList<String>();
+
+        Set<String> newTagsKeys = new HashSet<String>();
+        for (Tag tag : newTags) {
+            newTagsKeys.add(tag.key());
+        }
+
+        // Check if the existingTag key is not in newTags keys. If so add that key to the list of those to remove
+        for (Tag tag : existingTags) {
+            if (!newTagsKeys.contains(tag.key())) {
+                tagsToRemove.add(tag.key());
+            }
+        }
+
+        return tagsToRemove;
+    }
+
+    static Collection<Tag> getTagsToAddOrUpdate(Set<Tag> existingTags, Set<Tag> newTags) {
+        Collection<Tag> tagsToAddOrUpdate = new ArrayList<>();
+
+        HashMap<String, Tag> keyToExistingTag = new HashMap<String, Tag>();
+        for (Tag tag : existingTags) {
+            keyToExistingTag.put(tag.key(), tag);
+        }
+
+        HashMap<String, Tag> keyToNewTag = new HashMap<String, Tag>();
+        for (Tag tag : newTags) {
+            keyToNewTag.put(tag.key(), tag);
+        }
+
+        // Find the new keys and add corresponding tag
+        for (String key : keyToNewTag.keySet()) {
+            if (!keyToExistingTag.containsKey(key)) {
+                tagsToAddOrUpdate.add(keyToNewTag.get(key));
+            }
+        }
+
+        // Find the keys w/ different values and add corresponding tag
+        for (String key : keyToNewTag.keySet()) {
+            if (keyToExistingTag.containsKey(key)) {
+                if (!keyToNewTag.get(key).value().equals(keyToExistingTag.get(key).value())) {
+                    tagsToAddOrUpdate.add(keyToNewTag.get(key));
+                }
+            }
+        }
+
+        return tagsToAddOrUpdate;
     }
 }

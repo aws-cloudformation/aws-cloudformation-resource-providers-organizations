@@ -22,6 +22,7 @@ public class AbstractTestBase {
     protected static final String TEST_OU_UPDATED_NAME = "test_ou_updated_name";
     protected static final String TEST_OU_ARN = "arn:aws:organizations::111111111111:ou/o-0101010101/ou-abc1-abcd1234";
     protected static final String TEST_OU_ID = "abcd1234";
+    protected static final String TEST_OU_ID_CHANGED = "4321dcba";
     protected static final String TEST_PARENT_ID = "r-hhhu";
 
     protected static final Credentials MOCK_CREDENTIALS;

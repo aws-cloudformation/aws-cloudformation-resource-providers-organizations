@@ -101,9 +101,6 @@ public class Translator {
     }
 
     static ResourceModel getResourceModelFromOrganizationalUnit(
-            final ResourceHandlerRequest<ResourceModel> request,
-            final AmazonWebServicesClientProxy proxy,
-            final ProxyClient<OrganizationsClient> proxyClient,
             final OrganizationalUnit organizationalUnit) {
 
         ResourceModel model = ResourceModel.builder()
@@ -115,21 +112,11 @@ public class Translator {
         return model;
     }
 
-    static ResourceModel translateFromDescribeOrganizationalUnitResponse(final ResourceModel model, final ListTagsForResourceResponse listTagsForResourceResponse) {
+    static ResourceModel translateFromDescribeResponse(final ResourceModel model, final ListTagsForResourceResponse listTagsForResourceResponse) {
         return ResourceModel.builder()
             .arn(model.getArn())
             .id(model.getId())
             .name(model.getName())
-            .tags(translateTagsFromSdkResponse(listTagsForResourceResponse.tags()))
-            .build();
-    }
-
-    static ResourceModel translateFromUpdateOrganizationalUnitResponse(final UpdateOrganizationalUnitResponse updateOrganizationalUnitResponse, final ListTagsForResourceResponse listTagsForResourceResponse) {
-        OrganizationalUnit organizationalUnit = updateOrganizationalUnitResponse.organizationalUnit();
-        return ResourceModel.builder()
-            .arn(organizationalUnit.arn())
-            .id(organizationalUnit.id())
-            .name(organizationalUnit.name())
             .tags(translateTagsFromSdkResponse(listTagsForResourceResponse.tags()))
             .build();
     }
