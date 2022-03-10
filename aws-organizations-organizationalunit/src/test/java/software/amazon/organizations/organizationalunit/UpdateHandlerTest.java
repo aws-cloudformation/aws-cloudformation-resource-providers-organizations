@@ -1,18 +1,24 @@
 package software.amazon.organizations.organizationalunit;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitResponse;
-import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitRequest;
-import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitResponse;
-import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnitNotFoundException;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
 import software.amazon.awssdk.services.organizations.model.Tag;
+import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
+import software.amazon.awssdk.services.organizations.model.TagResourceResponse;
+import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
+import software.amazon.awssdk.services.organizations.model.UntagResourceResponse;
+import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitRequest;
+import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -53,47 +59,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
         mockProxyClient = MOCK_PROXY(mockAwsClientProxy, mockOrgsClient);
     }
 
-    protected ResourceModel generatePreviousResourceModel() {
-        return ResourceModel.builder()
-            .name(TEST_OU_NAME)
-            .id(TEST_OU_ID)
-            .tags(TagTestResources.translateTags(TagTestResources.defaultTags))
-            .build();
-    }
-
-    protected ResourceModel generateResourceModel() {
-        return ResourceModel.builder()
-            .name(TEST_OU_UPDATED_NAME)
-            .id(TEST_OU_ID)
-            .tags(TagTestResources.translateTags(TagTestResources.updatedTags))
-            .build();
-    }
-
-    protected UpdateOrganizationalUnitResponse getUpdateOrganizationalUnitResponse() {
-        return UpdateOrganizationalUnitResponse.builder()
-            .organizationalUnit(OrganizationalUnit.builder()
-                .name(TEST_OU_UPDATED_NAME)
-                .arn(TEST_OU_ARN)
-                .id(TEST_OU_ID)
-                .build()
-            ).build();
-    }
-
-    protected DescribeOrganizationalUnitResponse getDescribeOrganizationalUnitResponse() {
-        return DescribeOrganizationalUnitResponse.builder()
-            .organizationalUnit(OrganizationalUnit.builder()
-                .name(TEST_OU_UPDATED_NAME)
-                .arn(TEST_OU_ARN)
-                .id(TEST_OU_ID)
-                .build()
-            ).build();
-    }
-
     @Test
     public void handleRequest_SimpleSuccess() {
         final ResourceModel previousResourceModel = generatePreviousResourceModel();
 
-        final ResourceModel model = generateResourceModel();
+        final ResourceModel model = generateUpdatedResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .previousResourceState(previousResourceModel)
@@ -101,16 +71,24 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .build();
 
         final UpdateOrganizationalUnitResponse updateOrganizationalUnitResponse = getUpdateOrganizationalUnitResponse();
-
         final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = getDescribeOrganizationalUnitResponse();
-
-        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResources.buildUpdatedTagsResponse();
+        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildUpdatedTagsResponse();
 
         when(mockProxyClient.client().updateOrganizationalUnit(any(UpdateOrganizationalUnitRequest.class))).thenReturn(updateOrganizationalUnitResponse);
         when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+
+        final Collection<Tag> tagsToAddOrUpdate = updateHandler.getTagsToAddOrUpdate(
+            TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(previousResourceModel.getTags()),
+            TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(model.getTags())
+        );
+
+        final List<String> tagsToRemove = updateHandler.getTagsToRemove(
+            TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(previousResourceModel.getTags()),
+            TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(model.getTags())
+        );
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
@@ -119,18 +97,24 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getName()).isEqualTo(TEST_OU_UPDATED_NAME);
         assertThat(response.getResourceModel().getArn()).isEqualTo(TEST_OU_ARN);
         assertThat(response.getResourceModel().getId()).isEqualTo(TEST_OU_ID);
+        assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.updatedTags));
+        assertThat(TagTestResourcesHelper.correctTagsInTagAndUntagRequests(tagsToAddOrUpdate, tagsToRemove));
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
+        verify(mockProxyClient.client()).tagResource(any(TagResourceRequest.class));
+        verify(mockProxyClient.client()).untagResource(any(UntagResourceRequest.class));
+        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(mockProxyClient.client()).updateOrganizationalUnit(any(UpdateOrganizationalUnitRequest.class));
+        verify(mockProxyClient.client()).describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class));
     }
 
     @Test
     public void handleRequestWithoutTags_SimpleSuccess() {
          final ResourceModel previousResourceModel = generatePreviousResourceModel();
 
-        final ResourceModel model = generateResourceModel();
+        final ResourceModel model = generateUpdatedResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .previousResourceState(previousResourceModel)
@@ -141,7 +125,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = getDescribeOrganizationalUnitResponse();
 
-        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResources.buildEmptyTagsResponse();
+        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildEmptyTagsResponse();
 
         when(mockProxyClient.client().updateOrganizationalUnit(any(UpdateOrganizationalUnitRequest.class))).thenReturn(updateOrganizationalUnitResponse);
         when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
@@ -204,5 +188,41 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotUpdatable);
+    }
+
+    protected ResourceModel generatePreviousResourceModel() {
+        return ResourceModel.builder()
+            .name(TEST_OU_NAME)
+            .id(TEST_OU_ID)
+            .tags(TagTestResourcesHelper.translateOrganizationTagsToOrganizationalUnitTags(TagTestResourcesHelper.defaultTags))
+            .build();
+    }
+
+    protected ResourceModel generateUpdatedResourceModel() {
+        return ResourceModel.builder()
+            .name(TEST_OU_UPDATED_NAME)
+            .id(TEST_OU_ID)
+            .tags(TagTestResourcesHelper.translateOrganizationTagsToOrganizationalUnitTags(TagTestResourcesHelper.updatedTags))
+            .build();
+    }
+
+    protected UpdateOrganizationalUnitResponse getUpdateOrganizationalUnitResponse() {
+        return UpdateOrganizationalUnitResponse.builder()
+            .organizationalUnit(OrganizationalUnit.builder()
+                .name(TEST_OU_UPDATED_NAME)
+                .arn(TEST_OU_ARN)
+                .id(TEST_OU_ID)
+                .build()
+            ).build();
+    }
+
+    protected DescribeOrganizationalUnitResponse getDescribeOrganizationalUnitResponse() {
+        return DescribeOrganizationalUnitResponse.builder()
+            .organizationalUnit(OrganizationalUnit.builder()
+                .name(TEST_OU_UPDATED_NAME)
+                .arn(TEST_OU_ARN)
+                .id(TEST_OU_ID)
+                .build()
+            ).build();
     }
 }

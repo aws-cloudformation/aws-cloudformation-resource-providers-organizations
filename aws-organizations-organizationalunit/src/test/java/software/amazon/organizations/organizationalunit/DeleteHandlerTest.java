@@ -48,13 +48,6 @@ public class DeleteHandlerTest extends AbstractTestBase {
         mockProxyClient = MOCK_PROXY(mockAwsClientProxy, mockOrgsClient);
     }
 
-    protected ResourceModel generateDeleteResourceModel() {
-        ResourceModel model = ResourceModel.builder()
-            .id(TEST_OU_ID)
-            .build();
-        return model;
-    }
-
     @Test
     public void handleRequest_SimpleSuccess() {
         final ResourceModel model = generateDeleteResourceModel();
@@ -115,4 +108,12 @@ public class DeleteHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.GeneralServiceException);
     }
+
+    protected ResourceModel generateDeleteResourceModel() {
+        ResourceModel model = ResourceModel.builder()
+            .id(TEST_OU_ID)
+            .build();
+        return model;
+    }
+
 }
