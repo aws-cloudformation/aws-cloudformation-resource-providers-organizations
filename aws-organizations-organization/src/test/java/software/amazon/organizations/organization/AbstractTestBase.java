@@ -1,6 +1,6 @@
 package software.amazon.organizations.organization;
 
-import com.diffplug.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 
 import java.util.List;
