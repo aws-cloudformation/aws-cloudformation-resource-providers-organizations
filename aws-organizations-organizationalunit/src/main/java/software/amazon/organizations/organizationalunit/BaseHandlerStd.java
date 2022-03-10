@@ -83,7 +83,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         } else if (e instanceof InvalidInputException) {
           errorCode = HandlerErrorCode.InvalidRequest;
         } else if (e instanceof ServiceException) {
-          errorCode = HandlerErrorCode.InternalFailure;
+          errorCode = HandlerErrorCode.ServiceInternalError;
         } else if (e instanceof TooManyRequestsException) {
           errorCode = HandlerErrorCode.Throttling;
         }
