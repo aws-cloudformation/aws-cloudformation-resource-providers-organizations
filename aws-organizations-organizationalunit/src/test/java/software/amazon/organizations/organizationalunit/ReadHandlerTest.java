@@ -7,8 +7,11 @@ import software.amazon.awssdk.services.organizations.model.DescribeOrganizationa
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
+import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
+import software.amazon.awssdk.services.organizations.model.ListParentsResponse;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnitNotFoundException;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
+import software.amazon.awssdk.services.organizations.model.Parent;
 import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
@@ -68,9 +71,16 @@ public class ReadHandlerTest extends AbstractTestBase {
                 .build()
             ).build();
 
+        final ListParentsResponse listParentsResponse = ListParentsResponse.builder()
+            .parents(Parent.builder()
+                .id(TEST_PARENT_ID)
+                .build()
+            ).build();
+
         final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildDefaultTagsResponse();
 
         when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
+        when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponse);
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
@@ -88,6 +98,7 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(mockProxyClient.client()).describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class));
+        verify(mockProxyClient.client()).listParents(any(ListParentsRequest.class));
         verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 

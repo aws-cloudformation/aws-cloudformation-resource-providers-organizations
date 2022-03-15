@@ -7,6 +7,7 @@ import software.amazon.awssdk.services.organizations.model.DeleteOrganizationalU
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitResponse;
 import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentRequest;
+import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
@@ -65,6 +66,12 @@ public class Translator {
                 .build();
     }
 
+    static ListParentsRequest translateToListParentsRequest(final ResourceModel model) {
+        return ListParentsRequest.builder()
+                .childId(model.getId())
+                .build();
+    }
+
     static TagResourceRequest translateToTagResourceRequest(Collection<Tag> tags, String organizationalUnitId) {
         return TagResourceRequest.builder()
                 .resourceId(organizationalUnitId)
@@ -117,6 +124,7 @@ public class Translator {
             .arn(model.getArn())
             .id(model.getId())
             .name(model.getName())
+            .parentId(model.getParentId())
             .tags(translateTagsFromSdkResponse(listTagsForResourceResponse.tags()))
             .build();
     }

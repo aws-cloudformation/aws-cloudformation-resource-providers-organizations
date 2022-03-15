@@ -11,7 +11,10 @@ import software.amazon.awssdk.services.organizations.model.CreateOrganizationalU
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
+import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
+import software.amazon.awssdk.services.organizations.model.ListParentsResponse;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
+import software.amazon.awssdk.services.organizations.model.Parent;
 import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
@@ -62,19 +65,13 @@ public class CreateHandlerTest extends AbstractTestBase {
             .build();
 
         final CreateOrganizationalUnitResponse createOrganizationalUnitResponse = getCreateOrganizationalUnitResponse();
-
-        final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = DescribeOrganizationalUnitResponse.builder()
-            .organizationalUnit(OrganizationalUnit.builder()
-                .name(TEST_OU_NAME)
-                .arn(TEST_OU_ARN)
-                .id(TEST_OU_ID)
-                .build()
-            ).build();
-
+        final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = getDescribeOrganizationalUnitResponse();
+        final ListParentsResponse listParentsResponse = getListParentsResponse();
         final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildDefaultTagsResponse();
 
         when(mockProxyClient.client().createOrganizationalUnit(any(CreateOrganizationalUnitRequest.class))).thenReturn(createOrganizationalUnitResponse);
         when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
+        when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponse);
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
@@ -92,6 +89,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(mockProxyClient.client()).listParents(any(ListParentsRequest.class));
         verify(mockProxyClient.client()).createOrganizationalUnit(any(CreateOrganizationalUnitRequest.class));
     }
 
@@ -104,19 +102,13 @@ public class CreateHandlerTest extends AbstractTestBase {
             .build();
 
         final CreateOrganizationalUnitResponse createOrganizationalUnitResponse = getCreateOrganizationalUnitResponse();
-
-        final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = DescribeOrganizationalUnitResponse.builder()
-            .organizationalUnit(OrganizationalUnit.builder()
-                .name(TEST_OU_NAME)
-                .arn(TEST_OU_ARN)
-                .id(TEST_OU_ID)
-                .build()
-            ).build();
-
+        final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = getDescribeOrganizationalUnitResponse();
+        final ListParentsResponse listParentsResponse = getListParentsResponse();
         final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildEmptyTagsResponse();
 
         when(mockProxyClient.client().createOrganizationalUnit(any(CreateOrganizationalUnitRequest.class))).thenReturn(createOrganizationalUnitResponse);
         when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
+        when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponse);
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
@@ -124,6 +116,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getTags()).isEqualTo(new HashSet<Tag>());
 
         verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(mockProxyClient.client()).listParents(any(ListParentsRequest.class));
         verify(mockProxyClient.client()).createOrganizationalUnit(any(CreateOrganizationalUnitRequest.class));
     }
 
@@ -178,6 +171,14 @@ public class CreateHandlerTest extends AbstractTestBase {
                 .name(TEST_OU_NAME)
                 .arn(TEST_OU_ARN)
                 .id(TEST_OU_ID)
+                .build()
+            ).build();
+    }
+
+    protected ListParentsResponse getListParentsResponse() {
+        return ListParentsResponse.builder()
+            .parents(Parent.builder()
+                .id(TEST_PARENT_ID)
                 .build()
             ).build();
     }

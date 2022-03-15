@@ -34,6 +34,7 @@ Resources:
                 - "organizations:DeleteOrganizationalUnit"
                 - "organizations:DescribeOrganizationalUnit"
                 - "organizations:ListOrganizationalUnitsForParent"
+                - "organizations:ListParents"
                 - "organizations:ListTagsForResource"
                 - "organizations:TagResource"
                 - "organizations:UntagResource"
