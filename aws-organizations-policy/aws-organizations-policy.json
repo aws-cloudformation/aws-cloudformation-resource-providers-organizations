@@ -96,8 +96,7 @@
   "required": [
     "Name",
     "Type",
-    "Content",
-    "Description"
+    "Content"
   ],
   "primaryIdentifier": [
     "/properties/Id"
@@ -133,8 +132,11 @@
     },
     "update": {
       "permissions": [
+        "organizations:AttachPolicy",
+        "organizations:DetachPolicy",
         "organizations:UpdatePolicy",
         "organizations:ListTagsForResource",
+        "organizations:ListTargetsForPolicy",
         "organizations:TagResource",
         "organizations:UntagResource"
       ]
@@ -147,8 +149,7 @@
     },
     "list": {
       "permissions": [
-        "organizations:ListPolicies",
-        "organizations:ListTargetsForPolicy"
+        "organizations:ListPolicies"
       ]
     }
   }

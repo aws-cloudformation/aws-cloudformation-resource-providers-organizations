@@ -2,7 +2,21 @@ package software.amazon.organizations.policy;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 
-import software.amazon.awssdk.services.organizations.model.*;
+import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
+import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
+import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
+import software.amazon.awssdk.services.organizations.model.ConstraintViolationException;
+import software.amazon.awssdk.services.organizations.model.DuplicatePolicyAttachmentException;
+import software.amazon.awssdk.services.organizations.model.DuplicatePolicyException;
+import software.amazon.awssdk.services.organizations.model.InvalidInputException;
+import software.amazon.awssdk.services.organizations.model.MalformedPolicyDocumentException;
+import software.amazon.awssdk.services.organizations.model.OrganizationsRequest;
+import software.amazon.awssdk.services.organizations.model.PolicyChangesInProgressException;
+import software.amazon.awssdk.services.organizations.model.PolicyNotAttachedException;
+import software.amazon.awssdk.services.organizations.model.PolicyNotFoundException;
+import software.amazon.awssdk.services.organizations.model.ServiceException;
+import software.amazon.awssdk.services.organizations.model.TargetNotFoundException;
+import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
 
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
@@ -59,6 +73,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         } else if (e instanceof ConstraintViolationException) {
             errorCode = HandlerErrorCode.ServiceLimitExceeded;
         } else if (e instanceof InvalidInputException || e instanceof MalformedPolicyDocumentException) {
+            // also maybe handle:  PolicyTypeNotAvailableForOrganizationException,  PolicyTypeNotEnabledException
             errorCode = HandlerErrorCode.InvalidRequest;
         } else if (e instanceof ServiceException) {
             errorCode = HandlerErrorCode.ServiceInternalError;

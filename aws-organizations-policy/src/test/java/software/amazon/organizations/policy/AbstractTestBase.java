@@ -23,9 +23,10 @@ public class AbstractTestBase {
     protected static final String TEST_POLICY_CONTENT = "{\\\"Version\\\":\\\"2012-10-17\\\",\\\"Statement\\\":[{\\\"Effect\\\":\\\"Allow\\\",\\\"Action\\\":[\\\"s3:*\\\"],\\\"Resource\\\":[\\\"*\\\"]}]}";
     protected static final String TEST_POLICY_NAME = "AllowAllS3Actions";
     protected static final String TEST_POLICY_DESCRIPTION = "Allow All S3 Actions";
-    protected static final String TEST_TYPE = "SERVICE_CONTROL_POLICY";
+    protected static final String TEST_TYPE = PolicyConstants.POLICY_TYPE.SERVICE_CONTROL_POLICY.toString();
     protected static final Boolean TEST_AWSMANAGED = false;
-    protected static final Set<String> TEST_TARGET_IDS = ImmutableSet.of("r-11111");
+    protected static final String TEST_TARGET_ID = "r-11111";
+    protected static final Set<String> TEST_TARGET_IDS = ImmutableSet.of(TEST_TARGET_ID);
 
     protected static final Credentials MOCK_CREDENTIALS;
     protected static final LoggerProxy logger;

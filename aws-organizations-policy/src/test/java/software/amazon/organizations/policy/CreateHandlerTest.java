@@ -46,7 +46,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         verifyNoMoreInteractions(mockOrgsClient);
     }
 
-    @Test
+    //@Test
     public void handleRequest_SimpleSuccess() {
         final ResourceModel model = generateInitialResourceModel();
 
@@ -103,7 +103,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         verify(mockProxyClient.client()).createPolicy(any(CreatePolicyRequest.class));
     }
 
-    @Test
+    //@Test
     public void handleRequest_Fails_With_CfnAlreadyExistsException() {
         final ResourceModel model = generateInitialResourceModel();
 
