@@ -106,9 +106,6 @@
     "/properties/Arn",
     "/properties/AwsManaged"
   ],
-  "writeOnlyProperties": [
-    "/properties/Content"
-  ],
   "createOnlyProperties": [
     "/properties/Type"
   ],
@@ -119,6 +116,7 @@
         "organizations:CreatePolicy",
         "organizations:DescribePolicy",
         "organizations:AttachPolicy",
+        "organizations:ListTagsForResource",
         "organizations:ListTargetsForPolicy",
         "organizations:TagResource"
       ]

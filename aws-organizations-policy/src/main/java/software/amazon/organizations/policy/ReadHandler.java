@@ -1,7 +1,13 @@
 package software.amazon.organizations.policy;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.*;
+import software.amazon.awssdk.services.organizations.model.DescribePolicyRequest;
+import software.amazon.awssdk.services.organizations.model.DescribePolicyResponse;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
+import software.amazon.awssdk.services.organizations.model.ListTargetsForPolicyRequest;
+import software.amazon.awssdk.services.organizations.model.ListTargetsForPolicyResponse;
+import software.amazon.awssdk.services.organizations.model.PolicyTargetSummary;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -10,7 +16,6 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ReadHandler extends BaseHandlerStd {
     private Logger logger;
@@ -27,17 +32,23 @@ public class ReadHandler extends BaseHandlerStd {
         logger.log(String.format("Entered %s read handler with account Id [%s], policy Id: [%s].", ResourceModel.TYPE_NAME, request.getAwsAccountId(), model.getId()));
 
         return ProgressEvent.progress(model, callbackContext)
-            // Describe policy
             .then(progress -> awsClientProxy.initiate("AWS-Organizations-Policy::DescribePolicy", orgsClient, model, callbackContext)
                 .translateToServiceRequest(t -> Translator.translateToReadRequest(model))
                 .makeServiceCall(this::describePolicy)
                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
                     organizationsRequest, e, proxyClient1, model1, context, logger))
-                .done(describePolicyResponse -> ProgressEvent.progress(Translator.translateFromReadResponse(describePolicyResponse, model, logger), callbackContext))
+                .done(describePolicyResponse -> {
+                    model.setArn(describePolicyResponse.policy().policySummary().arn().toString());
+                    model.setDescription(describePolicyResponse.policy().policySummary().description());
+                    model.setContent(describePolicyResponse.policy().content());
+                    model.setId(describePolicyResponse.policy().policySummary().id());
+                    model.setName(describePolicyResponse.policy().policySummary().name());
+                    model.setType(describePolicyResponse.policy().policySummary().type().toString());
+                    model.setAwsManaged(describePolicyResponse.policy().policySummary().awsManaged());
+                    return ProgressEvent.progress(model, callbackContext);
+                })
             )
-            // listTargetsForPolicy
             .then(progress -> listTargetsForPolicy(awsClientProxy, request, model, callbackContext, orgsClient, logger))
-            // listTagsForResource
             .then(progress -> listTagsForPolicy(awsClientProxy, request, model, callbackContext, orgsClient, logger));
     }
 
@@ -55,26 +66,31 @@ public class ReadHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger
     ) {
-        logger.log("model1: " + model);
-
         String policyId = model.getId();
+        Set<String> policyTargetIds = new HashSet<>();
 
         logger.log(String.format("Listing targets for policyId: %s\n", policyId));
-        Set<String> policyTargetIds = new HashSet<>();
         String nextToken = null;
         do {
-            ListTargetsForPolicyResponse pageResult = awsClientProxy.injectCredentialsAndInvokeV2(
-                Translator.translateToListTargetsForPolicyRequest(policyId, nextToken),
-                orgsClient.client()::listTargetsForPolicy);
+            // since need to handle policyTarget list pagination manually, use try/catch for error handling
+            ListTargetsForPolicyResponse pageResult = null;
+            ListTargetsForPolicyRequest listTargetsRequest = null;
+            try {
+                listTargetsRequest = Translator.translateToListTargetsForPolicyRequest(policyId, nextToken);
+                pageResult = awsClientProxy.injectCredentialsAndInvokeV2(
+                    listTargetsRequest,
+                    orgsClient.client()::listTargetsForPolicy);
+            } catch (Exception e) {
+                return handleError(listTargetsRequest, e, orgsClient, model, callbackContext, logger);
+            }
+
             for (PolicyTargetSummary targetSummary : pageResult.targets()) {
                 policyTargetIds.add(targetSummary.targetId());
             }
             nextToken = pageResult.nextToken();
         } while (nextToken != null);
 
-//        return ProgressEvent.progress(addTargetIdsToModel(model, policyTargetIds), callbackContext);
         model.setTargetIds(policyTargetIds);
-        logger.log("model2: " + model);
         return ProgressEvent.progress(model, callbackContext);
     }
 
@@ -88,27 +104,18 @@ public class ReadHandler extends BaseHandlerStd {
         ) {
 
         String policyId = model.getId();
-
-        logger.log("model3: " + model);
-
         logger.log(String.format("Listing tags for policyId: %s.\n", policyId));
+
+        // ListTags currently returns all (max: 50) tags in a single call, so no need for pagination handling
         return awsClientProxy.initiate("AWS-Organizations-Policy::ListTagsForResource", orgsClient, model, callbackContext)
             .translateToServiceRequest(resourceModel -> Translator.translateToListTagsForResourceRequest(policyId))
             .makeServiceCall(this::listTagsForResource)
             .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
                 organizationsRequest, e, orgsClient1, model1, context, logger))
-            .done(listTagsForResourceResponse -> ProgressEvent.defaultSuccessHandler(Translator.translateFromListTagsResponse(model, listTagsForResourceResponse, logger)));
-    }
-
-    protected ResourceModel addTargetIdsToModel(ResourceModel model, Set<String> policyTargetIds) {
-        return ResourceModel.builder()
-            .arn(model.getArn())
-            .id(model.getId())
-            .name(model.getName())
-            .description(model.getDescription())
-            .targetIds(policyTargetIds)
-            .tags(model.getTags())
-            .build();
+            .done(listTagsForResourceResponse -> {
+                model.setTags(Translator.translateTagsFromSdkResponse(listTagsForResourceResponse.tags()));
+                return ProgressEvent.defaultSuccessHandler(model);
+            });
     }
 
     protected ListTagsForResourceResponse listTagsForResource(final ListTagsForResourceRequest listTagsForResourceRequest, final ProxyClient<OrganizationsClient> orgsClient) {

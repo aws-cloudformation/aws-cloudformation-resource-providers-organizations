@@ -2,7 +2,10 @@ package software.amazon.organizations.policy;
 
 import org.apache.commons.collections4.CollectionUtils;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.*;
+import software.amazon.awssdk.services.organizations.model.DeletePolicyRequest;
+import software.amazon.awssdk.services.organizations.model.DeletePolicyResponse;
+import software.amazon.awssdk.services.organizations.model.DetachPolicyRequest;
+import software.amazon.awssdk.services.organizations.model.DetachPolicyResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -27,10 +30,7 @@ public class DeleteHandler extends BaseHandlerStd {
         logger.log(String.format("Entered %s delete handler with policy Id: [%s]", ResourceModel.TYPE_NAME, model.getId()));
 
         return ProgressEvent.progress(model, callbackContext)
-            // Detach Policy
             .then(progress -> detachPolicyFromTargets(awsClientProxy, request, model, callbackContext, orgsClient, logger))
-
-            // Delete Policy
             .then(progress ->
                 awsClientProxy.initiate("AWS-Organizations-Policy::DeletePolicy", orgsClient, model, progress.getCallbackContext())
                     .translateToServiceRequest(t -> Translator.translateToDeleteRequest(model))

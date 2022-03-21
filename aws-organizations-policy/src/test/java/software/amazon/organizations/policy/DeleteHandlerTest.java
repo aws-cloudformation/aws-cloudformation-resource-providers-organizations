@@ -1,9 +1,21 @@
 package software.amazon.organizations.policy;
 
-import org.junit.jupiter.api.AfterEach;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.*;
-import software.amazon.cloudformation.proxy.*;
+import software.amazon.awssdk.services.organizations.model.DeletePolicyRequest;
+import software.amazon.awssdk.services.organizations.model.DeletePolicyResponse;
+import software.amazon.awssdk.services.organizations.model.DetachPolicyRequest;
+import software.amazon.awssdk.services.organizations.model.DetachPolicyResponse;
+import software.amazon.awssdk.services.organizations.model.PolicyInUseException;
+import software.amazon.awssdk.services.organizations.model.PolicyNotFoundException;
+
+import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
+import software.amazon.cloudformation.proxy.OperationStatus;
+import software.amazon.cloudformation.proxy.ProgressEvent;
+import software.amazon.cloudformation.proxy.ProxyClient;
+import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -47,7 +60,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
     @Test
     public void deleteHandleRequest_SimpleSuccess() {
-        final ResourceModel model = generateFinalResourceModel();
+        final ResourceModel model = generateFinalResourceModel(true, true);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
@@ -69,12 +82,13 @@ public class DeleteHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
+        verify(mockProxyClient.client(), times(2)).detachPolicy(any(DetachPolicyRequest.class));
         verify(mockProxyClient.client()).deletePolicy(any(DeletePolicyRequest.class));
     }
 
     @Test
     public void deleteHandleRequest_Fails_With_CfnNotFoundException() {
-        final ResourceModel model = generateFinalResourceModel();
+        final ResourceModel model = generateFinalResourceModel(true, true);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
@@ -94,7 +108,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
     @Test
     public void deleteHandleRequest_Fails_With_GeneralServiceException() {
-        final ResourceModel model = generateFinalResourceModel();
+        final ResourceModel model = generateFinalResourceModel(true, true);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)

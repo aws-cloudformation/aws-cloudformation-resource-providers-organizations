@@ -27,13 +27,12 @@ public class CreateHandler extends BaseHandlerStd {
         this.logger = logger;
         final ResourceModel model = request.getDesiredResourceState();
         if (request.getDesiredResourceState().getType() == null) {
-            model.setType(PolicyConstants.POLICY_TYPE.SERVICE_CONTROL_POLICY.toString());
+            model.setType(PolicyConstants.PolicyType.SERVICE_CONTROL_POLICY.toString());
         }
 
         logger.log(String.format("Entered %s create handler with account Id [%s], ", ResourceModel.TYPE_NAME, request.getAwsAccountId()));
         logger.log(String.format("Create policy with Content [%s], Description [%s], Name [%s], Type [%s]", model.getContent(), model.getDescription(), model.getName(), model.getType()));
         return ProgressEvent.progress(model, callbackContext)
-            // Create Policy
             .then(progress ->
                 awsClientProxy.initiate("AWS-Organizations-Policy::CreatePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                     .translateToServiceRequest(Translator::translateToCreateRequest)
@@ -46,9 +45,7 @@ public class CreateHandler extends BaseHandlerStd {
                         return ProgressEvent.progress(model, callbackContext);
                     })
             )
-            // Attach Policy
             .then(progress -> attachPolicyToTargets(awsClientProxy, request, model, callbackContext, orgsClient, logger))
-            // Read Handler
             .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 

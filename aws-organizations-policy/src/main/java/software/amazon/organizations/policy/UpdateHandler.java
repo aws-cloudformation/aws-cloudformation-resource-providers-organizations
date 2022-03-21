@@ -1,17 +1,15 @@
 package software.amazon.organizations.policy;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
-import software.amazon.awssdk.services.organizations.model.Policy;
 import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.services.organizations.model.UpdatePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.UpdatePolicyResponse;
 import software.amazon.awssdk.utils.CollectionUtils;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
-import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 import java.util.ArrayList;
@@ -20,9 +18,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class UpdateHandler extends BaseHandlerStd {
     private Logger logger;
@@ -36,15 +32,18 @@ public class UpdateHandler extends BaseHandlerStd {
         final Logger logger) {
 
         this.logger = logger;
+        final ResourceModel previousModel = request.getPreviousResourceState();
         final ResourceModel model = request.getDesiredResourceState();
 
         String policyId = model.getId();
-        String policyName = model.getName();
-        String policyDescription = model.getDescription() == null ? "" : model.getDescription();
-        String policyContent = model.getContent();
+
+        if (previousModel != null && previousModel.getId() != null && !policyId.equals(previousModel.getId())) {
+            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotUpdatable,
+                "Policy cannot be updated as the id was changed!");
+        }
 
         // call UpdatePolicy API
-        logger.log(String.format("Requesting UpdatePolicy w/ id: %s, name: %s, and description: %s.\n", policyId, policyName, policyDescription));
+        logger.log(String.format("Requesting UpdatePolicy w/ id: %s", policyId));
         return ProgressEvent.progress(model, callbackContext)
             .then(progress ->
                 awsClientProxy.initiate("AWS-Organizations-Policy::UpdatePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
@@ -65,7 +64,7 @@ public class UpdateHandler extends BaseHandlerStd {
         return response;
     }
 
-    // handles attching to targets: adding to new and removing from old targets
+    // handles attaching to targets: adding to new and removing from old targets
     private ProgressEvent<ResourceModel, CallbackContext> handleTargets(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceModel model,
@@ -77,14 +76,14 @@ public class UpdateHandler extends BaseHandlerStd {
         final Logger logger
     ) {
         // filter previous and desired lists to determine which to attach and remove
-        final List<String> targetsToAttach = new ArrayList<String>();
+        final List<String> targetsToAttach = new ArrayList<>();
         for (String desired : desiredTargets) {
             if (!previousTargets.contains(desired)) {
                 targetsToAttach.add(desired);
             }
         }
 
-        final List<String> targetsToRemove = new ArrayList<String>();
+        final List<String> targetsToRemove = new ArrayList<>();
         for (String previous : previousTargets) {
             if (!desiredTargets.contains(previous)) {
                 targetsToRemove.add(previous);
@@ -165,9 +164,9 @@ public class UpdateHandler extends BaseHandlerStd {
     }
 
     static List<String> getTagsToRemove(Set<Tag> existingTags, Set<Tag> newTags) {
-        List<String> tagsToRemove = new ArrayList<String>();
+        List<String> tagsToRemove = new ArrayList<>();
 
-        Set<String> newTagsKeys = new HashSet<String>();
+        Set<String> newTagsKeys = new HashSet<>();
         for (Tag tag : newTags) {
             newTagsKeys.add(tag.key());
         }
@@ -185,12 +184,12 @@ public class UpdateHandler extends BaseHandlerStd {
     static Collection<Tag> getTagsToAddOrUpdate(Set<Tag> existingTags, Set<Tag> newTags) {
         Collection<Tag> tagsToAddOrUpdate = new ArrayList<>();
 
-        HashMap<String, Tag> keyToExistingTag = new HashMap<String, Tag>();
+        HashMap<String, Tag> keyToExistingTag = new HashMap<>();
         for (Tag tag : existingTags) {
             keyToExistingTag.put(tag.key(), tag);
         }
 
-        HashMap<String, Tag> keyToNewTag = new HashMap<String, Tag>();
+        HashMap<String, Tag> keyToNewTag = new HashMap<>();
         for (Tag tag : newTags) {
             keyToNewTag.put(tag.key(), tag);
         }
