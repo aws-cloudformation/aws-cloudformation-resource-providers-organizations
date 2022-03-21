@@ -1,14 +1,7 @@
 package software.amazon.organizations.organization;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.AlreadyInOrganizationException;
-import software.amazon.awssdk.services.organizations.model.CreateOrganizationRequest;
-import software.amazon.awssdk.services.organizations.model.CreateOrganizationResponse;
-import software.amazon.awssdk.services.organizations.model.DescribeOrganizationRequest;
-import software.amazon.awssdk.services.organizations.model.DescribeOrganizationResponse;
-import software.amazon.awssdk.services.organizations.model.ListRootsRequest;
-import software.amazon.awssdk.services.organizations.model.ListRootsResponse;
-import software.amazon.awssdk.services.organizations.model.Organization;
+import software.amazon.awssdk.services.organizations.model.*;
 
 import java.time.Duration;
 
@@ -37,14 +30,11 @@ import static org.mockito.Mockito.when;
 public class CreateHandlerTest extends AbstractTestBase {
 
     @Mock
+    OrganizationsClient mockOrgsClient;
+    @Mock
     private AmazonWebServicesClientProxy mockAwsClientProxy;
-
     @Mock
     private ProxyClient<OrganizationsClient> mockProxyClient;
-
-    @Mock
-    OrganizationsClient mockOrgsClient;
-
     private CreateHandler createHandler;
 
     @BeforeEach
@@ -63,11 +53,13 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_SimpleSuccess() {
-        final ResourceModel model = generateResourceModel();
+        final ResourceModel model = ResourceModel.builder()
+            .featureSet(TEST_FEATURE_SET)
+            .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
+            .desiredResourceState(model)
+            .build();
 
         final CreateOrganizationResponse createOrganizationResponse = CreateOrganizationResponse.builder()
             .organization(Organization.builder()
@@ -79,7 +71,7 @@ public class CreateHandlerTest extends AbstractTestBase {
                 .masterAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
                 .build()
             )
-        .build();
+            .build();
         when(mockProxyClient.client().createOrganization(any(CreateOrganizationRequest.class))).thenReturn(createOrganizationResponse);
 
         final ListRootsResponse listRootsResponse = ListRootsResponse.builder().roots(
@@ -104,14 +96,13 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
+        final ResourceModel resultModel = generateResourceModel();
+
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel()).isEqualTo(request.getDesiredResourceState());
-        assertThat(response.getResourceModel().getRootIds().get(0)).isEqualTo(TEST_ROOT_ID);
-        assertThat(response.getResourceModel().getManagementAccountArn()).isEqualTo(TEST_MANAGEMENT_ACCOUNT_ARN);
-        assertThat(response.getResourceModel().getFeatureSet()).isEqualTo(TEST_FEATURE_SET);
+        assertThat(response.getResourceModel()).isEqualTo(resultModel);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
@@ -121,7 +112,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_Fails_With_CfnAlreadyExistsException() {
-        final ResourceModel model = generateResourceModel();
+        final ResourceModel model = ResourceModel.builder().build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
@@ -134,5 +125,39 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AlreadyExists);
+    }
+
+    @Test
+    public void handleRequest_Fails_With_InvalidInputException() {
+        final ResourceModel model = ResourceModel.builder().build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        when(mockProxyClient.client().createOrganization(any(CreateOrganizationRequest.class))).thenThrow(InvalidInputException.class);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InvalidRequest);
+    }
+
+    @Test
+    public void handleRequest_Fails_With_AccessDeniedForDependencyException() {
+        final ResourceModel model = ResourceModel.builder().build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        when(mockProxyClient.client().createOrganization(any(CreateOrganizationRequest.class))).thenThrow(AccessDeniedForDependencyException.class);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AccessDenied);
     }
 }

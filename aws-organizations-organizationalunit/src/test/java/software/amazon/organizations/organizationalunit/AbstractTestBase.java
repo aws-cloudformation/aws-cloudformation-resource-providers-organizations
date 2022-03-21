@@ -1,10 +1,7 @@
-package software.amazon.organizations.organization;
+package software.amazon.organizations.organizationalunit;
 
-import com.google.common.collect.ImmutableList;
-import software.amazon.awssdk.services.organizations.OrganizationsClient;
-
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.HashSet;
 import java.util.function.Function;
 
 import software.amazon.awssdk.awscore.AwsRequest;
@@ -12,20 +9,21 @@ import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
+import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.Tag;
+
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Credentials;
 import software.amazon.cloudformation.proxy.LoggerProxy;
 import software.amazon.cloudformation.proxy.ProxyClient;
 
 public class AbstractTestBase {
-    protected static final String TEST_ORG_ID = "o-1231231231";
-    protected static final String TEST_ORG_ARN = "arn:org:test::555555555555:organization/o-2222222222";
-    protected static final String TEST_FEATURE_SET = "ALL";
-    protected static final String TEST_MANAGEMENT_ACCOUNT_ARN = "arn:account:test::555555555555:organization/o-2222222222";
-    protected static final String TEST_MANAGEMENT_ACCOUNT_EMAIL = "testEmail@test.com";
-    protected static final String TEST_MANAGEMENT_ACCOUNT_ID = "000000000000";
-    protected static final String TEST_ROOT_ID = "r-12345";
-    protected static final List<String> TEST_ROOT_IDs = ImmutableList.of(TEST_ROOT_ID);
+    protected static final String TEST_OU_NAME = "test_ou_name";
+    protected static final String TEST_OU_UPDATED_NAME = "test_ou_updated_name";
+    protected static final String TEST_OU_ARN = "arn:aws:organizations::111111111111:ou/o-0101010101/ou-abc1-abcd1234";
+    protected static final String TEST_OU_ID = "abcd1234";
+    protected static final String TEST_OU_ID_CHANGED = "4321dcba";
+    protected static final String TEST_PARENT_ID = "r-hhhu";
 
     protected static final Credentials MOCK_CREDENTIALS;
     protected static final LoggerProxy logger;
@@ -76,18 +74,5 @@ public class AbstractTestBase {
                 return orgsClient;
             }
         };
-    }
-
-    protected ResourceModel generateResourceModel() {
-        ResourceModel model = ResourceModel.builder()
-            .featureSet(TEST_FEATURE_SET)
-            .id(TEST_ORG_ID)
-            .arn(TEST_ORG_ARN)
-            .managementAccountArn(TEST_MANAGEMENT_ACCOUNT_ARN)
-            .managementAccountId(TEST_MANAGEMENT_ACCOUNT_ID)
-            .managementAccountEmail(TEST_MANAGEMENT_ACCOUNT_EMAIL)
-            .rootIds(TEST_ROOT_IDs)
-            .build();
-        return model;
     }
 }

@@ -1,12 +1,7 @@
 package software.amazon.organizations.organization;
 
-import software.amazon.awssdk.services.organizations.model.CreateOrganizationRequest;
-import software.amazon.awssdk.services.organizations.model.DeleteOrganizationRequest;
-import software.amazon.awssdk.services.organizations.model.DescribeOrganizationRequest;
-import software.amazon.awssdk.services.organizations.model.DescribeOrganizationResponse;
-import software.amazon.awssdk.services.organizations.model.ListRootsRequest;
-import software.amazon.awssdk.services.organizations.model.ListRootsResponse;
-import software.amazon.awssdk.services.organizations.model.Organization;
+import software.amazon.awssdk.services.organizations.model.*;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,21 +28,6 @@ public class Translator {
     static ListRootsRequest translateToListRootsRequest() {
         return ListRootsRequest.builder().build();
     }
-
-    static ResourceModel translateFromListRootsResponse(final ListRootsResponse listRootsResponse, final ResourceModel model) {
-        if (!listRootsResponse.hasRoots()) {
-            return model;
-        }
-        List<String> rootIds = new ArrayList<>();
-        String nextToken;
-        do {
-            listRootsResponse.roots().forEach(root -> rootIds.add(root.id()));
-            nextToken = listRootsResponse.nextToken();
-        } while (nextToken != null);
-        model.setRootIds(rootIds);
-        return model;
-    }
-
 
     static ResourceModel translateFromReadResponse(final DescribeOrganizationResponse describeOrganizationResponse, final ResourceModel model) {
         Organization organization = describeOrganizationResponse.organization();
