@@ -57,21 +57,21 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     ) {
         HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
         if (e instanceof AlreadyInOrganizationException) {
-          errorCode = HandlerErrorCode.AlreadyExists;
+            errorCode = HandlerErrorCode.AlreadyExists;
         } else if (e instanceof AwsOrganizationsNotInUseException) {
-          errorCode = HandlerErrorCode.NotFound;
+            errorCode = HandlerErrorCode.NotFound;
         } else if (e instanceof AccessDeniedException || e instanceof AccessDeniedForDependencyException) {
-          errorCode = HandlerErrorCode.AccessDenied;
-        } else if (e instanceof ConcurrentModificationException){
-          errorCode = HandlerErrorCode.ResourceConflict;
+            errorCode = HandlerErrorCode.AccessDenied;
+        } else if (e instanceof ConcurrentModificationException) {
+            errorCode = HandlerErrorCode.ResourceConflict;
         } else if (e instanceof ConstraintViolationException) {
-          errorCode = HandlerErrorCode.ServiceLimitExceeded;
+            errorCode = HandlerErrorCode.ServiceLimitExceeded;
         } else if (e instanceof InvalidInputException) {
-          errorCode = HandlerErrorCode.InvalidRequest;
+            errorCode = HandlerErrorCode.InvalidRequest;
         } else if (e instanceof ServiceException) {
-          errorCode = HandlerErrorCode.InternalFailure;
+            errorCode = HandlerErrorCode.ServiceInternalError;
         } else if (e instanceof TooManyRequestsException) {
-          errorCode = HandlerErrorCode.Throttling;
+            errorCode = HandlerErrorCode.Throttling;
         }
         logger.log(String.format("[Exception] Failed with exception: [%s]. Message: %s, ", e.getClass().getSimpleName(), e.getMessage()));
         return ProgressEvent.defaultFailureHandler(e, errorCode);

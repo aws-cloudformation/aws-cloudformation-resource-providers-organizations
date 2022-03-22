@@ -3,9 +3,6 @@ package software.amazon.organizations.organization;
 import software.amazon.awssdk.services.organizations.model.*;
 
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * This class is a centralized placeholder for
  * - api request construction
