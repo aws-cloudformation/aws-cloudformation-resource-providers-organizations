@@ -98,6 +98,13 @@
       ]
     }
   },
+  "tagging": {
+    "taggable": true,
+    "tagOnCreate": true,
+    "tagUpdatable": true,
+    "cloudFormationSystemTags": false,
+    "tagProperty": "/properties/Tags"
+  },
   "readOnlyProperties": [
     "/properties/Arn",
     "/properties/Id"
