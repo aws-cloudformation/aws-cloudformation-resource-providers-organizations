@@ -8,6 +8,7 @@ import software.amazon.awssdk.services.organizations.model.DetachPolicyResponse;
 import software.amazon.awssdk.services.organizations.model.PolicyInUseException;
 import software.amazon.awssdk.services.organizations.model.PolicyNotFoundException;
 
+import software.amazon.awssdk.services.organizations.model.TargetNotFoundException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -59,6 +60,30 @@ public class DeleteHandlerTest extends AbstractTestBase {
     }
 
     @Test
+    public void handleRequest_NoTargets_SimpleRequest() {
+        final ResourceModel model = generateFinalResourceModel(false, true);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        final DeletePolicyResponse deletePolicyResponse = DeletePolicyResponse.builder().build();
+        when(mockProxyClient.client().deletePolicy(any(DeletePolicyRequest.class))).thenReturn(deletePolicyResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNull();
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(mockProxyClient.client()).deletePolicy(any(DeletePolicyRequest.class));
+    }
+
+    @Test
     public void deleteHandleRequest_SimpleSuccess() {
         final ResourceModel model = generateFinalResourceModel(true, true);
 
@@ -69,8 +94,35 @@ public class DeleteHandlerTest extends AbstractTestBase {
         final DetachPolicyResponse detachPolicyResponse = DetachPolicyResponse.builder().build();
         when(mockProxyClient.client().detachPolicy(any(DetachPolicyRequest.class))).thenReturn(detachPolicyResponse);
 
-        final DeletePolicyResponse deleteOrganizationResponse = DeletePolicyResponse.builder().build();
-        when(mockProxyClient.client().deletePolicy(any(DeletePolicyRequest.class))).thenReturn(deleteOrganizationResponse);
+        final DeletePolicyResponse deletePolicyResponse = DeletePolicyResponse.builder().build();
+        when(mockProxyClient.client().deletePolicy(any(DeletePolicyRequest.class))).thenReturn(deletePolicyResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNull();
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(mockProxyClient.client(), times(2)).detachPolicy(any(DetachPolicyRequest.class));
+        verify(mockProxyClient.client()).deletePolicy(any(DeletePolicyRequest.class));
+    }
+
+    @Test
+    public void handleRequest_WithTargets_DetachPolicyFails_HandlerSucceeds() {
+        final ResourceModel model = generateFinalResourceModel(true, false);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        when(mockProxyClient.client().detachPolicy(any(DetachPolicyRequest.class))).thenThrow(TargetNotFoundException.class);
+
+        final DeletePolicyResponse deletePolicyResponse = DeletePolicyResponse.builder().build();
+        when(mockProxyClient.client().deletePolicy(any(DeletePolicyRequest.class))).thenReturn(deletePolicyResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 

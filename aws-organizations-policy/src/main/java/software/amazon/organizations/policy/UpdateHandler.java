@@ -37,7 +37,7 @@ public class UpdateHandler extends BaseHandlerStd {
 
         String policyId = model.getId();
 
-        if (previousModel != null && previousModel.getId() != null && !policyId.equals(previousModel.getId())) {
+        if (previousModel == null || previousModel.getId() == null || !policyId.equals(previousModel.getId())) {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotUpdatable,
                 "Policy cannot be updated as the id was changed!");
         }

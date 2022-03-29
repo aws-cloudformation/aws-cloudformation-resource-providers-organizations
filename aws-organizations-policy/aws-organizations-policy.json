@@ -1,18 +1,18 @@
 {
   "typeName": "AWS::Organizations::Policy",
-  "description": "Policies in AWS Organizations enable you to manage different features of the AWS accounts in your organization.",
+  "description": "Policies in AWS Organizations enable you to manage different features of the AWS accounts in your organization.  You can use policies when all features are enabled in your organization.",
   "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-organizations.git",
   "properties": {
     "Name": {
       "description": "Name of the Policy",
       "type": "string",
+      "pattern": "[\\s\\S]*",
       "minLength": 1,
       "maxLength": 128
     },
     "Type": {
       "description": "The type of policy to create. You can specify one of the following values: AISERVICES_OPT_OUT_POLICY, BACKUP_POLICY, SERVICE_CONTROL_POLICY, TAG_POLICY",
       "type": "string",
-      "default": "SERVICE_CONTROL_POLICY",
       "enum": [
         "SERVICE_CONTROL_POLICY",
         "AISERVICES_OPT_OUT_POLICY",
@@ -23,11 +23,13 @@
     "Content": {
       "description": "The Policy text content",
       "type": "string",
+      "pattern": "[\\s\\S]*",
       "minLength": 1,
       "maxLength": 1000000
     },
     "Description": {
       "description": "Human readable description of the policy",
+      "pattern": "[\\s\\S]*",
       "type": "string",
       "maxLength": 512
     },
@@ -37,7 +39,8 @@
       "insertionOrder": false,
       "uniqueItems": true,
       "items": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(r-[0-9a-z]{4,32})|(\\d{12})|(ou-[0-9a-z]{4,32}-[a-z0-9]{8,32})$"
       }
     },
     "Tags": {
@@ -52,6 +55,7 @@
     "Id": {
       "description": "Id of the Policy",
       "type": "string",
+      "pattern": "^p-[0-9a-zA-Z_]{8,128}$",
       "maxLength": 130
     },
     "Arn": {
@@ -66,16 +70,21 @@
   },
   "definitions": {
     "Tag": {
+      "description": "A custom key-value pair associated with a resource within your organization.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "Key": {
+          "description": "The key identifier, or name, of the tag.",
           "type": "string",
+          "pattern": "[\\s\\S]*",
           "minLength": 1,
           "maxLength": 128
         },
         "Value": {
+          "description": "The string value that's associated with the key of the tag. You can set the value of a tag to an empty string, but you can't set the value of a tag to null.",
           "type": "string",
+          "pattern": "[\\s\\S]*",
           "minLength": 0,
           "maxLength": 256
         }
@@ -89,7 +98,7 @@
   "tagging": {
     "taggable": true,
     "tagOnCreate": true,
-    "tagUpdatable": false,
+    "tagUpdatable": true,
     "cloudFormationSystemTags": false,
     "tagProperty": "/properties/Tags"
   },

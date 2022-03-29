@@ -1,5 +1,7 @@
 # AWS::Organizations::Policy Tag
 
+A custom key-value pair associated with a resource within your organization.
+
 ## Syntax
 
 To declare this entity in your AWS CloudFormation template, use the following syntax:
@@ -24,6 +26,8 @@ To declare this entity in your AWS CloudFormation template, use the following sy
 
 #### Key
 
+The key identifier, or name, of the tag.
+
 _Required_: Yes
 
 _Type_: String
@@ -32,14 +36,20 @@ _Minimum_: <code>1</code>
 
 _Maximum_: <code>128</code>
 
+_Pattern_: <code>[\s\S]*</code>
+
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 
 #### Value
+
+The string value that's associated with the key of the tag. You can set the value of a tag to an empty string, but you can't set the value of a tag to null.
 
 _Required_: Yes
 
 _Type_: String
 
 _Maximum_: <code>256</code>
+
+_Pattern_: <code>[\s\S]*</code>
 
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)

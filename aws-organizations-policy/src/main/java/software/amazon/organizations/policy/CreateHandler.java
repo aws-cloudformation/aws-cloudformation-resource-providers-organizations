@@ -7,6 +7,7 @@ import software.amazon.awssdk.services.organizations.model.AttachPolicyResponse;
 import software.amazon.awssdk.services.organizations.model.CreatePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.CreatePolicyResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
@@ -26,12 +27,13 @@ public class CreateHandler extends BaseHandlerStd {
 
         this.logger = logger;
         final ResourceModel model = request.getDesiredResourceState();
-        if (request.getDesiredResourceState().getType() == null) {
-            model.setType(PolicyConstants.PolicyType.SERVICE_CONTROL_POLICY.toString());
+        if (model.getName() == null || model.getType() == null || model.getContent() == null) {
+            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
+                "Policy cannot be created without name, type, and content!");
         }
 
-        logger.log(String.format("Entered %s create handler with account Id [%s], ", ResourceModel.TYPE_NAME, request.getAwsAccountId()));
-        logger.log(String.format("Create policy with Content [%s], Description [%s], Name [%s], Type [%s]", model.getContent(), model.getDescription(), model.getName(), model.getType()));
+        logger.log(String.format("Entered %s create handler with account Id [%s], with Content [%s], Description [%s], Name [%s], Type [%s]",
+            ResourceModel.TYPE_NAME, request.getAwsAccountId(), model.getContent(), model.getDescription(), model.getName(), model.getType()));
         return ProgressEvent.progress(model, callbackContext)
             .then(progress ->
                 awsClientProxy.initiate("AWS-Organizations-Policy::CreatePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
@@ -75,14 +77,18 @@ public class CreateHandler extends BaseHandlerStd {
             return ProgressEvent.progress(model, callbackContext);
         }
         logger.log("Target Ids found in request. Start attaching policy to provided targets.\n");
-        targets.forEach(targetId -> {
-            awsClientProxy.initiate("AWS-Organizations-Policy::AttachPolicy", orgsClient, model, callbackContext)
-                .translateToServiceRequest(resourceModel -> Translator.translateToAttachRequest(model.getId(), targetId))
+        for (final String targetId : targets) {
+            final ProgressEvent<ResourceModel, CallbackContext> progressEvent = awsClientProxy
+                .initiate("AWS-Organizations-Policy::AttachPolicy", orgsClient, model, callbackContext)
+                .translateToServiceRequest((resourceModel) -> Translator.translateToAttachRequest(model.getId(), targetId))
                 .makeServiceCall(this::attachPolicy)
                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
                     organizationsRequest, e, proxyClient1, model1, context, logger))
-                .done(CreatePolicyResponse -> ProgressEvent.progress(model, callbackContext));
-        });
+                .success();
+            if (!progressEvent.isSuccess()) {
+                return progressEvent;
+            }
+        }
         return ProgressEvent.progress(model, callbackContext);
     }
 }

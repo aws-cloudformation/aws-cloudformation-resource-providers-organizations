@@ -67,14 +67,16 @@ public class DeleteHandler extends BaseHandlerStd {
             return ProgressEvent.progress(model, callbackContext);
         }
         logger.log("Target Ids found in request. Start detaching policy to provided targets.\n");
-        targets.forEach(targetId -> {
-            awsClientProxy.initiate("AWS-Organizations-Policy::DetachPolicy", orgsClient, model, callbackContext)
-                .translateToServiceRequest(resourceModel -> Translator.translateToDetachRequest(model.getId(), targetId))
+        for (final String targetId : targets) {
+            final ProgressEvent<ResourceModel, CallbackContext> progressEvent = awsClientProxy
+                .initiate("AWS-Organizations-Policy::DetachPolicy", orgsClient, model, callbackContext)
+                .translateToServiceRequest((resourceModel) -> Translator.translateToDetachRequest(model.getId(), targetId))
                 .makeServiceCall(this::detachPolicy)
                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
                     organizationsRequest, e, proxyClient1, model1, context, logger))
-                .done(CreatePolicyResponse -> ProgressEvent.progress(model, callbackContext));
-        });
+                .success();
+            // if detach policy fails, just continue
+        }
         return ProgressEvent.progress(model, callbackContext);
     }
 

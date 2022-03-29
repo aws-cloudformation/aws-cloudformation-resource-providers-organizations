@@ -245,8 +245,53 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_Fails_WithCfnNotUpdatableException() {
+    public void handleRequest_IdChanged_Fails_WithCfnNotUpdatableException() {
         final ResourceModel previousResourceModel = generateFinalResourceModel(false, false);
+        final ResourceModel desiredResourceModel = ResourceModel.builder()
+            .name(TEST_POLICY_UPDATED_NAME)
+            .id(TEST_POLICY_ID_CHANGED)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceState(previousResourceModel)
+            .desiredResourceState(desiredResourceModel)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = updateHandlerToTest.handleRequest(mockAwsClientproxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotUpdatable);
+    }
+
+    @Test
+    public void handleRequest_PreviousModelNull_Fails_WithCfnNotUpdatableException() {
+        final ResourceModel desiredResourceModel = ResourceModel.builder()
+            .name(TEST_POLICY_UPDATED_NAME)
+            .id(TEST_POLICY_ID_CHANGED)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceState(null)
+            .desiredResourceState(desiredResourceModel)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = updateHandlerToTest.handleRequest(mockAwsClientproxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotUpdatable);
+    }
+
+    @Test
+    public void handleRequest_PreviousModelIdNull_Fails_WithCfnNotUpdatableException() {
+        final ResourceModel previousResourceModel = ResourceModel.builder()
+            .id(null)
+            .name(TEST_POLICY_NAME)
+            .build();
+
         final ResourceModel desiredResourceModel = ResourceModel.builder()
             .name(TEST_POLICY_UPDATED_NAME)
             .id(TEST_POLICY_ID_CHANGED)

@@ -39,6 +39,7 @@ public class AbstractTestBase {
     protected static final String TEST_TARGET_ACCOUNT_ID = "123456789012";
     protected static final Set<String> TEST_TARGET_IDS = ImmutableSet.of(TEST_TARGET_ROOT_ID, TEST_TARGET_OU_ID);
     protected static final Set<String> TEST_UPDATED_TARGET_IDS = ImmutableSet.of(TEST_TARGET_ROOT_ID, TEST_TARGET_ACCOUNT_ID);
+    protected static final String TEST_NEXT_TOKEN = "mockNextTokenItem";
 
     protected static final Credentials MOCK_CREDENTIALS;
     protected static final LoggerProxy logger;
@@ -96,7 +97,7 @@ public class AbstractTestBase {
             .targetIds(hasTargets ? TEST_TARGET_IDS : new HashSet<>())
             .tags(hasTags
                 ? TagTestResourceHelper.translateOrganizationTagsToPolicyTags(TagTestResourceHelper.defaultTags)
-                : TagTestResourceHelper.translateOrganizationTagsToPolicyTags(null))
+                : null)
             .description(TEST_POLICY_DESCRIPTION)
             .content(TEST_POLICY_CONTENT)
             .name(TEST_POLICY_NAME)
@@ -116,7 +117,7 @@ public class AbstractTestBase {
             .awsManaged(TEST_AWSMANAGED)
             .tags(hasTags
                 ? TagTestResourceHelper.translateOrganizationTagsToPolicyTags(TagTestResourceHelper.defaultTags)
-                : TagTestResourceHelper.translateOrganizationTagsToPolicyTags(null))
+                : null)
             .build();
     }
 
@@ -132,7 +133,7 @@ public class AbstractTestBase {
             .targetIds(hasTargets ? TEST_UPDATED_TARGET_IDS : new HashSet<>())
             .tags(hasTags
                 ? TagTestResourceHelper.translateOrganizationTagsToPolicyTags(TagTestResourceHelper.updatedTags)
-                : TagTestResourceHelper.translateOrganizationTagsToPolicyTags(null))
+                : null)
             .build();
     }
 

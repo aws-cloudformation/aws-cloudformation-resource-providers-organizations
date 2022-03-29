@@ -1,6 +1,6 @@
 # AWS::Organizations::Policy
 
-Policies in AWS Organizations enable you to manage different features of the AWS accounts in your organization.
+Policies in AWS Organizations enable you to manage different features of the AWS accounts in your organization.  You can use policies when all features are enabled in your organization.
 
 ## Syntax
 
@@ -51,6 +51,8 @@ _Minimum_: <code>1</code>
 
 _Maximum_: <code>128</code>
 
+_Pattern_: <code>[\s\S]*</code>
+
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 
 #### Type
@@ -77,6 +79,8 @@ _Minimum_: <code>1</code>
 
 _Maximum_: <code>1000000</code>
 
+_Pattern_: <code>[\s\S]*</code>
+
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 
 #### Description
@@ -88,6 +92,8 @@ _Required_: No
 _Type_: String
 
 _Maximum_: <code>512</code>
+
+_Pattern_: <code>[\s\S]*</code>
 
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 

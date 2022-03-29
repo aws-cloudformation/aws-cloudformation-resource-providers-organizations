@@ -5,8 +5,6 @@ import software.amazon.awssdk.services.organizations.model.CreatePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DeletePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DetachPolicyRequest;
-import software.amazon.awssdk.services.organizations.model.ListPoliciesResponse;
-import software.amazon.awssdk.services.organizations.model.ListPoliciesRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.ListTargetsForPolicyRequest;
 import software.amazon.awssdk.services.organizations.model.Tag;
@@ -74,10 +72,6 @@ public class Translator {
             .description(getOptionalDescription(model))
             .content(model.getContent())
             .build();
-    }
-
-    static ListPoliciesRequest translateToListPoliciesRequest(final String filterPolicyType, final String nextToken) {
-        return ListPoliciesRequest.builder().filter(filterPolicyType).nextToken(nextToken).build();
     }
 
     static ListTargetsForPolicyRequest translateToListTargetsForPolicyRequest(final String policyId, final String nextToken) {
