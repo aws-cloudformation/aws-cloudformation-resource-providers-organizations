@@ -1,0 +1,9 @@
+{
+  "Name": "testOUUpdatedName",
+  "Tags": [
+    {
+        "Key": "updatedKey",
+        "Value": "updatedValue"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "Name": "testOU1",
+  "ParentId": "{{orgRootId}}",
+  "Tags": [
+    {
+        "Key": "key1",
+        "Value": "value1"
+    }
+  ]
+}
