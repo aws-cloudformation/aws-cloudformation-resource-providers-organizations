@@ -5,7 +5,8 @@ import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DeletePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DeletePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.DetachPolicyRequest;
-import software.amazon.awssdk.services.organizations.model.DetachPolicyResponse;
+import software.amazon.awssdk.services.organizations.model.PolicyNotAttachedException;
+import software.amazon.awssdk.services.organizations.model.TargetNotFoundException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -47,12 +48,6 @@ public class DeleteHandler extends BaseHandlerStd {
         return deletePolicyResponse;
     }
 
-    protected DetachPolicyResponse detachPolicy(final DetachPolicyRequest detachPolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log(String.format("Start detaching policy."));
-        final DetachPolicyResponse response = orgsClient.injectCredentialsAndInvokeV2(detachPolicyRequest, orgsClient.client()::detachPolicy);
-        return response;
-    }
-
     protected ProgressEvent<ResourceModel, CallbackContext> detachPolicyFromTargets(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceHandlerRequest<ResourceModel> request,
@@ -63,19 +58,24 @@ public class DeleteHandler extends BaseHandlerStd {
 
         Set<String> targets = model.getTargetIds();
         if (CollectionUtils.isEmpty(targets)) {
-            logger.log("No target id found in request. Skip detaching policy.\n");
+            logger.log("No target id found in request. Skip detaching policy.");
             return ProgressEvent.progress(model, callbackContext);
         }
-        logger.log("Target Ids found in request. Start detaching policy to provided targets.\n");
+        logger.log("Target Ids found in request. Start detaching policy to provided targets.");
         for (final String targetId : targets) {
-            final ProgressEvent<ResourceModel, CallbackContext> progressEvent = awsClientProxy
-                .initiate("AWS-Organizations-Policy::DetachPolicy", orgsClient, model, callbackContext)
-                .translateToServiceRequest((resourceModel) -> Translator.translateToDetachRequest(model.getId(), targetId))
-                .makeServiceCall(this::detachPolicy)
-                .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
-                    organizationsRequest, e, proxyClient1, model1, context, logger))
-                .success();
-            // if detach policy fails, just continue
+            logger.log(String.format("Start detaching policy from targetId [%s].", targetId));
+            DetachPolicyRequest detachPolicyRequest = Translator.translateToDetachRequest(model.getId(), targetId);
+            try {
+                awsClientProxy.injectCredentialsAndInvokeV2(detachPolicyRequest, orgsClient.client()::detachPolicy);
+            } catch (Exception e) {
+                if (e instanceof PolicyNotAttachedException || e instanceof TargetNotFoundException) {
+                    logger.log(String.format("Got %s when calling detachPolicy for "
+                        + "policyId [%s], targetId [%s]. Continuing with delete...",
+                        e.getClass().getName(), model.getId(), targetId));
+                } else {
+                    return handleError(detachPolicyRequest, e, orgsClient, model, callbackContext, logger);
+                }
+            }
         }
         return ProgressEvent.progress(model, callbackContext);
     }

@@ -1,6 +1,10 @@
 package software.amazon.organizations.policy;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.AttachPolicyRequest;
+import software.amazon.awssdk.services.organizations.model.DetachPolicyRequest;
+import software.amazon.awssdk.services.organizations.model.DuplicatePolicyAttachmentException;
+import software.amazon.awssdk.services.organizations.model.PolicyNotAttachedException;
 import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.services.organizations.model.UpdatePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.UpdatePolicyResponse;
@@ -42,6 +46,11 @@ public class UpdateHandler extends BaseHandlerStd {
                 "Policy cannot be updated as the id was changed!");
         }
 
+        if (!previousModel.getType().equalsIgnoreCase(model.getType())) {
+            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotUpdatable,
+                "Policy cannot be updated as the type has changed!");
+        }
+
         // call UpdatePolicy API
         logger.log(String.format("Requesting UpdatePolicy w/ id: %s", policyId));
         return ProgressEvent.progress(model, callbackContext)
@@ -53,19 +62,20 @@ public class UpdateHandler extends BaseHandlerStd {
                         organizationsRequest, e, orgsClient1, model1, context, logger))
                     .progress()
             )
-            .then(progress -> handleTargets(awsClientProxy, model, callbackContext, request.getDesiredResourceState().getTargetIds(), request.getPreviousResourceState().getTargetIds(), policyId, orgsClient, logger))
+            .then(progress -> handleTargets(request, awsClientProxy, model, callbackContext, request.getDesiredResourceState().getTargetIds(), request.getPreviousResourceState().getTargetIds(), policyId, orgsClient, logger))
             .then(progress -> handleTagging(awsClientProxy, model, callbackContext, request.getDesiredResourceState().getTags(), request.getPreviousResourceState().getTags(), policyId, orgsClient, logger))
             .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
     protected UpdatePolicyResponse updatePolicy(final UpdatePolicyRequest updatePolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Calling updatePolicy API.\n");
+        logger.log("Calling updatePolicy API.");
         final UpdatePolicyResponse response = orgsClient.injectCredentialsAndInvokeV2(updatePolicyRequest, orgsClient.client()::updatePolicy);
         return response;
     }
 
     // handles attaching to targets: adding to new and removing from old targets
     private ProgressEvent<ResourceModel, CallbackContext> handleTargets(
+        final ResourceHandlerRequest<ResourceModel> request,
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceModel model,
         final CallbackContext callbackContext,
@@ -93,18 +103,38 @@ public class UpdateHandler extends BaseHandlerStd {
         // make the calls to attach to new targets
         if (!CollectionUtils.isNullOrEmpty(targetsToAttach)) {
             for (String attachTargetId : targetsToAttach) {
-                logger.log(String.format("Calling attachPolicy API with targetId: %s\n", attachTargetId));
-                awsClientProxy.injectCredentialsAndInvokeV2(
-                    Translator.translateToAttachRequest(policyId, attachTargetId), orgsClient.client()::attachPolicy);
+                logger.log(String.format("Calling attachPolicy API with targetId: [%s]", attachTargetId));
+                AttachPolicyRequest attachPolicyRequest = Translator.translateToAttachRequest(policyId, attachTargetId);
+                try {
+                    awsClientProxy.injectCredentialsAndInvokeV2(attachPolicyRequest, orgsClient.client()::attachPolicy);
+                } catch (Exception e) {
+                    if (e instanceof DuplicatePolicyAttachmentException) {
+                        logger.log(String.format("Got %s when calling attachPolicy for "
+                            + "policyId [%s], targetId [%s]. Continuing with update...",
+                            e.getClass().getName(), policyId, attachTargetId));
+                    } else {
+                        return handleError(attachPolicyRequest, e, orgsClient, model, callbackContext, logger);
+                    }
+                }
             }
         }
 
         // make calls to detach from old targets
         if (!CollectionUtils.isNullOrEmpty(targetsToRemove)) {
             for (String removeTargetId : targetsToRemove) {
-                logger.log(String.format("Calling detachPolicy API with targetId: %s\n", removeTargetId));
-                awsClientProxy.injectCredentialsAndInvokeV2(
-                    Translator.translateToDetachRequest(policyId, removeTargetId), orgsClient.client()::detachPolicy);
+                logger.log(String.format("Calling detachPolicy API with targetId: [%s]", removeTargetId));
+                DetachPolicyRequest detachPolicyRequest = Translator.translateToDetachRequest(policyId, removeTargetId);
+                try {
+                    awsClientProxy.injectCredentialsAndInvokeV2(detachPolicyRequest, orgsClient.client()::detachPolicy);
+                } catch (Exception e) {
+                    if (e instanceof PolicyNotAttachedException) {
+                        logger.log(String.format("Got %s when calling detachPolicy for "
+                            + "policyId [%s], targetId [%s]. Continuing with update...",
+                            e.getClass().getName(), policyId, removeTargetId));
+                    } else {
+                        return handleError(detachPolicyRequest, e, orgsClient, model, callbackContext, logger);
+                    }
+                }
             }
         }
 
@@ -136,14 +166,14 @@ public class UpdateHandler extends BaseHandlerStd {
 
         // Deletes tags only if tagsToRemove is not empty
         if (!CollectionUtils.isNullOrEmpty(tagsToRemove)) {
-            logger.log("Calling untagResource API.\n");
+            logger.log("Calling untagResource API.");
             awsClientProxy.injectCredentialsAndInvokeV2(
                 Translator.translateToUntagResourceRequest(tagsToRemove, policyId), orgsClient.client()::untagResource);
         }
 
         // Adds tags only if tagsToAddOrUpdate is not empty.
         if (!CollectionUtils.isNullOrEmpty(tagsToAddOrUpdate)) {
-            logger.log("Calling tagResource API.\n");
+            logger.log("Calling tagResource API.");
             awsClientProxy.injectCredentialsAndInvokeV2(
                 Translator.translateToTagResourceRequest(tagsToAddOrUpdate, policyId), orgsClient.client()::tagResource);
         }

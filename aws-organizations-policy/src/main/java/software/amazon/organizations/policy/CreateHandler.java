@@ -57,12 +57,6 @@ public class CreateHandler extends BaseHandlerStd {
         return createPolicyResponse;
     }
 
-    protected AttachPolicyResponse attachPolicy(final AttachPolicyRequest attachPolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log(String.format("Start attaching policy."));
-        final AttachPolicyResponse attachPolicyResponse = orgsClient.injectCredentialsAndInvokeV2(attachPolicyRequest, orgsClient.client()::attachPolicy);
-        return attachPolicyResponse;
-    }
-
     protected ProgressEvent<ResourceModel, CallbackContext> attachPolicyToTargets(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceHandlerRequest<ResourceModel> request,
@@ -73,11 +67,12 @@ public class CreateHandler extends BaseHandlerStd {
 
         Set<String> targets = model.getTargetIds();
         if (CollectionUtils.isEmpty(targets)) {
-            logger.log("No target id found in request. Skip attaching policy.\n");
+            logger.log("No target id found in request. Skip attaching policy.");
             return ProgressEvent.progress(model, callbackContext);
         }
-        logger.log("Target Ids found in request. Start attaching policy to provided targets.\n");
+        logger.log("Target Ids found in request. Start attaching policy to provided targets.");
         for (final String targetId : targets) {
+            logger.log(String.format("Start attaching policy to targetId [%s].", targetId));
             final ProgressEvent<ResourceModel, CallbackContext> progressEvent = awsClientProxy
                 .initiate("AWS-Organizations-Policy::AttachPolicy", orgsClient, model, callbackContext)
                 .translateToServiceRequest((resourceModel) -> Translator.translateToAttachRequest(model.getId(), targetId))
@@ -90,5 +85,10 @@ public class CreateHandler extends BaseHandlerStd {
             }
         }
         return ProgressEvent.progress(model, callbackContext);
+    }
+
+    protected AttachPolicyResponse attachPolicy(final AttachPolicyRequest attachPolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
+        final AttachPolicyResponse attachPolicyResponse = orgsClient.injectCredentialsAndInvokeV2(attachPolicyRequest, orgsClient.client()::attachPolicy);
+        return attachPolicyResponse;
     }
 }

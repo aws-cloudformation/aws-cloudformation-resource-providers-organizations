@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.organizations.model.InvalidInputException
 import software.amazon.awssdk.services.organizations.model.MalformedPolicyDocumentException;
 import software.amazon.awssdk.services.organizations.model.OrganizationsRequest;
 import software.amazon.awssdk.services.organizations.model.PolicyChangesInProgressException;
+import software.amazon.awssdk.services.organizations.model.PolicyInUseException;
 import software.amazon.awssdk.services.organizations.model.PolicyNotAttachedException;
 import software.amazon.awssdk.services.organizations.model.PolicyNotFoundException;
 import software.amazon.awssdk.services.organizations.model.PolicyTypeNotAvailableForOrganizationException;
@@ -63,7 +64,9 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final Logger logger
     ) {
         HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
-        if (e instanceof DuplicatePolicyException || e instanceof DuplicatePolicyAttachmentException) {
+        if (e instanceof PolicyInUseException) {
+            errorCode = HandlerErrorCode.GeneralServiceException;
+        } else if (e instanceof DuplicatePolicyException || e instanceof DuplicatePolicyAttachmentException) {
             errorCode = HandlerErrorCode.AlreadyExists;
         } else if (e instanceof AwsOrganizationsNotInUseException || e instanceof PolicyNotFoundException
             || e instanceof TargetNotFoundException || e instanceof PolicyNotAttachedException) {

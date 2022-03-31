@@ -33,6 +33,7 @@ public class AbstractTestBase {
     protected static final String TEST_POLICY_UPDATED_NAME = "DenyAllS3Actions";
     protected static final String TEST_POLICY_UPDATED_DESCRIPTION = "Deny All S3 Actions";
     protected static final String TEST_TYPE = PolicyConstants.PolicyType.SERVICE_CONTROL_POLICY.toString();
+    protected static final String TEST_TYPE_CHANGED = PolicyConstants.PolicyType.TAG_POLICY.toString();
     protected static final Boolean TEST_AWSMANAGED = false;
     protected static final String TEST_TARGET_ROOT_ID = "r-11111";
     protected static final String TEST_TARGET_OU_ID = "ou-abc1-abcd1234";

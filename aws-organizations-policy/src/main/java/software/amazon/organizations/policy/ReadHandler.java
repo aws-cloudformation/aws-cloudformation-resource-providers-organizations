@@ -69,7 +69,7 @@ public class ReadHandler extends BaseHandlerStd {
         String policyId = model.getId();
         Set<String> policyTargetIds = new HashSet<>();
 
-        logger.log(String.format("Listing targets for policyId: %s\n", policyId));
+        logger.log(String.format("Listing targets for policyId: %s", policyId));
         String nextToken = null;
         do {
             // since need to handle policyTarget list pagination manually, use try/catch for error handling
@@ -104,7 +104,7 @@ public class ReadHandler extends BaseHandlerStd {
         ) {
 
         String policyId = model.getId();
-        logger.log(String.format("Listing tags for policyId: %s.\n", policyId));
+        logger.log(String.format("Listing tags for policyId: %s.", policyId));
 
         // ListTags currently returns all (max: 50) tags in a single call, so no need for pagination handling
         return awsClientProxy.initiate("AWS-Organizations-Policy::ListTagsForResource", orgsClient, model, callbackContext)
@@ -119,7 +119,7 @@ public class ReadHandler extends BaseHandlerStd {
     }
 
     protected ListTagsForResourceResponse listTagsForResource(final ListTagsForResourceRequest listTagsForResourceRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Calling listTagsForResource API.\n");
+        logger.log("Calling listTagsForResource API.");
         final ListTagsForResourceResponse response = orgsClient.injectCredentialsAndInvokeV2(listTagsForResourceRequest, orgsClient.client()::listTagsForResource);
         return response;
     }
