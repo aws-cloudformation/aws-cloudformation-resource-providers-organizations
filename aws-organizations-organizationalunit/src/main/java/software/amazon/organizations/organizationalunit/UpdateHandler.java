@@ -42,10 +42,17 @@ public class UpdateHandler extends BaseHandlerStd {
         String ouId = model.getId();
         String name = model.getName();
 
-        if (previousModel != null && !ouId.equals(previousModel.getId())) {
-            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotUpdatable,
+        // Check that the previousModel OU id is equal to the desiredModel OU id. If not then return NotUpdatable exception
+        if (previousModel != null) {
+            if (previousModel.getId() != null && !ouId.equals(previousModel.getId())) {
+                return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotUpdatable,
                     "Organizational unit cannot be updated as the id was changed");
+            }
         }
+
+        // Check to see if previous/current model exist before calling getTags()
+        Set<software.amazon.organizations.organizationalunit.Tag> previousTags = previousModel == null ? null : previousModel.getTags();
+        Set<software.amazon.organizations.organizationalunit.Tag> desiredTags = model == null ? null : model.getTags();
 
         // Call UpdateOrganizationalUnit API
         logger.log(String.format("Requesting UpdateOrganizationalUnit w/ id: %s and name: %s.\n", ouId, name));
@@ -58,7 +65,7 @@ public class UpdateHandler extends BaseHandlerStd {
                             organizationsRequest, e, orgsClient1, model1, context, logger))
                 .progress()
             )
-            .then(progress -> handleTagging(awsClientProxy, model, callbackContext, request.getDesiredResourceState().getTags(), request.getPreviousResourceState().getTags(), ouId, orgsClient, logger))
+            .then(progress -> handleTagging(awsClientProxy, model, callbackContext, desiredTags, previousTags, ouId, orgsClient, logger))
             .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
