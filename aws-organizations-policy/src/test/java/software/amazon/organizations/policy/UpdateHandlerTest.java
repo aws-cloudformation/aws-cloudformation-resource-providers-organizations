@@ -2,6 +2,7 @@ package software.amazon.organizations.policy;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.AttachPolicyRequest;
+import software.amazon.awssdk.services.organizations.model.ConstraintViolationException;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.DetachPolicyRequest;
@@ -334,6 +335,67 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         verify(mockProxyClient.client()).updatePolicy(any(UpdatePolicyRequest.class));
         verify(mockProxyClient.client()).attachPolicy(any(AttachPolicyRequest.class));
+
+        verify(mockOrgsClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(mockOrgsClient);
+    }
+
+    @Test
+    public void handleRequest_WithTags_UntagResourceFails_With_CfnServiceLimitExceeded() {
+        final ResourceModel initialResourceModel = generateFinalResourceModel(false, true);
+        final ResourceModel updatedResourceModel = generateUpdatedResourceModel(false, true);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceState(initialResourceModel)
+            .desiredResourceState(updatedResourceModel)
+            .build();
+
+        final UpdatePolicyResponse updatePolicyResponse = getUpdatePolicyResponse();
+        when(mockProxyClient.client().updatePolicy(any(UpdatePolicyRequest.class))).thenReturn(updatePolicyResponse);
+
+        //mock exception for UntagResource
+        when(mockProxyClient.client().untagResource(any(UntagResourceRequest.class))).thenThrow(ConstraintViolationException.class);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = updateHandlerToTest.handleRequest(mockAwsClientproxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceLimitExceeded);
+
+        verify(mockProxyClient.client()).updatePolicy(any(UpdatePolicyRequest.class));
+        verify(mockProxyClient.client()).untagResource(any(UntagResourceRequest.class));
+
+        verify(mockOrgsClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(mockOrgsClient);
+    }
+
+    @Test
+    public void handleRequest_WithTags_TagResourceFails_With_CfnServiceLimitExceeded() {
+        final ResourceModel initialResourceModel = generateFinalResourceModel(false, true);
+        final ResourceModel updatedResourceModel = generateUpdatedResourceModel(false, true);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceState(initialResourceModel)
+            .desiredResourceState(updatedResourceModel)
+            .build();
+
+        final UpdatePolicyResponse updatePolicyResponse = getUpdatePolicyResponse();
+        when(mockProxyClient.client().updatePolicy(any(UpdatePolicyRequest.class))).thenReturn(updatePolicyResponse);
+
+        //mock exception for TagResource
+        when(mockProxyClient.client().tagResource(any(TagResourceRequest.class))).thenThrow(ConstraintViolationException.class);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = updateHandlerToTest.handleRequest(mockAwsClientproxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceLimitExceeded);
+
+        verify(mockProxyClient.client()).updatePolicy(any(UpdatePolicyRequest.class));
+        verify(mockProxyClient.client()).untagResource(any(UntagResourceRequest.class));
+        verify(mockProxyClient.client()).tagResource(any(TagResourceRequest.class));
 
         verify(mockOrgsClient, atLeastOnce()).serviceName();
         verifyNoMoreInteractions(mockOrgsClient);

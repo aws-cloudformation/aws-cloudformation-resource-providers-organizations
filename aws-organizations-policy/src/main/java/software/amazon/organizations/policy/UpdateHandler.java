@@ -6,6 +6,8 @@ import software.amazon.awssdk.services.organizations.model.DetachPolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DuplicatePolicyAttachmentException;
 import software.amazon.awssdk.services.organizations.model.PolicyNotAttachedException;
 import software.amazon.awssdk.services.organizations.model.Tag;
+import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
+import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UpdatePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.UpdatePolicyResponse;
 import software.amazon.awssdk.utils.CollectionUtils;
@@ -48,7 +50,7 @@ public class UpdateHandler extends BaseHandlerStd {
 
         if (!previousModel.getType().equalsIgnoreCase(model.getType())) {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotUpdatable,
-                "Policy cannot be updated as the type has changed!");
+                "Cannot update policy type after creation!");
         }
 
         // call UpdatePolicy API
@@ -164,18 +166,26 @@ public class UpdateHandler extends BaseHandlerStd {
         // Excluded all old tags that do exist in new tag list
         final Collection<Tag> tagsToAddOrUpdate = getTagsToAddOrUpdate(existingTags, newTags);
 
-        // Deletes tags only if tagsToRemove is not empty
+        // Delete tags only if tagsToRemove is not empty
         if (!CollectionUtils.isNullOrEmpty(tagsToRemove)) {
             logger.log("Calling untagResource API.");
-            awsClientProxy.injectCredentialsAndInvokeV2(
-                Translator.translateToUntagResourceRequest(tagsToRemove, policyId), orgsClient.client()::untagResource);
+            UntagResourceRequest untagResourceRequest = Translator.translateToUntagResourceRequest(tagsToRemove, policyId);
+            try {
+                awsClientProxy.injectCredentialsAndInvokeV2(untagResourceRequest, orgsClient.client()::untagResource);
+            } catch (Exception e) {
+                return handleError(untagResourceRequest, e, orgsClient, model, callbackContext, logger);
+            }
         }
 
-        // Adds tags only if tagsToAddOrUpdate is not empty.
+        // Add tags only if tagsToAddOrUpdate is not empty.
         if (!CollectionUtils.isNullOrEmpty(tagsToAddOrUpdate)) {
             logger.log("Calling tagResource API.");
-            awsClientProxy.injectCredentialsAndInvokeV2(
-                Translator.translateToTagResourceRequest(tagsToAddOrUpdate, policyId), orgsClient.client()::tagResource);
+            TagResourceRequest tagResourceRequest = Translator.translateToTagResourceRequest(tagsToAddOrUpdate, policyId);
+            try {
+                awsClientProxy.injectCredentialsAndInvokeV2(tagResourceRequest, orgsClient.client()::tagResource);
+            } catch (Exception e) {
+                return handleError(tagResourceRequest, e, orgsClient, model, callbackContext, logger);
+            }
         }
 
         return ProgressEvent.progress(model, callbackContext);
