@@ -13,8 +13,12 @@ out/
 .settings
 .project
 
-# auto-generated files
+# build and test auto-generated files
 target/
+*.zip
+build
+.gradle/
+.hypothesis
 
 # our logs
 rpdk.log*
