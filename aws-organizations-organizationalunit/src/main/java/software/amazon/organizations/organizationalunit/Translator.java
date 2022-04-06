@@ -1,11 +1,8 @@
 package software.amazon.organizations.organizationalunit;
 
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitRequest;
-import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitResponse;
 import software.amazon.awssdk.services.organizations.model.DeleteOrganizationalUnitRequest;
-import software.amazon.awssdk.services.organizations.model.DeleteOrganizationalUnitResponse;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitRequest;
-import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitResponse;
 import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentRequest;
 import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
@@ -15,12 +12,6 @@ import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitRequest;
-import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitResponse;
-import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
-import software.amazon.cloudformation.proxy.ProxyClient;
-import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,7 +53,7 @@ public class Translator {
         return ListOrganizationalUnitsForParentRequest.builder()
                 .maxResults(20)
                 .nextToken(nextToken)
-                .parentId(model.getParentId())
+                .parentId(model.getId())
                 .build();
     }
 

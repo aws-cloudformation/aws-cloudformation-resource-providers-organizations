@@ -5,6 +5,8 @@ import software.amazon.awssdk.services.organizations.model.CreatePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DeletePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DetachPolicyRequest;
+import software.amazon.awssdk.services.organizations.model.ListPoliciesRequest;
+import software.amazon.awssdk.services.organizations.model.ListPoliciesResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.ListTargetsForPolicyRequest;
 import software.amazon.awssdk.services.organizations.model.Tag;
@@ -16,7 +18,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class is a centralized placeholder for
@@ -112,6 +117,29 @@ public class Translator {
             .resourceId(policyId)
             .tagKeys(tagKeys)
             .build();
+    }
+
+    static ListPoliciesRequest translateToListPoliciesRequest(final ResourceModel model, final String nextToken) {
+        return ListPoliciesRequest.builder().filter(model.getType()).nextToken(nextToken).build();
+    }
+
+    static List<ResourceModel> translateListPoliciesResponseToResourceModels(final ListPoliciesResponse pageResponse) {
+        return streamOfOrEmpty(pageResponse.policies())
+            .map(policy -> ResourceModel.builder()
+                .arn(policy.arn())
+                .id(policy.id())
+                .awsManaged(policy.awsManaged())
+                .name(policy.name())
+                .type(policy.typeAsString())
+                .description(policy.description())
+                .build())
+            .collect(Collectors.toList());
+    }
+
+    private static <T> Stream<T> streamOfOrEmpty(final Collection<T> collection) {
+        return Optional.ofNullable(collection)
+            .map(Collection::stream)
+            .orElseGet(Stream::empty);
     }
 
     static String getOptionalDescription(final ResourceModel model) {
