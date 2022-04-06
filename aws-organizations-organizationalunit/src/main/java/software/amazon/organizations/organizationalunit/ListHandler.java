@@ -1,8 +1,10 @@
 package software.amazon.organizations.organizationalunit;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentRequest;
 import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -26,8 +28,24 @@ public class ListHandler extends BaseHandlerStd {
 
         // Call ListOrganizationalUnitsForParent API
         logger.log("Requesting ListOrganizationalUnitsForParent");
-        final ListOrganizationalUnitsForParentResponse listOrganizationalUnitsForParentResponse = awsClientProxy.injectCredentialsAndInvokeV2(
-                Translator.translateToListOrganizationalUnitsForParentRequest(request.getNextToken(), request.getDesiredResourceState()), orgsClient.client()::listOrganizationalUnitsForParent);
+
+        final ResourceModel model = request.getDesiredResourceState();
+        if (model == null || model.getId() == null) {
+            return ProgressEvent.failed(ResourceModel.builder().build(), callbackContext, HandlerErrorCode.InvalidRequest,
+                "Organizational Units cannot be listed without specifying an Id in the provided resource model to use as ParentId in ListOrganizationalUnitsForParentRequest!");
+        }
+
+        ListOrganizationalUnitsForParentRequest listOrganizationalUnitsForParentRequest =
+            Translator.translateToListOrganizationalUnitsForParentRequest(request.getNextToken(), model);
+
+        ListOrganizationalUnitsForParentResponse listOrganizationalUnitsForParentResponse = null;
+
+        try {
+            listOrganizationalUnitsForParentResponse = awsClientProxy.injectCredentialsAndInvokeV2(
+                listOrganizationalUnitsForParentRequest, orgsClient.client()::listOrganizationalUnitsForParent);
+        } catch(Exception e) {
+            return handleError(listOrganizationalUnitsForParentRequest, e, orgsClient, model, callbackContext, logger);
+        }
 
         final List<ResourceModel> models = listOrganizationalUnitsForParentResponse.organizationalUnits().stream().map(organizationalUnit ->
                 Translator.getResourceModelFromOrganizationalUnit(organizationalUnit)).collect(Collectors.toList());
