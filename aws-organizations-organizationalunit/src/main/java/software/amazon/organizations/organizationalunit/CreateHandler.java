@@ -4,7 +4,6 @@ import com.amazonaws.util.StringUtils;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitResponse;
-import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;

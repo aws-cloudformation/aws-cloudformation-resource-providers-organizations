@@ -1,7 +1,6 @@
 package software.amazon.organizations.organizationalunit;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.HashSet;
 import java.util.function.Function;
 
 import software.amazon.awssdk.awscore.AwsRequest;
@@ -10,7 +9,6 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.Tag;
 
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Credentials;

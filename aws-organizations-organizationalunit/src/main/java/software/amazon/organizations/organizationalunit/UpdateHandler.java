@@ -1,16 +1,15 @@
 package software.amazon.organizations.organizationalunit;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
+import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitResponse;
-import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
-import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
 import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.utils.CollectionUtils;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
-import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
@@ -21,9 +20,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class UpdateHandler extends BaseHandlerStd {
     private Logger logger;
@@ -97,13 +94,27 @@ public class UpdateHandler extends BaseHandlerStd {
         // Excluded all old tags that do exist in new tag list
         final Collection<Tag> tagsToAddOrUpdate = getTagsToAddOrUpdate(existingTags, newTags);
 
-        // Deletes tags only if tagsToRemove is not empty
-        if (!CollectionUtils.isNullOrEmpty(tagsToRemove)) awsClientProxy.injectCredentialsAndInvokeV2(
-                Translator.translateToUntagResourceRequest(tagsToRemove, organizationalUnitId), orgsClient.client()::untagResource);
+        // Delete tags only if tagsToRemove is not empty
+        if (!CollectionUtils.isNullOrEmpty(tagsToRemove)) {
+            logger.log("Calling untagResource API.");
+            UntagResourceRequest untagResourceRequest = Translator.translateToUntagResourceRequest(tagsToRemove, organizationalUnitId);
+            try {
+                awsClientProxy.injectCredentialsAndInvokeV2(untagResourceRequest, orgsClient.client()::untagResource);
+            } catch (Exception e) {
+                return handleError(untagResourceRequest, e, orgsClient, model, callbackContext, logger);
+            }
+        }
 
-        // Adds tags only if tagsToAddOrUpdate is not empty.
-        if (!CollectionUtils.isNullOrEmpty(tagsToAddOrUpdate)) awsClientProxy.injectCredentialsAndInvokeV2(
-                Translator.translateToTagResourceRequest(tagsToAddOrUpdate, organizationalUnitId), orgsClient.client()::tagResource);
+        // Add tags only if tagsToAddOrUpdate is not empty.
+        if (!CollectionUtils.isNullOrEmpty(tagsToAddOrUpdate)) {
+            logger.log("Calling tagResource API.");
+            TagResourceRequest tagResourceRequest = Translator.translateToTagResourceRequest(tagsToAddOrUpdate, organizationalUnitId);
+            try {
+                awsClientProxy.injectCredentialsAndInvokeV2(tagResourceRequest, orgsClient.client()::tagResource);
+            } catch(Exception e) {
+                return handleError(tagResourceRequest, e, orgsClient, model, callbackContext, logger);
+            }
+        }
 
         return ProgressEvent.progress(model, callbackContext);
     }

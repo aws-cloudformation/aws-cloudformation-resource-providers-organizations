@@ -1,9 +1,7 @@
 package software.amazon.organizations.organizationalunit;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentRequest;
 import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentResponse;
-import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.OperationStatus;

@@ -12,7 +12,6 @@ import software.amazon.awssdk.services.organizations.model.ListParentsResponse;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnitNotFoundException;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
 import software.amazon.awssdk.services.organizations.model.Parent;
-import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.OperationStatus;

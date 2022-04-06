@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.ConstraintViolationException;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
@@ -17,9 +18,7 @@ import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
 import software.amazon.awssdk.services.organizations.model.Parent;
 import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
-import software.amazon.awssdk.services.organizations.model.TagResourceResponse;
 import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
-import software.amazon.awssdk.services.organizations.model.UntagResourceResponse;
 import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
@@ -118,7 +117,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequestWithoutTags_SimpleSuccess() {
-         final ResourceModel previousResourceModel = generatePreviousResourceModel();
+        final ResourceModel previousResourceModel = generatePreviousResourceModel();
 
         final ResourceModel model = generateUpdatedResourceModel();
 
@@ -168,6 +167,55 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getResourceModels()).isNull();
+    }
+
+    @Test
+    public void handleRequest_WithTags_UntagResourceFails_Fails_With_CfnServiceLimitExceededException() {
+        final ResourceModel previousResourceModel = generatePreviousResourceModel();
+
+        final ResourceModel model = generateUpdatedResourceModel();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceState(previousResourceModel)
+            .desiredResourceState(model)
+            .build();
+
+        when(mockProxyClient.client().untagResource(any(UntagResourceRequest.class))).thenThrow(ConstraintViolationException.class);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceLimitExceeded);
+
+        verify(mockProxyClient.client()).updateOrganizationalUnit(any(UpdateOrganizationalUnitRequest.class));
+        verify(mockProxyClient.client()).untagResource(any(UntagResourceRequest.class));
+    }
+
+    @Test
+    public void handleRequest_WithTags_TagResourceFails_Fails_With_CfnServiceLimitExceededException() {
+        final ResourceModel previousResourceModel = generatePreviousResourceModel();
+
+        final ResourceModel model = generateUpdatedResourceModel();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceState(previousResourceModel)
+            .desiredResourceState(model)
+            .build();
+
+        when(mockProxyClient.client().tagResource(any(TagResourceRequest.class))).thenThrow(ConstraintViolationException.class);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceLimitExceeded);
+
+        verify(mockProxyClient.client()).updateOrganizationalUnit(any(UpdateOrganizationalUnitRequest.class));
+        verify(mockProxyClient.client()).untagResource(any(UntagResourceRequest.class));
+        verify(mockProxyClient.client()).tagResource(any(TagResourceRequest.class));
     }
 
     @Test

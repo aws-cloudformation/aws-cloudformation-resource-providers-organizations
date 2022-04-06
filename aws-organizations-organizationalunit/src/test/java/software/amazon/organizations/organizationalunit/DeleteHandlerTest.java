@@ -7,7 +7,6 @@ import software.amazon.awssdk.services.organizations.model.DeleteOrganizationalU
 import software.amazon.awssdk.services.organizations.model.DeleteOrganizationalUnitResponse;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnitNotEmptyException;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnitNotFoundException;
-import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.OperationStatus;

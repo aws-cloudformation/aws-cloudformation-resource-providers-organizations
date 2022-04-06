@@ -2,11 +2,8 @@ package software.amazon.organizations.organizationalunit;
 
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.Tag;
-import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
-import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
