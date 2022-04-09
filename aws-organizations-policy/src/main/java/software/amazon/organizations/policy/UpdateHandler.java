@@ -44,7 +44,7 @@ public class UpdateHandler extends BaseHandlerStd {
         String policyId = model.getId();
 
         if (previousModel == null || previousModel.getId() == null || !policyId.equals(previousModel.getId())) {
-            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotUpdatable,
+            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotFound,
                 "Policy cannot be updated as the id was changed!");
         }
 
@@ -89,16 +89,20 @@ public class UpdateHandler extends BaseHandlerStd {
     ) {
         // filter previous and desired lists to determine which to attach and remove
         final List<String> targetsToAttach = new ArrayList<>();
-        for (String desired : desiredTargets) {
-            if (!previousTargets.contains(desired)) {
-                targetsToAttach.add(desired);
+        if (!CollectionUtils.isNullOrEmpty(desiredTargets)) {
+            for (String desired : desiredTargets) {
+                if (!previousTargets.contains(desired)) {
+                    targetsToAttach.add(desired);
+                }
             }
         }
 
         final List<String> targetsToRemove = new ArrayList<>();
-        for (String previous : previousTargets) {
-            if (!desiredTargets.contains(previous)) {
-                targetsToRemove.add(previous);
+        if (!CollectionUtils.isNullOrEmpty(previousTargets)) {
+            for (String previous : previousTargets) {
+                if (!desiredTargets.contains(previous)) {
+                    targetsToRemove.add(previous);
+                }
             }
         }
 
