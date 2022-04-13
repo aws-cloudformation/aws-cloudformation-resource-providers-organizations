@@ -10,7 +10,7 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 public class DeleteHandler extends BaseHandlerStd {
-    private Logger logger;
+    private Logger log;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -19,7 +19,7 @@ public class DeleteHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
 
-        this.logger = logger;
+        this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();
 
         String ouId = model.getId();
@@ -38,8 +38,8 @@ public class DeleteHandler extends BaseHandlerStd {
     }
 
     protected DeleteOrganizationalUnitResponse deleteOrganizationalUnit(final DeleteOrganizationalUnitRequest deleteOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Calling deleteOrganizationalUnit API.");
-	    final DeleteOrganizationalUnitResponse deleteOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(deleteOrganizationalUnitRequest, orgsClient.client()::deleteOrganizationalUnit);
-	    return deleteOrganizationalUnitResponse;
-	}
+        log.log("Calling deleteOrganizationalUnit API.");
+        final DeleteOrganizationalUnitResponse deleteOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(deleteOrganizationalUnitRequest, orgsClient.client()::deleteOrganizationalUnit);
+        return deleteOrganizationalUnitResponse;
+    }
 }

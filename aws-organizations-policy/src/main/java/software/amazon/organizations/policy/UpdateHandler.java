@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 public class UpdateHandler extends BaseHandlerStd {
-    private Logger logger;
+    private Logger log;
 
     @Override
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -37,7 +37,7 @@ public class UpdateHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
 
-        this.logger = logger;
+        this.log = logger;
         final ResourceModel previousModel = request.getPreviousResourceState();
         final ResourceModel model = request.getDesiredResourceState();
 
@@ -70,7 +70,7 @@ public class UpdateHandler extends BaseHandlerStd {
     }
 
     protected UpdatePolicyResponse updatePolicy(final UpdatePolicyRequest updatePolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Calling updatePolicy API.");
+        log.log("Calling updatePolicy API.");
         final UpdatePolicyResponse response = orgsClient.injectCredentialsAndInvokeV2(updatePolicyRequest, orgsClient.client()::updatePolicy);
         return response;
     }

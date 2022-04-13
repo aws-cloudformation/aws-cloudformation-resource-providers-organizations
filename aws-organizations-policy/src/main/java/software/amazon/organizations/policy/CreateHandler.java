@@ -16,7 +16,7 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import java.util.Set;
 
 public class CreateHandler extends BaseHandlerStd {
-    private Logger logger;
+    private Logger log;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -25,7 +25,7 @@ public class CreateHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
 
-        this.logger = logger;
+        this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();
         if (model.getName() == null || model.getType() == null || model.getContent() == null) {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
@@ -52,7 +52,7 @@ public class CreateHandler extends BaseHandlerStd {
     }
 
     protected CreatePolicyResponse createPolicy(final CreatePolicyRequest createPolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log(String.format("Start creating policy."));
+        log.log(String.format("Start creating policy."));
         final CreatePolicyResponse createPolicyResponse = orgsClient.injectCredentialsAndInvokeV2(createPolicyRequest, orgsClient.client()::createPolicy);
         return createPolicyResponse;
     }

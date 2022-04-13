@@ -11,7 +11,7 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 public class CreateHandler extends BaseHandlerStd {
-    private Logger logger;
+    private Logger log;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -20,7 +20,7 @@ public class CreateHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
 
-        this.logger = logger;
+        this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();
 
         String name = model.getName();
@@ -42,10 +42,10 @@ public class CreateHandler extends BaseHandlerStd {
     }
 
     protected CreateOrganizationalUnitResponse createOrganizationalUnit(final CreateOrganizationalUnitRequest createOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Calling createOrganizationalUnit API.");
-	    final CreateOrganizationalUnitResponse createOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(createOrganizationalUnitRequest, orgsClient.client()::createOrganizationalUnit);
-	    return createOrganizationalUnitResponse;
-	}
+        log.log("Calling createOrganizationalUnit API.");
+        final CreateOrganizationalUnitResponse createOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(createOrganizationalUnitRequest, orgsClient.client()::createOrganizationalUnit);
+        return createOrganizationalUnitResponse;
+    }
 
     private Boolean stabilized(CreateOrganizationalUnitRequest createOrganizationalUnitRequest, CreateOrganizationalUnitResponse createOrganizationalUnitResponse, ProxyClient<OrganizationsClient> orgsClient, ResourceModel model, CallbackContext callbackContext) {
         if (!StringUtils.isNullOrEmpty(createOrganizationalUnitResponse.organizationalUnit().id())) {

@@ -15,7 +15,7 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 public class ReadHandler extends BaseHandlerStd {
-    private Logger logger;
+    private Logger log;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -24,7 +24,7 @@ public class ReadHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
 
-        this.logger = logger;
+        this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();
 
         String ouId = model.getId();
@@ -92,22 +92,22 @@ public class ReadHandler extends BaseHandlerStd {
     }
 
     protected DescribeOrganizationalUnitResponse describeOrganizationalUnit(final DescribeOrganizationalUnitRequest describeOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Calling describeOrganizationalUnit API.");
+        log.log("Calling describeOrganizationalUnit API.");
         final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(describeOrganizationalUnitRequest, orgsClient.client()::describeOrganizationalUnit);
-	    return describeOrganizationalUnitResponse;
+        return describeOrganizationalUnitResponse;
     }
 
     // DescribeOU call doesn't return tags on OU so ListTags call needs to be made separately
     protected ListTagsForResourceResponse listTagsForResource(final ListTagsForResourceRequest listTagsForResourceRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Calling listTagsForResource API.");
+        log.log("Calling listTagsForResource API.");
         final ListTagsForResourceResponse listTagsForResourceResponse = orgsClient.injectCredentialsAndInvokeV2(listTagsForResourceRequest, orgsClient.client()::listTagsForResource);
-	    return listTagsForResourceResponse;
+        return listTagsForResourceResponse;
     }
 
     // DescribeOU call doesn't return parentId of OU so ListParents call needs to be made separately
     protected ListParentsResponse listParents(final ListParentsRequest listParentsRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Calling listParents API.");
+        log.log("Calling listParents API.");
         final ListParentsResponse listParentsResponse = orgsClient.injectCredentialsAndInvokeV2(listParentsRequest, orgsClient.client()::listParents);
-	    return listParentsResponse;
+        return listParentsResponse;
     }
 }

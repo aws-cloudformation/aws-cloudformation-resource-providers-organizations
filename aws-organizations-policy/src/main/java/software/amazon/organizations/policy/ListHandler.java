@@ -16,7 +16,7 @@ import java.util.List;
 
 
 public class ListHandler extends BaseHandlerStd {
-    private Logger logger;
+    private Logger log;
 
     @Override
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -26,7 +26,7 @@ public class ListHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
 
-        this.logger = logger;
+        this.log = logger;
         logger.log(String.format("Entered %s list handler with accountId [%s]", ResourceModel.TYPE_NAME, request.getAwsAccountId()));
 
         final ResourceModel model = request.getDesiredResourceState();
@@ -54,7 +54,7 @@ public class ListHandler extends BaseHandlerStd {
     }
 
     protected ListPoliciesResponse listPolicies(final ListPoliciesRequest listPoliciesRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Start calling listPolicies");
+        log.log("Start calling listPolicies");
         final ListPoliciesResponse listPoliciesResponse = orgsClient.injectCredentialsAndInvokeV2(listPoliciesRequest, orgsClient.client()::listPolicies);
         return listPoliciesResponse;
     }

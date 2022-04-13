@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 public class UpdateHandler extends BaseHandlerStd {
-    private Logger logger;
+    private Logger log;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -32,7 +32,7 @@ public class UpdateHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
 
-        this.logger = logger;
+        this.log = logger;
         final ResourceModel previousModel = request.getPreviousResourceState();
         final ResourceModel model = request.getDesiredResourceState();
 
@@ -67,10 +67,10 @@ public class UpdateHandler extends BaseHandlerStd {
     }
 
     protected UpdateOrganizationalUnitResponse updateOrganizationalUnit(final UpdateOrganizationalUnitRequest updateOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Calling updateOrganizationalUnit API.");
-	    final UpdateOrganizationalUnitResponse updateOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(updateOrganizationalUnitRequest, orgsClient.client()::updateOrganizationalUnit);
-	    return updateOrganizationalUnitResponse;
-	}
+        log.log("Calling updateOrganizationalUnit API.");
+        final UpdateOrganizationalUnitResponse updateOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(updateOrganizationalUnitRequest, orgsClient.client()::updateOrganizationalUnit);
+        return updateOrganizationalUnitResponse;
+    }
 
     // Handles creating new tags, updating existing tags, and deleting old tags
     private ProgressEvent<ResourceModel, CallbackContext> handleTagging(
