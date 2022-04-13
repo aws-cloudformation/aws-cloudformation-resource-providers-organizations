@@ -105,6 +105,9 @@
     "cloudFormationSystemTags": false,
     "tagProperty": "/properties/Tags"
   },
+  "createOnlyProperties": [
+    "/properties/ParentId"
+  ],
   "readOnlyProperties": [
     "/properties/Arn",
     "/properties/Id"
