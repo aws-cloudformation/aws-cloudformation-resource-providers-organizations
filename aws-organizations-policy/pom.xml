@@ -229,6 +229,7 @@
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
+                            <sourceDirectories>${project.build.sourceDirectory}</sourceDirectories>
                         </configuration>
                         <goals>
                             <goal>check</goal>
