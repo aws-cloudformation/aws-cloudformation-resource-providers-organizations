@@ -17,7 +17,7 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import java.util.Set;
 
 public class DeleteHandler extends BaseHandlerStd {
-    private Logger logger;
+    private Logger log;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -26,7 +26,7 @@ public class DeleteHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
 
-        this.logger = logger;
+        this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();
         logger.log(String.format("Entered %s delete handler with policy Id: [%s]", ResourceModel.TYPE_NAME, model.getId()));
 
@@ -43,7 +43,7 @@ public class DeleteHandler extends BaseHandlerStd {
     }
 
     protected DeletePolicyResponse deletePolicy(final DeletePolicyRequest deletePolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log(String.format("Attempt to delete policy."));
+        log.log(String.format("Attempt to delete policy."));
         final DeletePolicyResponse deletePolicyResponse = orgsClient.injectCredentialsAndInvokeV2(deletePolicyRequest, orgsClient.client()::deletePolicy);
         return deletePolicyResponse;
     }
@@ -79,5 +79,4 @@ public class DeleteHandler extends BaseHandlerStd {
         }
         return ProgressEvent.progress(model, callbackContext);
     }
-
 }

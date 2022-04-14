@@ -18,7 +18,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ReadHandler extends BaseHandlerStd {
-    private Logger logger;
+    private Logger log;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -27,7 +27,7 @@ public class ReadHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
 
-        this.logger = logger;
+        this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();
         logger.log(String.format("Entered %s read handler with account Id [%s], policy Id: [%s].", ResourceModel.TYPE_NAME, request.getAwsAccountId(), model.getId()));
 
@@ -53,7 +53,7 @@ public class ReadHandler extends BaseHandlerStd {
     }
 
     protected DescribePolicyResponse describePolicy(final DescribePolicyRequest describePolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log(String.format("Retrieving policy details."));
+        log.log(String.format("Retrieving policy details."));
         final DescribePolicyResponse response = orgsClient.injectCredentialsAndInvokeV2(describePolicyRequest, orgsClient.client()::describePolicy);
         return response;
     }
@@ -119,7 +119,7 @@ public class ReadHandler extends BaseHandlerStd {
     }
 
     protected ListTagsForResourceResponse listTagsForResource(final ListTagsForResourceRequest listTagsForResourceRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        logger.log("Calling listTagsForResource API.");
+        log.log("Calling listTagsForResource API.");
         final ListTagsForResourceResponse response = orgsClient.injectCredentialsAndInvokeV2(listTagsForResourceRequest, orgsClient.client()::listTagsForResource);
         return response;
     }

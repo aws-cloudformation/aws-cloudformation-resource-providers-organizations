@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ListHandler extends BaseHandlerStd {
-    private Logger logger;
+    private Logger log;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -24,7 +24,7 @@ public class ListHandler extends BaseHandlerStd {
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
 
-        this.logger = logger;
+        this.log = logger;
 
         // Call ListOrganizationalUnitsForParent API
         logger.log("Requesting ListOrganizationalUnitsForParent");
