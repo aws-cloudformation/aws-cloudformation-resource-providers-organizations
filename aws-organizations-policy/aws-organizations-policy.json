@@ -108,8 +108,7 @@
     "Content"
   ],
   "primaryIdentifier": [
-    "/properties/Id",
-    "/properties/Name"
+    "/properties/Id"
   ],
   "readOnlyProperties": [
     "/properties/Id",
