@@ -424,7 +424,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_IdChanged_Fails_WithCfnNotUpdatableException() {
+    public void handleRequest_IdChanged_Fails_WithCfnNotFoundException() {
         final ResourceModel previousResourceModel = generateFinalResourceModel(false, false);
         final ResourceModel desiredResourceModel = ResourceModel.builder()
             .name(TEST_POLICY_UPDATED_NAME)
@@ -441,11 +441,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotUpdatable);
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
     }
 
     @Test
-    public void handleRequest_PreviousModelNull_Fails_WithCfnNotUpdatableException() {
+    public void handleRequest_PreviousModelNull_Fails_WithCfnNotFoundException() {
         final ResourceModel desiredResourceModel = ResourceModel.builder()
             .name(TEST_POLICY_UPDATED_NAME)
             .id(TEST_POLICY_ID_CHANGED)
@@ -461,11 +461,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotUpdatable);
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
     }
 
     @Test
-    public void handleRequest_PreviousModelIdNull_Fails_WithCfnNotUpdatableException() {
+    public void handleRequest_PreviousModelIdNull_Fails_WithCfnNotFoundException() {
         final ResourceModel previousResourceModel = ResourceModel.builder()
             .id(null)
             .name(TEST_POLICY_NAME)
@@ -486,7 +486,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotUpdatable);
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
     }
 
     @Test

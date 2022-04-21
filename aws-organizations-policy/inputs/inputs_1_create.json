@@ -1,0 +1,12 @@
+{
+  "Name": "ContractTestServiceControlPolicy",
+  "Type": "SERVICE_CONTROL_POLICY",
+  "Content": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:*\"],\"Resource\":[\"*\"]}]}",
+  "Description": "Policy created during CFN Contract Test, allows all S3 actions",
+  "Tags": [
+    {
+      "Key": "TestTagKey",
+      "Value": "TestTagValue"
+    }
+  ]
+}

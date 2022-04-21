@@ -1,0 +1,12 @@
+{
+  "Name": "ContractTestServiceControlPolicy-Updated",
+  "Type": "SERVICE_CONTROL_POLICY",
+  "Content": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:*\",\"dynamodb:*\"],\"Resource\":[\"*\"]}]}",
+  "Description": "Policy created during CFN Contract Test, allows all S3 and DDB actions",
+  "Tags": [
+    {
+      "Key": "TestTagKeyUpdated",
+      "Value": "TestTagValueUpdated"
+    }
+  ]
+}
