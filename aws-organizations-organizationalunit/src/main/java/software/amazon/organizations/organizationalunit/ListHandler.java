@@ -30,9 +30,9 @@ public class ListHandler extends BaseHandlerStd {
         logger.log("Requesting ListOrganizationalUnitsForParent");
 
         final ResourceModel model = request.getDesiredResourceState();
-        if (model == null || model.getId() == null) {
+        if (model == null || model.getParentId() == null) {
             return ProgressEvent.failed(ResourceModel.builder().build(), callbackContext, HandlerErrorCode.InvalidRequest,
-                "Organizational Units cannot be listed without specifying an Id in the provided resource model to use as ParentId in ListOrganizationalUnitsForParentRequest!");
+                "Organizational Units cannot be listed without specifying a ParentId in the provided resource model for the ListOrganizationalUnitsForParent request");
         }
 
         ListOrganizationalUnitsForParentRequest listOrganizationalUnitsForParentRequest =

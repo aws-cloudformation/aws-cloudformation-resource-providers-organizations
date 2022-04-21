@@ -105,6 +105,10 @@
     "cloudFormationSystemTags": false,
     "tagProperty": "/properties/Tags"
   },
+  "required": [
+    "Name",
+    "ParentId"
+  ],
   "createOnlyProperties": [
     "/properties/ParentId"
   ],
