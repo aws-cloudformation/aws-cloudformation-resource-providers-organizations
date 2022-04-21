@@ -36,7 +36,7 @@ Properties:
 
 The friendly name of this OU.
 
-_Required_: No
+_Required_: Yes
 
 _Type_: String
 
@@ -52,7 +52,7 @@ _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormati
 
 The unique identifier (ID) of the parent root or OU that you want to create the new OU in.
 
-_Required_: No
+_Required_: Yes
 
 _Type_: String
 

@@ -53,7 +53,7 @@ public class Translator {
         return ListOrganizationalUnitsForParentRequest.builder()
                 .maxResults(20)
                 .nextToken(nextToken)
-                .parentId(model.getId())
+                .parentId(model.getParentId())
                 .build();
     }
 

@@ -53,6 +53,7 @@ public class ListHandlerTest extends AbstractTestBase {
     public void handleRequest_SimpleSuccess() {
         final ResourceModel model = ResourceModel.builder()
             .id(TEST_OU_ID)
+            .parentId(TEST_PARENT_ID)
             .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
