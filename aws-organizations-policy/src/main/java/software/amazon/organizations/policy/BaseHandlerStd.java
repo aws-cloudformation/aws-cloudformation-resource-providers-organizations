@@ -86,6 +86,6 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             errorCode = HandlerErrorCode.Throttling;
         }
         logger.log(String.format("[Exception] Failed with exception: [%s]. Message: [%s], ErrorCode: [%s]", e.getClass().getSimpleName(), e.getMessage(), errorCode));
-        return ProgressEvent.defaultFailureHandler(e, errorCode);
+        return ProgressEvent.failed(resourceModel, callbackContext, errorCode,e.getMessage());
     }
 }

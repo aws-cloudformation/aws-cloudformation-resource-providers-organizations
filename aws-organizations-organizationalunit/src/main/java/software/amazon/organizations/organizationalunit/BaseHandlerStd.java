@@ -54,17 +54,21 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final CallbackContext callbackContext,
         final Logger logger
     ) {
-        return handleErrorTranslation(e, logger);
+        return handleErrorTranslation(resourceModel, callbackContext, e, logger);
     }
 
     public ProgressEvent<ResourceModel, CallbackContext> handleError(
+        final ResourceModel resourceModel,
+        final CallbackContext callbackContext,
         final Exception e,
         final Logger logger
     ) {
-        return handleErrorTranslation(e, logger);
+        return handleErrorTranslation(resourceModel, callbackContext, e, logger);
     }
 
     public ProgressEvent<ResourceModel, CallbackContext> handleErrorTranslation(
+        final ResourceModel resourceModel,
+        final CallbackContext callbackContext,
         final Exception e,
         final Logger logger
     ) {
@@ -89,6 +93,6 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         }
         logger.log(String.format("[Exception] Failed with exception: [%s]. Message: %s, ", e.getClass().getSimpleName(), e.getMessage()));
 
-        return ProgressEvent.defaultFailureHandler(e, errorCode);
+        return ProgressEvent.failed(resourceModel, callbackContext, errorCode, e.getMessage());
     }
 }
