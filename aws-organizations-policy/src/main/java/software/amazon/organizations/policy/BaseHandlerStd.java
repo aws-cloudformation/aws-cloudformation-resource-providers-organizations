@@ -64,9 +64,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final Logger logger
     ) {
         HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
-        if (e instanceof PolicyInUseException) {
-            errorCode = HandlerErrorCode.GeneralServiceException;
-        } else if (e instanceof DuplicatePolicyException || e instanceof DuplicatePolicyAttachmentException) {
+        if (e instanceof DuplicatePolicyException || e instanceof DuplicatePolicyAttachmentException) {
             errorCode = HandlerErrorCode.AlreadyExists;
         } else if (e instanceof AwsOrganizationsNotInUseException || e instanceof PolicyNotFoundException
             || e instanceof TargetNotFoundException || e instanceof PolicyNotAttachedException) {
@@ -78,7 +76,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         } else if (e instanceof ConstraintViolationException) {
             errorCode = HandlerErrorCode.ServiceLimitExceeded;
         } else if (e instanceof InvalidInputException || e instanceof MalformedPolicyDocumentException
-            || e instanceof PolicyTypeNotAvailableForOrganizationException || e instanceof PolicyTypeNotEnabledException) {
+            || e instanceof PolicyTypeNotAvailableForOrganizationException || e instanceof PolicyTypeNotEnabledException
+            || e instanceof PolicyInUseException) {
             errorCode = HandlerErrorCode.InvalidRequest;
         } else if (e instanceof ServiceException) {
             errorCode = HandlerErrorCode.ServiceInternalError;
