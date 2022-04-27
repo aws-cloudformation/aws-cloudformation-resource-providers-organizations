@@ -67,23 +67,26 @@
       "permissions": [
         "organizations:CreateOrganizationalUnit",
         "organizations:DescribeOrganizationalUnit",
-        "organizations:TagResource",
-        "organizations:ListTagsForResource"
+        "organizations:ListParents",
+        "organizations:ListTagsForResource",
+        "organizations:TagResource"
       ]
     },
     "read": {
       "permissions": [
         "organizations:DescribeOrganizationalUnit",
-        "organizations:ListTagsForResource",
-        "organizations:ListParents"
+        "organizations:ListParents",
+        "organizations:ListTagsForResource"
       ]
     },
     "update": {
       "permissions": [
-        "organizations:UpdateOrganizationalUnit",
+        "organizations:DescribeOrganizationalUnit",
+        "organizations:ListParents",
+        "organizations:ListTagsForResource",
         "organizations:TagResource",
         "organizations:UntagResource",
-        "organizations:ListTagsForResource"
+        "organizations:UpdateOrganizationalUnit"
       ]
     },
     "delete": {
@@ -93,7 +96,6 @@
     },
     "list": {
       "permissions": [
-        "organizations:DescribeOrganizationalUnit",
         "organizations:ListOrganizationalUnitsForParent"
       ]
     }
