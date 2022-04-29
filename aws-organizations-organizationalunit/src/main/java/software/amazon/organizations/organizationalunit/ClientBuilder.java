@@ -17,16 +17,22 @@ import java.util.regex.Pattern;
 public class ClientBuilder {
 
     // Retry Strategy
+    private static final int MAX_ERROR_RETRY = 3;
     private static final BackoffStrategy BACKOFF_STRATEGY = EqualJitterBackoffStrategy.builder()
-                                                                .baseDelay(Duration.ofMillis(2000))
-                                                                .maxBackoffTime(Duration.ofMillis(20000))
+                                                                .baseDelay(Duration.ofMillis(500))
+                                                                .maxBackoffTime(Duration.ofMillis(5000))
                                                                 .build();
+    private static final BackoffStrategy THROTTLE_BACKOFF_STRATEGY = EqualJitterBackoffStrategy.builder()
+                                                                         .baseDelay(Duration.ofMillis(1000))
+                                                                         .maxBackoffTime(Duration.ofMillis(10000))
+                                                                         .build();
 
     private static final RetryPolicy ORGANIZATIONS_RETRY_POLICY =
         RetryPolicy.builder()
-            .numRetries(4)
+            .numRetries(MAX_ERROR_RETRY)
             .retryCondition(RetryCondition.defaultRetryCondition())
-            .throttlingBackoffStrategy(BACKOFF_STRATEGY)
+            .backoffStrategy(BACKOFF_STRATEGY)
+            .throttlingBackoffStrategy(THROTTLE_BACKOFF_STRATEGY)
             .build();
 
     public static OrganizationsClient getClient() {
