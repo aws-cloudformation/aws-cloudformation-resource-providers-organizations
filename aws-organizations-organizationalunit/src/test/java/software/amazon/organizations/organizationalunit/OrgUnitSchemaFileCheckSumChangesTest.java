@@ -32,7 +32,7 @@ public class OrgUnitSchemaFileCheckSumChangesTest extends AbstractTestBase {
     catch (NoSuchFileException e) {
       logger.info("Organization Unit schema json file not found. {}", e.toString());
     } catch (IOException e) {
-      logger.info(String.format(e.toString()));
+      logger.info(e.toString());
     }
   }
 

@@ -32,7 +32,7 @@ public class PolicySchemaFileCheckSumChangesTest extends AbstractTestBase {
     catch (NoSuchFileException e) {
       logger.info("Policy schema json file not found. {}", e.toString());
     } catch (IOException e) {
-      logger.info(String.format(e.toString()));
+      logger.info(e.toString());
     }
   }
 
