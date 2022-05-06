@@ -28,10 +28,16 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 
+import java.util.Random;
+
 
 // Placeholder for the functionality that could be shared across Create/Read/Update/Delete/List Handlers
 
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
+    // ExponentialBackoffJitter Constants
+    private final double RANDOMIZATION_FACTOR = 0.5;
+    private final int BASE_DELAY = 5;
+
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy proxy,
@@ -86,5 +92,20 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         }
         logger.log(String.format("[Exception] Failed with exception: [%s]. Message: [%s], ErrorCode: [%s]", e.getClass().getSimpleName(), e.getMessage(), errorCode));
         return ProgressEvent.failed(resourceModel, callbackContext, errorCode,e.getMessage());
+    }
+
+    public final int computeDelayBeforeNextRetry(int retryAttempt) {
+        Random random = new Random();
+        int exponentialBackoff = (int) Math.pow(2, retryAttempt) * BASE_DELAY;
+        int jitter = random.nextInt((int) Math.ceil(exponentialBackoff * RANDOMIZATION_FACTOR));
+        int callbackDelaySeconds = exponentialBackoff + jitter;
+        return callbackDelaySeconds;
+    }
+
+    public final boolean isRetriableException (Exception e){
+        return (e instanceof ConcurrentModificationException
+            || e instanceof PolicyChangesInProgressException
+            || e instanceof TooManyRequestsException
+            || e instanceof ServiceException);
     }
 }
