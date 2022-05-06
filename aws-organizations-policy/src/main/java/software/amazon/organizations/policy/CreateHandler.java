@@ -6,6 +6,7 @@ import software.amazon.awssdk.services.organizations.model.AttachPolicyRequest;
 import software.amazon.awssdk.services.organizations.model.AttachPolicyResponse;
 import software.amazon.awssdk.services.organizations.model.CreatePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.CreatePolicyResponse;
+import software.amazon.awssdk.services.organizations.model.DuplicatePolicyAttachmentException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
@@ -35,8 +36,13 @@ public class CreateHandler extends BaseHandlerStd {
         logger.log(String.format("Entered %s create handler with account Id [%s], with Content [%s], Description [%s], Name [%s], Type [%s]",
             ResourceModel.TYPE_NAME, request.getAwsAccountId(), model.getContent(), model.getDescription(), model.getName(), model.getType()));
         return ProgressEvent.progress(model, callbackContext)
-            .then(progress ->
-                awsClientProxy.initiate("AWS-Organizations-Policy::CreatePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
+            .then(progress -> {
+                if (progress.getCallbackContext().isPolicyCreated()) {
+                    // skip to attach policy
+                    log.log(String.format("Policy has already been created in previous handler invoke, policy Id: [%s]. Skip to attach policy.", model.getId()));
+                    return ProgressEvent.progress(model, callbackContext);
+                }
+                return awsClientProxy.initiate("AWS-Organizations-Policy::CreatePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                     .translateToServiceRequest(Translator::translateToCreateRequest)
                     .makeServiceCall(this::createPolicy)
                     .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
@@ -44,8 +50,10 @@ public class CreateHandler extends BaseHandlerStd {
                     .done(CreatePolicyResponse -> {
                         logger.log(String.format("Created policy with Id: [%s]", CreatePolicyResponse.policy().policySummary().id()));
                         model.setId(CreatePolicyResponse.policy().policySummary().id());
+                        progress.getCallbackContext().setPolicyCreated(true);
                         return ProgressEvent.progress(model, callbackContext);
-                    })
+                    });
+                }
             )
             .then(progress -> attachPolicyToTargets(awsClientProxy, request, model, callbackContext, orgsClient, logger))
             .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
@@ -77,8 +85,31 @@ public class CreateHandler extends BaseHandlerStd {
                 .initiate("AWS-Organizations-Policy::AttachPolicy", orgsClient, model, callbackContext)
                 .translateToServiceRequest((resourceModel) -> Translator.translateToAttachRequest(model.getId(), targetId))
                 .makeServiceCall(this::attachPolicy)
-                .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
-                    organizationsRequest, e, proxyClient1, model1, context, logger))
+                .handleError((organizationsRequest, e, proxyClient1, model1, context) -> {
+                    // retry on exceptions that map to CloudFormation retriable exceptions
+                    // reference: https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-test-contract-errors.html
+                    if (isRetriableException(e)) {
+                        int currentAttempt = context.getRetryAttempt();
+                        if (currentAttempt != context.getMaxRetryCount()) {
+                            int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
+                            logger.log(String.format("Got %s when calling attachPolicy for "
+                                                         + "policyId [%s], targetId [%s]. Retrying %s of %s with callback delay %s seconds.",
+                                e.getClass().getName(), model1.getId(), targetId, currentAttempt+1, context.getMaxRetryCount(), callbackDelaySeconds));
+                            context.setRetryAttempt(context.getRetryAttempt() + 1);
+                            return ProgressEvent.defaultInProgressHandler(context,callbackDelaySeconds,model1);
+                        } else {
+                            logger.log("All retry attempts exhausted, return exception to CloudFormation for further handling.");
+                            return handleError(organizationsRequest, e, proxyClient1, model1, context, logger);
+                        }
+                    } else if (e instanceof DuplicatePolicyAttachmentException) {
+                        logger.log(String.format("Got DuplicatePolicyAttachmentException when calling attachPolicy for "
+                                                     + "policyId [%s], targetId [%s]. Continuing with attach...",
+                            e.getClass().getName(), model.getId(), targetId));
+                        return ProgressEvent.progress(model1,context);
+                    } else {
+                        return handleError(organizationsRequest, e, proxyClient1, model1, context, logger);
+                    }
+                })
                 .success();
             if (!progressEvent.isSuccess()) {
                 return progressEvent;
