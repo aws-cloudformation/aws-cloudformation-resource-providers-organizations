@@ -43,7 +43,7 @@ public class UpdateHandler extends BaseHandlerStd {
         if (previousModel != null) {
             if (previousModel.getId() != null && !ouId.equals(previousModel.getId())) {
                 return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotUpdatable,
-                    "Organizational unit cannot be updated as the id was changed");
+                    String.format("Organizational unit [%s] cannot be updated as the id was changed", name));
             }
         }
 
@@ -67,7 +67,7 @@ public class UpdateHandler extends BaseHandlerStd {
     }
 
     protected UpdateOrganizationalUnitResponse updateOrganizationalUnit(final UpdateOrganizationalUnitRequest updateOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log("Calling updateOrganizationalUnit API.");
+        log.log(String.format("Calling updateOrganizationalUnit API for OU [%s].", updateOrganizationalUnitRequest.organizationalUnitId()));
         final UpdateOrganizationalUnitResponse updateOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(updateOrganizationalUnitRequest, orgsClient.client()::updateOrganizationalUnit);
         return updateOrganizationalUnitResponse;
     }
@@ -96,7 +96,7 @@ public class UpdateHandler extends BaseHandlerStd {
 
         // Delete tags only if tagsToRemove is not empty
         if (!CollectionUtils.isNullOrEmpty(tagsToRemove)) {
-            logger.log("Calling untagResource API.");
+            logger.log(String.format("Calling untagResource API for OU [%s].", model.getName()));
             UntagResourceRequest untagResourceRequest = Translator.translateToUntagResourceRequest(tagsToRemove, organizationalUnitId);
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(untagResourceRequest, orgsClient.client()::untagResource);
@@ -107,7 +107,7 @@ public class UpdateHandler extends BaseHandlerStd {
 
         // Add tags only if tagsToAddOrUpdate is not empty.
         if (!CollectionUtils.isNullOrEmpty(tagsToAddOrUpdate)) {
-            logger.log("Calling tagResource API.");
+            logger.log(String.format("Calling tagResource API for OU [%s].", model.getName()));
             TagResourceRequest tagResourceRequest = Translator.translateToTagResourceRequest(tagsToAddOrUpdate, organizationalUnitId);
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(tagResourceRequest, orgsClient.client()::tagResource);

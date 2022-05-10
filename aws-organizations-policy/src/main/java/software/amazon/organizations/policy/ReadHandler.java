@@ -53,7 +53,7 @@ public class ReadHandler extends BaseHandlerStd {
     }
 
     protected DescribePolicyResponse describePolicy(final DescribePolicyRequest describePolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log(String.format("Retrieving policy details."));
+        log.log(String.format("Retrieving policy details for policy [%s].", describePolicyRequest.policyId()));
         final DescribePolicyResponse response = orgsClient.injectCredentialsAndInvokeV2(describePolicyRequest, orgsClient.client()::describePolicy);
         return response;
     }
@@ -119,7 +119,7 @@ public class ReadHandler extends BaseHandlerStd {
     }
 
     protected ListTagsForResourceResponse listTagsForResource(final ListTagsForResourceRequest listTagsForResourceRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log("Calling listTagsForResource API.");
+        log.log(String.format("Calling listTagsForResource API for policy [%s].", listTagsForResourceRequest.resourceId()));
         final ListTagsForResourceResponse response = orgsClient.injectCredentialsAndInvokeV2(listTagsForResourceRequest, orgsClient.client()::listTagsForResource);
         return response;
     }

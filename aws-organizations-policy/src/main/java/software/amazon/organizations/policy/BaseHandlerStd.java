@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.TargetNotFoundException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
 
+import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -90,7 +91,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         } else if (e instanceof TooManyRequestsException) {
             errorCode = HandlerErrorCode.Throttling;
         }
-        logger.log(String.format("[Exception] Failed with exception: [%s]. Message: [%s], ErrorCode: [%s]", e.getClass().getSimpleName(), e.getMessage(), errorCode));
+        logger.log(String.format("[Exception] Failed with exception: [%s]. Message: [%s], ErrorCode: [%s] for policy [%s].",
+            e.getClass().getSimpleName(), e.getMessage(), errorCode, resourceModel.getName()));
         return ProgressEvent.failed(resourceModel, callbackContext, errorCode,e.getMessage());
     }
 
@@ -98,8 +100,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         Random random = new Random();
         int exponentialBackoff = (int) Math.pow(2, retryAttempt) * BASE_DELAY;
         int jitter = random.nextInt((int) Math.ceil(exponentialBackoff * RANDOMIZATION_FACTOR));
-        int callbackDelaySeconds = exponentialBackoff + jitter;
-        return callbackDelaySeconds;
+        return exponentialBackoff + jitter;
     }
 
     public final boolean isRetriableException (Exception e){
@@ -107,5 +108,55 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             || e instanceof PolicyChangesInProgressException
             || e instanceof TooManyRequestsException
             || e instanceof ServiceException);
+    }
+
+    private int getCurrentAttempt(final PolicyConstants.Action actionName, final CallbackContext context){
+        if (actionName == PolicyConstants.Action.DELETE_POLICY) {
+            return context.getRetryDeleteAttempt();
+        } else if (actionName == PolicyConstants.Action.ATTACH_POLICY) {
+            return context.getRetryAttachAttempt();
+        } else if (actionName == PolicyConstants.Action.DETACH_POLICY) {
+            return context.getRetryDetachAttempt();
+        } else {
+            throw new CfnGeneralServiceException("Error in getting current retry attempt from callback context!");
+        }
+    }
+
+    private CallbackContext setCurrentAttempt(final PolicyConstants.Action actionName, final CallbackContext context){
+        if (actionName == PolicyConstants.Action.DELETE_POLICY) {
+            context.setRetryDeleteAttempt(context.getRetryDeleteAttempt() + 1);
+        } else if (actionName == PolicyConstants.Action.ATTACH_POLICY) {
+            context.setRetryAttachAttempt(context.getRetryAttachAttempt() + 1);
+        } else if (actionName == PolicyConstants.Action.DETACH_POLICY) {
+            context.setRetryDetachAttempt(context.getRetryDetachAttempt() + 1);
+        }
+        return context;
+    }
+
+    public final ProgressEvent<ResourceModel, CallbackContext> handleRetriableException(
+        final OrganizationsRequest organizationsRequest,
+        final ProxyClient<OrganizationsClient> proxyClient,
+        final CallbackContext context,
+        final Logger logger,
+        final Exception e,
+        final ResourceModel model,
+        final PolicyConstants.Action actionName
+    ) {
+        try {
+            final int currentAttempt = getCurrentAttempt(actionName,context);
+            if (currentAttempt < context.getMaxRetryCount()) {
+                int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
+                logger.log(String.format("Got %s when calling %s for "
+                                             + "policy [%s]. Retrying %s of %s with callback delay %s seconds.",
+                    e.getClass().getName(), organizationsRequest.getClass().getName(), model.getName(), currentAttempt+1, context.getMaxRetryCount(), callbackDelaySeconds));
+                setCurrentAttempt(actionName,context);
+                return ProgressEvent.defaultInProgressHandler(context,callbackDelaySeconds, model);
+            } else {
+                logger.log(String.format("All retry attempts exhausted for policy [%s], return exception to CloudFormation for further handling.", model.getName()));
+                return handleError(organizationsRequest, e, proxyClient, model, context, logger);
+            }
+        } catch (Exception exception){
+            return ProgressEvent.failed(model, context, HandlerErrorCode.GeneralServiceException, exception.getMessage());
+        }
     }
 }

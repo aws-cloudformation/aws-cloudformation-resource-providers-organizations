@@ -42,7 +42,7 @@ public class CreateHandler extends BaseHandlerStd {
     }
 
     protected CreateOrganizationalUnitResponse createOrganizationalUnit(final CreateOrganizationalUnitRequest createOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log("Calling createOrganizationalUnit API.");
+        log.log(String.format("Calling createOrganizationalUnit API for OU [%s].", createOrganizationalUnitRequest.name()));
         final CreateOrganizationalUnitResponse createOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(createOrganizationalUnitRequest, orgsClient.client()::createOrganizationalUnit);
         return createOrganizationalUnitResponse;
     }

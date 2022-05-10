@@ -9,6 +9,10 @@ import software.amazon.cloudformation.proxy.StdCallbackContext;
 public class CallbackContext extends StdCallbackContext {
     private int maxRetryCount = 3;
     // used in CREATE handler re-invoking
-    private int retryAttempt = 0;
+    private int retryAttachAttempt = 0;
     private boolean isPolicyCreated = false;
+    // used in DELETE handler re-invoking
+    private int retryDetachAttempt = 0;
+    private int retryDeleteAttempt = 0;
+    private boolean isPolicyDetached = false;
 }

@@ -92,21 +92,21 @@ public class ReadHandler extends BaseHandlerStd {
     }
 
     protected DescribeOrganizationalUnitResponse describeOrganizationalUnit(final DescribeOrganizationalUnitRequest describeOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log("Calling describeOrganizationalUnit API.");
+        log.log(String.format("Calling describeOrganizationalUnit API for OU [%s].", describeOrganizationalUnitRequest.organizationalUnitId()));
         final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(describeOrganizationalUnitRequest, orgsClient.client()::describeOrganizationalUnit);
         return describeOrganizationalUnitResponse;
     }
 
     // DescribeOU call doesn't return tags on OU so ListTags call needs to be made separately
     protected ListTagsForResourceResponse listTagsForResource(final ListTagsForResourceRequest listTagsForResourceRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log("Calling listTagsForResource API.");
+        log.log(String.format("Calling listTagsForResource API for resource [%s].", listTagsForResourceRequest.resourceId()));
         final ListTagsForResourceResponse listTagsForResourceResponse = orgsClient.injectCredentialsAndInvokeV2(listTagsForResourceRequest, orgsClient.client()::listTagsForResource);
         return listTagsForResourceResponse;
     }
 
     // DescribeOU call doesn't return parentId of OU so ListParents call needs to be made separately
     protected ListParentsResponse listParents(final ListParentsRequest listParentsRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log("Calling listParents API.");
+        log.log(String.format("Calling listParents API for OU [%s].", listParentsRequest.childId()));
         final ListParentsResponse listParentsResponse = orgsClient.injectCredentialsAndInvokeV2(listParentsRequest, orgsClient.client()::listParents);
         return listParentsResponse;
     }

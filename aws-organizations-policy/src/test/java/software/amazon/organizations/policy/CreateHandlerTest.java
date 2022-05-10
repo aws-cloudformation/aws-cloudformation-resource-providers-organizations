@@ -249,19 +249,19 @@ public class CreateHandlerTest extends AbstractTestBase {
         ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
         // retry attempt 1
         assertThat(context.isPolicyCreated()).isEqualTo(true);
-        assertThat(context.getRetryAttempt()).isEqualTo(1);
+        assertThat(context.getRetryAttachAttempt()).isEqualTo(1);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
         // retry attempt 2
         response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
         assertThat(context.isPolicyCreated()).isEqualTo(true);
-        assertThat(context.getRetryAttempt()).isEqualTo(2);
+        assertThat(context.getRetryAttachAttempt()).isEqualTo(2);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
         // retry attempt 3
         response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
         assertThat(context.isPolicyCreated()).isEqualTo(true);
-        assertThat(context.getRetryAttempt()).isEqualTo(3);
+        assertThat(context.getRetryAttachAttempt()).isEqualTo(3);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
 
