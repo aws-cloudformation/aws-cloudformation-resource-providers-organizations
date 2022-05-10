@@ -45,12 +45,12 @@ public class UpdateHandler extends BaseHandlerStd {
 
         if (previousModel == null || previousModel.getId() == null || !policyId.equals(previousModel.getId())) {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotFound,
-                "Policy cannot be updated as the id was changed!");
+                String.format("Policy [%s] cannot be updated as the id was changed!", model.getName()));
         }
 
         if (!previousModel.getType().equalsIgnoreCase(model.getType())) {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotUpdatable,
-                "Cannot update policy type after creation!");
+                String.format("Cannot update policy type after creation for [%s]!", model.getName()));
         }
 
         // call UpdatePolicy API
@@ -70,7 +70,7 @@ public class UpdateHandler extends BaseHandlerStd {
     }
 
     protected UpdatePolicyResponse updatePolicy(final UpdatePolicyRequest updatePolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log("Calling updatePolicy API.");
+        log.log(String.format("Calling updatePolicy API for policy [%s].", updatePolicyRequest.policyId()));
         final UpdatePolicyResponse response = orgsClient.injectCredentialsAndInvokeV2(updatePolicyRequest, orgsClient.client()::updatePolicy);
         return response;
     }
@@ -109,7 +109,7 @@ public class UpdateHandler extends BaseHandlerStd {
         // make the calls to attach to new targets
         if (!CollectionUtils.isNullOrEmpty(targetsToAttach)) {
             for (String attachTargetId : targetsToAttach) {
-                logger.log(String.format("Calling attachPolicy API with targetId: [%s]", attachTargetId));
+                logger.log(String.format("Calling attachPolicy API with targetId: [%s] for policy [%s]", attachTargetId, model.getName()));
                 AttachPolicyRequest attachPolicyRequest = Translator.translateToAttachRequest(policyId, attachTargetId);
                 try {
                     awsClientProxy.injectCredentialsAndInvokeV2(attachPolicyRequest, orgsClient.client()::attachPolicy);
@@ -128,7 +128,7 @@ public class UpdateHandler extends BaseHandlerStd {
         // make calls to detach from old targets
         if (!CollectionUtils.isNullOrEmpty(targetsToRemove)) {
             for (String removeTargetId : targetsToRemove) {
-                logger.log(String.format("Calling detachPolicy API with targetId: [%s]", removeTargetId));
+                logger.log(String.format("Calling detachPolicy API with targetId: [%s] for policy [%s]", removeTargetId, model.getName()));
                 DetachPolicyRequest detachPolicyRequest = Translator.translateToDetachRequest(policyId, removeTargetId);
                 try {
                     awsClientProxy.injectCredentialsAndInvokeV2(detachPolicyRequest, orgsClient.client()::detachPolicy);
@@ -172,7 +172,7 @@ public class UpdateHandler extends BaseHandlerStd {
 
         // Delete tags only if tagsToRemove is not empty
         if (!CollectionUtils.isNullOrEmpty(tagsToRemove)) {
-            logger.log("Calling untagResource API.");
+            logger.log(String.format("Calling untagResource API for policy [%s].", model.getName()));
             UntagResourceRequest untagResourceRequest = Translator.translateToUntagResourceRequest(tagsToRemove, policyId);
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(untagResourceRequest, orgsClient.client()::untagResource);
@@ -183,7 +183,7 @@ public class UpdateHandler extends BaseHandlerStd {
 
         // Add tags only if tagsToAddOrUpdate is not empty.
         if (!CollectionUtils.isNullOrEmpty(tagsToAddOrUpdate)) {
-            logger.log("Calling tagResource API.");
+            logger.log(String.format("Calling tagResource API for policy [%s].", model.getName()));
             TagResourceRequest tagResourceRequest = Translator.translateToTagResourceRequest(tagsToAddOrUpdate, policyId);
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(tagResourceRequest, orgsClient.client()::tagResource);

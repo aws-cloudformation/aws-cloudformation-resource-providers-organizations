@@ -19,4 +19,11 @@ public class PolicyConstants {
             return policyType;
         }
     }
+
+    // constants used for handleRetriableException
+    public enum Action {
+        ATTACH_POLICY,
+        DETACH_POLICY,
+        DELETE_POLICY
+    }
 }

@@ -1,6 +1,7 @@
 package software.amazon.organizations.policy;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
 import software.amazon.awssdk.services.organizations.model.DeletePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DeletePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.DetachPolicyRequest;
@@ -27,6 +28,7 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -191,6 +193,47 @@ public class DeleteHandlerTest extends AbstractTestBase {
         verify(mockProxyClient.client()).detachPolicy(any(DetachPolicyRequest.class));
 
         verifyNoMoreInteractions(mockOrgsClient);
+    }
+
+    @Test
+    public void handleRequest_WithTargets_DeletePolicyFailsWithConcurrentModificationException_ShouldSkipDetachPolicyIfAllDetachedAlready() {
+        final ResourceModel model = generateFinalResourceModel(true, false);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                                                                  .desiredResourceState(model)
+                                                                  .build();
+
+        final DetachPolicyResponse detachPolicyResponse = DetachPolicyResponse.builder().build();
+        when(mockProxyClient.client().detachPolicy(any(DetachPolicyRequest.class))).thenReturn(detachPolicyResponse);
+
+        when(mockProxyClient.client().deletePolicy(any(DeletePolicyRequest.class))).thenThrow(ConcurrentModificationException.class);
+
+        CallbackContext context = new CallbackContext();
+        ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        // retry attempt 1
+        assertThat(context.isPolicyDetached()).isEqualTo(true);
+        assertThat(context.getRetryDeleteAttempt()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+        // retry attempt 2
+        response = deleteHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        assertThat(context.getRetryDeleteAttempt()).isEqualTo(2);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+        // retry attempt 3
+        response = deleteHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        assertThat(context.getRetryDeleteAttempt()).isEqualTo(3);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+
+        response = deleteHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+
+        // verify detachPolicy is only invoked 2 times since there are 2 targets and attachPolicy invoked at least maxRetryCount times
+        verify(mockProxyClient.client(), times(2)).detachPolicy(any(DetachPolicyRequest.class));
+        verify(mockProxyClient.client(), atLeast(3)).deletePolicy(any(DeletePolicyRequest.class));
     }
 
     @Test

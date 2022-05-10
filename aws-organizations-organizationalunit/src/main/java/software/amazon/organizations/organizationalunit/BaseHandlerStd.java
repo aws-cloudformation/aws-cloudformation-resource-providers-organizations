@@ -91,7 +91,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         } else if (e instanceof TooManyRequestsException) {
           errorCode = HandlerErrorCode.Throttling;
         }
-        logger.log(String.format("[Exception] Failed with exception: [%s]. Message: %s, ", e.getClass().getSimpleName(), e.getMessage()));
+        logger.log(String.format("[Exception] Failed with exception: [%s]. Message: [%s], ErrorCode: [%s] for OrganizationalUnit [%s].",
+            e.getClass().getSimpleName(), e.getMessage(), errorCode, resourceModel.getName()));
 
         return ProgressEvent.failed(resourceModel, callbackContext, errorCode, e.getMessage());
     }

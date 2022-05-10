@@ -38,7 +38,7 @@ public class DeleteHandler extends BaseHandlerStd {
     }
 
     protected DeleteOrganizationalUnitResponse deleteOrganizationalUnit(final DeleteOrganizationalUnitRequest deleteOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log("Calling deleteOrganizationalUnit API.");
+        log.log(String.format("Calling deleteOrganizationalUnit API for OU [%s].", deleteOrganizationalUnitRequest.organizationalUnitId()));
         final DeleteOrganizationalUnitResponse deleteOrganizationalUnitResponse = orgsClient.injectCredentialsAndInvokeV2(deleteOrganizationalUnitRequest, orgsClient.client()::deleteOrganizationalUnit);
         return deleteOrganizationalUnitResponse;
     }
