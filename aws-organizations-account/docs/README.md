@@ -17,7 +17,7 @@ To declare this entity in your AWS CloudFormation template, use the following sy
         "<a href="#rolename" title="RoleName">RoleName</a>" : <i>String</i>,
         "<a href="#parentids" title="ParentIds">ParentIds</a>" : <i>[ String, ... ]</i>,
         "<a href="#tags" title="Tags">Tags</a>" : <i>[ <a href="tag.md">Tag</a>, ... ]</i>,
-        "<a href="#alternatecontacts" title="AlternateContacts">AlternateContacts</a>" : <i>[ <a href="alternatecontact.md">AlternateContact</a>, ... ]</i>,
+        "<a href="#alternatecontacts" title="AlternateContacts">AlternateContacts</a>" : <i><a href="alternatecontacts.md">AlternateContacts</a></i>,
     }
 }
 </pre>
@@ -34,8 +34,7 @@ Properties:
       - String</i>
     <a href="#tags" title="Tags">Tags</a>: <i>
       - <a href="tag.md">Tag</a></i>
-    <a href="#alternatecontacts" title="AlternateContacts">AlternateContacts</a>: <i>
-      - <a href="alternatecontact.md">AlternateContact</a></i>
+    <a href="#alternatecontacts" title="AlternateContacts">AlternateContacts</a>: <i><a href="alternatecontacts.md">AlternateContacts</a></i>
 </pre>
 
 ## Properties
@@ -80,6 +79,8 @@ _Required_: No
 
 _Type_: String
 
+_Minimum_: <code>1</code>
+
 _Maximum_: <code>64</code>
 
 _Pattern_: <code>[\w+=,.@-]{1,64}</code>
@@ -108,11 +109,11 @@ _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormati
 
 #### AlternateContacts
 
-List of alternate contacts you want to put. Your organization must enable all features to manage settings on your member accounts. You need to enable trusted access for AWS Account Management service.
+Alternate contacts you want to put. Your organization must enable all features to manage settings on your member accounts. You need to enable trusted access for AWS Account Management service.
 
 _Required_: No
 
-_Type_: List of <a href="alternatecontact.md">AlternateContact</a>
+_Type_: <a href="alternatecontacts.md">AlternateContacts</a>
 
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 

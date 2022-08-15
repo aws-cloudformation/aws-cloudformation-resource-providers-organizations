@@ -22,6 +22,7 @@
       "type": "string",
       "default": "OrganizationAccountAccessRole",
       "pattern": "[\\w+=,.@-]{1,64}",
+      "minLength": 1,
       "maxLength": 64
     },
     "ParentIds": {
@@ -31,7 +32,7 @@
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "pattern": "^(r-[0-9a-z]{4,32})|(\\d{12})|(ou-[0-9a-z]{4,32}-[a-z0-9]{8,32})$"
+        "pattern": "^(r-[0-9a-z]{4,32})|(ou-[0-9a-z]{4,32}-[a-z0-9]{8,32})$"
       }
     },
     "Tags": {
@@ -44,12 +45,19 @@
       }
     },
     "AlternateContacts": {
-      "description": "List of alternate contacts you want to put. Your organization must enable all features to manage settings on your member accounts. You need to enable trusted access for AWS Account Management service.",
-      "type": "array",
-      "uniqueItems": true,
-      "insertionOrder": false,
-      "items": {
-        "$ref": "#/definitions/AlternateContact"
+      "description": "Alternate contacts you want to put. Your organization must enable all features to manage settings on your member accounts. You need to enable trusted access for AWS Account Management service.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Billing": {
+          "$ref": "#/definitions/AlternateContact"
+        },
+        "Operations": {
+          "$ref": "#/definitions/AlternateContact"
+        },
+        "Security": {
+          "$ref": "#/definitions/AlternateContact"
+        }
       }
     },
     "AccountId": {
@@ -90,15 +98,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "AlternateContactType": {
-          "description": "Specifies which alternate contact you want to create or update.",
-          "type": "string",
-          "enum": [
-            "BILLING",
-            "OPERATIONS",
-            "SECURITY"
-          ]
-        },
         "EmailAddress": {
           "description": "Specifies an email address for the alternate contact. ",
           "type": "string",
@@ -127,7 +126,6 @@
         }
       },
       "required": [
-        "AlternateContactType",
         "EmailAddress",
         "Name",
         "PhoneNumber",
@@ -174,9 +172,11 @@
     },
     "update": {
       "permissions": [
+        "organizations:MoveAccount",
         "organizations:TagResource",
         "organizations:UntagResource",
-        "account:PutAlternateContact"
+        "account:PutAlternateContact",
+        "account:DeleteAlternateContact"
       ]
     },
     "delete": {

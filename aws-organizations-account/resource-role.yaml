@@ -31,14 +31,12 @@ Resources:
               - Effect: Allow
                 Action:
                 - "account:DeleteAlternateContact"
-                - "account:GetAlternateContact"
                 - "account:PutAlternateContact"
-                - "iam:CreateRole"
-                - "iam:DeleteRole"
                 - "organizations:CloseAccount"
                 - "organizations:CreateAccount"
                 - "organizations:DescribeAccount"
                 - "organizations:ListAccounts"
+                - "organizations:ListParents"
                 - "organizations:MoveAccount"
                 - "organizations:TagResource"
                 - "organizations:UntagResource"

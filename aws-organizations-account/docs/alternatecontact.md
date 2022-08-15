@@ -10,7 +10,6 @@ To declare this entity in your AWS CloudFormation template, use the following sy
 
 <pre>
 {
-    "<a href="#alternatecontacttype" title="AlternateContactType">AlternateContactType</a>" : <i>String</i>,
     "<a href="#emailaddress" title="EmailAddress">EmailAddress</a>" : <i>String</i>,
     "<a href="#name" title="Name">Name</a>" : <i>String</i>,
     "<a href="#phonenumber" title="PhoneNumber">PhoneNumber</a>" : <i>String</i>,
@@ -21,7 +20,6 @@ To declare this entity in your AWS CloudFormation template, use the following sy
 ### YAML
 
 <pre>
-<a href="#alternatecontacttype" title="AlternateContactType">AlternateContactType</a>: <i>String</i>
 <a href="#emailaddress" title="EmailAddress">EmailAddress</a>: <i>String</i>
 <a href="#name" title="Name">Name</a>: <i>String</i>
 <a href="#phonenumber" title="PhoneNumber">PhoneNumber</a>: <i>String</i>
@@ -29,18 +27,6 @@ To declare this entity in your AWS CloudFormation template, use the following sy
 </pre>
 
 ## Properties
-
-#### AlternateContactType
-
-Specifies which alternate contact you want to create or update.
-
-_Required_: Yes
-
-_Type_: String
-
-_Allowed Values_: <code>BILLING</code> | <code>OPERATIONS</code> | <code>SECURITY</code>
-
-_Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 
 #### EmailAddress
 
