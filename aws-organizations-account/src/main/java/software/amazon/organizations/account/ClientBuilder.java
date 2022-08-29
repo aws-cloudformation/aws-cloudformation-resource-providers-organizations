@@ -1,25 +1,77 @@
 package software.amazon.organizations.account;
 
-import software.amazon.awssdk.core.SdkClient;
-// TODO: replace all usage of SdkClient with your service client type, e.g; YourServiceClient
-// import software.amazon.awssdk.services.yourservice.YourServiceClient;
-// import software.amazon.cloudformation.LambdaWrapper;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.retry.RetryPolicy;
+import software.amazon.awssdk.core.retry.backoff.BackoffStrategy;
+import software.amazon.awssdk.core.retry.backoff.EqualJitterBackoffStrategy;
+import software.amazon.awssdk.core.retry.conditions.RetryCondition;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.account.AccountClient;
+import software.amazon.cloudformation.LambdaWrapper;
+
+import java.time.Duration;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ClientBuilder {
-  /*
-  TODO: uncomment the following, replacing YourServiceClient with your service client name
-  It is recommended to use static HTTP client so less memory is consumed
-  e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/master/aws-logs-loggroup/src/main/java/software/amazon/logs/loggroup/ClientBuilder.java#L9
+    // Retry Strategy
+    private static final int MAX_ERROR_RETRY = 3;
+    private static final BackoffStrategy BACKOFF_STRATEGY = EqualJitterBackoffStrategy.builder()
+                                                                .baseDelay(Duration.ofMillis(500))
+                                                                .maxBackoffTime(Duration.ofMillis(5000))
+                                                                .build();
+    private static final BackoffStrategy THROTTLE_BACKOFF_STRATEGY = EqualJitterBackoffStrategy.builder()
+                                                                         .baseDelay(Duration.ofMillis(1000))
+                                                                         .maxBackoffTime(Duration.ofMillis(10000))
+                                                                         .build();
+    private static final RetryPolicy ORGANIZATIONS_RETRY_POLICY =
+        RetryPolicy.builder()
+            .numRetries(MAX_ERROR_RETRY)
+            .retryCondition(RetryCondition.defaultRetryCondition())
+            .backoffStrategy(BACKOFF_STRATEGY)
+            .throttlingBackoffStrategy(THROTTLE_BACKOFF_STRATEGY)
+            .build();
 
-  public static YourServiceClient getClient() {
-    return YourServiceClient.builder()
-              .httpClient(LambdaWrapper.HTTP_CLIENT)
-              .build();
-  }
-  */
+    private ClientBuilder() {
+    }
 
-  // TODO: remove this implementation once you have uncommented the above
-  public static SdkClient getClient() {
-    return null;
-  }
+    public static OrganizationsClient getClient() {
+        return OrganizationsClient.builder()
+                   .overrideConfiguration(ClientOverrideConfiguration.builder()
+                                              .retryPolicy(ORGANIZATIONS_RETRY_POLICY)
+                                              .build())
+                   .region(getGlobalRegion())
+                   .httpClient(LambdaWrapper.HTTP_CLIENT)
+                   .build();
+    }
+
+    public static AccountClient getAccountClient() {
+        return AccountClient.builder()
+                   .httpClient(LambdaWrapper.HTTP_CLIENT)
+                   .build();
+    }
+
+    /**
+     * Returns aws-us-gov-global Region if current region is a gov region.
+     * Returns aws-cn-global Region if current region is a china region.
+     * Otherwise returns aws-global Region
+     *
+     * @return AWS Organizations Global Region
+     */
+    private static Region getGlobalRegion() {
+        final String currentRegion = Optional.ofNullable(System.getenv("AWS_REGION")).orElse("");
+        final Pattern isGovPattern = Pattern.compile("us-gov");
+        final Matcher isGovMatcher = isGovPattern.matcher(currentRegion);
+        final Pattern isChinaPattern = Pattern.compile("cn");
+        final Matcher isChinaMatcher = isChinaPattern.matcher(currentRegion);
+
+        if (isGovMatcher.find()) {
+            return Region.AWS_US_GOV_GLOBAL;
+        } else if (isChinaMatcher.find()) {
+            return Region.AWS_CN_GLOBAL;
+        }
+        return Region.AWS_GLOBAL;
+    }
 }

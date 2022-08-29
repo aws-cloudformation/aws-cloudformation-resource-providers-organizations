@@ -132,3 +132,11 @@ For more information about using the `Fn::GetAtt` intrinsic function, see [Fn::G
 #### AccountId
 
 If the account was created successfully, the unique identifier (ID) of the new account.
+
+#### CreateAccountRequestId
+
+Specifies the Id value that uniquely identifies the CreateAccount request. You can get the value from the CreateAccountStatus.Id response in an earlier CreateAccount request, or from the ListCreateAccountStatus operation.
+
+#### FailureReason
+
+If the create account request failed, a description of the reason for the failure.

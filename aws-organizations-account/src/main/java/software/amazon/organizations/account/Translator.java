@@ -1,16 +1,23 @@
 package software.amazon.organizations.account;
 
-import com.google.common.collect.Lists;
 import software.amazon.awssdk.awscore.AwsRequest;
-import software.amazon.awssdk.awscore.AwsResponse;
+import software.amazon.awssdk.services.account.model.GetAlternateContactRequest;
+import software.amazon.awssdk.services.account.model.PutAlternateContactRequest;
+import software.amazon.awssdk.services.organizations.model.CloseAccountRequest;
+import software.amazon.awssdk.services.organizations.model.CreateAccountRequest;
+import software.amazon.awssdk.services.organizations.model.DescribeAccountRequest;
+import software.amazon.awssdk.services.organizations.model.DescribeCreateAccountStatusRequest;
+import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
+import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
+import software.amazon.awssdk.services.organizations.model.MoveAccountRequest;
+import software.amazon.awssdk.services.organizations.model.Tag;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * This class is a centralized placeholder for
@@ -20,76 +27,111 @@ import java.util.stream.Stream;
  */
 
 public class Translator {
-
-  /**
-   * Request to create a resource
-   * @param model resource model
-   * @return awsRequest the aws service request to create a resource
-   */
-  static AwsRequest translateToCreateRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L39-L43
-    return awsRequest;
+  static DescribeCreateAccountStatusRequest translateToDescribeCreateAccountStatusRequest(final ResourceModel model) {
+    return DescribeCreateAccountStatusRequest.builder()
+               .createAccountRequestId(model.getCreateAccountRequestId())
+               .build();
   }
 
-  /**
-   * Request to read a resource
-   * @param model resource model
-   * @return awsRequest the aws service request to describe a resource
-   */
-  static AwsRequest translateToReadRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L20-L24
-    return awsRequest;
+  static ListTagsForResourceRequest translateToListTagsForResourceRequest(final String id) {
+    return ListTagsForResourceRequest.builder()
+               .resourceId(id)
+               .build();
   }
 
-  /**
-   * Translates resource object from sdk into a resource model
-   * @param awsResponse the aws service describe resource response
-   * @return model resource model
-   */
-  static ResourceModel translateFromReadResponse(final AwsResponse awsResponse) {
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L58-L73
-    return ResourceModel.builder()
-        //.someProperty(response.property())
+  static GetAlternateContactRequest translateToGetAlternateContactRequest(final ResourceModel model, final String alternateContactType) {
+    return GetAlternateContactRequest.builder()
+        .accountId(model.getAccountId())
+        .alternateContactType(alternateContactType)
         .build();
   }
 
-  /**
-   * Request to delete a resource
-   * @param model resource model
-   * @return awsRequest the aws service request to delete a resource
-   */
-  static AwsRequest translateToDeleteRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L33-L37
-    return awsRequest;
+  static ListParentsRequest translateToListParentsRequest(final ResourceModel model) {
+    return ListParentsRequest.builder()
+               .childId(model.getAccountId())
+               .build();
   }
 
-  /**
-   * Request to update properties of a previously created resource
-   * @param model resource model
-   * @return awsRequest the aws service request to modify a resource
-   */
-  static AwsRequest translateToFirstUpdateRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L45-L50
-    return awsRequest;
+  static CreateAccountRequest translateToCreateAccountRequest(final ResourceModel model) {
+    return CreateAccountRequest.builder()
+              .accountName(model.getAccountName())
+              .email(model.getEmail())
+              .roleName(model.getRoleName())
+              .tags(translateTagsForTagResourceRequest(model.getTags()))
+              .build();
   }
 
-  /**
-   * Request to update some other properties that could not be provisioned through first update request
-   * @param model resource model
-   * @return awsRequest the aws service request to modify a resource
-   */
-  static AwsRequest translateToSecondUpdateRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    return awsRequest;
+  static CloseAccountRequest translateToCloseAccountRequest(final ResourceModel model) {
+    return CloseAccountRequest.builder().accountId(model.getAccountId()).build();
+  }
+
+  static MoveAccountRequest translateToMoveAccountRequest(final ResourceModel model, String destinationParentId, String sourceParentId) {
+    return MoveAccountRequest.builder()
+               .accountId(model.getAccountId())
+               .sourceParentId(sourceParentId)
+               .destinationParentId(destinationParentId)
+               .build();
+  }
+
+  static PutAlternateContactRequest translateToPutAlternateContactTypeRequest(final ResourceModel model, String alternateContactType, AlternateContact alternateContact) {
+      return PutAlternateContactRequest
+                 .builder()
+                 .accountId(model.getAccountId())
+                 .alternateContactType(alternateContactType)
+                 .emailAddress(alternateContact.getEmailAddress())
+                 .name(alternateContact.getName())
+                 .phoneNumber(alternateContact.getPhoneNumber())
+                 .title(alternateContact.getTitle())
+                 .build();
+  }
+
+  static ListParentsRequest translateToListParentsRequest(final String childId) {
+    return ListParentsRequest.builder().childId(childId).build();
+  }
+
+  static DescribeAccountRequest translateToDescribeAccountRequest(final ResourceModel model) {
+    return DescribeAccountRequest.builder()
+               .accountId(model.getAccountId())
+               .build();
+  }
+
+  static Collection<software.amazon.awssdk.services.organizations.model.Tag> translateTagsForTagResourceRequest(Set<software.amazon.organizations.account.Tag> tags) {
+    if (tags == null) return new ArrayList<>();
+    final Collection<software.amazon.awssdk.services.organizations.model.Tag> tagsToReturn = new ArrayList<>();
+    for (software.amazon.organizations.account.Tag inputTags : tags) {
+      software.amazon.awssdk.services.organizations.model.Tag tag = Tag.builder()
+                                                                        .key(inputTags.getKey())
+                                                                        .value(inputTags.getValue())
+                                                                        .build();
+      tagsToReturn.add(tag);
+    }
+    return tagsToReturn;
+  }
+
+  static ResourceModel translateFromAllDescribeResponse(final ResourceModel model, final ListTagsForResourceResponse listTagsForResourceResponse) {
+    return ResourceModel.builder()
+               .accountId(model.getAccountId())
+               .accountName(model.getAccountName())
+               .email(model.getEmail())
+               .parentIds(model.getParentIds())
+               .alternateContacts(model.getAlternateContacts())
+               .tags(translateTagsFromSdkResponse(listTagsForResourceResponse.tags()))
+               .roleName(model.getRoleName())
+               .build();
+  }
+
+  static Set<software.amazon.organizations.account.Tag> translateTagsFromSdkResponse(List<Tag> tags) {
+    if (tags == null) return new HashSet<>();
+
+    final Set<software.amazon.organizations.account.Tag> tagsToReturn = new HashSet<>();
+    for (Tag inputTags : tags) {
+      software.amazon.organizations.account.Tag tag = software.amazon.organizations.account.Tag.builder()
+                                                                     .key(inputTags.key())
+                                                                     .value(inputTags.value())
+                                                                     .build();
+      tagsToReturn.add(tag);
+    }
+    return tagsToReturn;
   }
 
   /**
@@ -101,50 +143,6 @@ public class Translator {
     final AwsRequest awsRequest = null;
     // TODO: construct a request
     // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L26-L31
-    return awsRequest;
-  }
-
-  /**
-   * Translates resource objects from sdk into a resource model (primary identifier only)
-   * @param awsResponse the aws service describe resource response
-   * @return list of resource models
-   */
-  static List<ResourceModel> translateFromListRequest(final AwsResponse awsResponse) {
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L75-L82
-    return streamOfOrEmpty(Lists.newArrayList())
-        .map(resource -> ResourceModel.builder()
-            // include only primary identifier
-            .build())
-        .collect(Collectors.toList());
-  }
-
-  private static <T> Stream<T> streamOfOrEmpty(final Collection<T> collection) {
-    return Optional.ofNullable(collection)
-        .map(Collection::stream)
-        .orElseGet(Stream::empty);
-  }
-
-  /**
-   * Request to add tags to a resource
-   * @param model resource model
-   * @return awsRequest the aws service request to create a resource
-   */
-  static AwsRequest tagResourceRequest(final ResourceModel model, final Map<String, String> addedTags) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L39-L43
-    return awsRequest;
-  }
-
-  /**
-   * Request to add tags to a resource
-   * @param model resource model
-   * @return awsRequest the aws service request to create a resource
-   */
-  static AwsRequest untagResourceRequest(final ResourceModel model, final Set<String> removedTags) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L39-L43
     return awsRequest;
   }
 }

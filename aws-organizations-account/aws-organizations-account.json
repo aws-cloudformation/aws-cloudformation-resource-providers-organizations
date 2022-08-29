@@ -35,6 +35,17 @@
         "pattern": "^(r-[0-9a-z]{4,32})|(ou-[0-9a-z]{4,32}-[a-z0-9]{8,32})$"
       }
     },
+    "CreateAccountRequestId": {
+      "description": "Specifies the Id value that uniquely identifies the CreateAccount request. You can get the value from the CreateAccountStatus.Id response in an earlier CreateAccount request, or from the ListCreateAccountStatus operation.",
+      "type": "string",
+      "pattern": "^car-[a-z0-9]{8,32}$",
+      "minLength": 1,
+      "maxLength": 36
+    },
+    "FailureReason": {
+      "description": "If the create account request failed, a description of the reason for the failure.",
+      "type": "string"
+    },
     "Tags": {
       "description": "A list of tags that you want to attach to the newly created account. For each tag in the list, you must specify both a tag key and a value.",
       "type": "array",
@@ -150,7 +161,9 @@
     "/properties/Email"
   ],
   "readOnlyProperties": [
-    "/properties/AccountId"
+    "/properties/AccountId",
+    "/properties/CreateAccountRequestId",
+    "/properties/FailureReason"
   ],
   "primaryIdentifier": [
     "/properties/AccountId"
@@ -159,7 +172,7 @@
     "create": {
       "permissions": [
         "organizations:CreateAccount",
-        "organizations:TagResource",
+        "organizations:DescribeCreateAccountStatus",
         "organizations:MoveAccount",
         "organizations:ListParents",
         "account:PutAlternateContact"
@@ -167,7 +180,10 @@
     },
     "read": {
       "permissions": [
-        "organizations:DescribeAccount"
+        "organizations:DescribeAccount",
+        "account:GetAlternateContact",
+        "organizations:ListParents",
+        "organizations:ListTagsForResource"
       ]
     },
     "update": {
@@ -181,7 +197,6 @@
     },
     "delete": {
       "permissions": [
-        "account:DeleteAlternateContact",
         "organizations:CloseAccount"
       ]
     },
