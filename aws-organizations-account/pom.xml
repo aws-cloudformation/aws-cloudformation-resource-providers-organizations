@@ -101,11 +101,6 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>account</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/sts -->
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>sts</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
