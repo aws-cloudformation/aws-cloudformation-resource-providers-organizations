@@ -36,7 +36,7 @@
       }
     },
     "CreateAccountRequestId": {
-      "description": "Specifies the Id value that uniquely identifies the CreateAccount request. You can get the value from the CreateAccountStatus.Id response in an earlier CreateAccount request, or from the ListCreateAccountStatus operation.",
+      "description": "Specifies the Id value that uniquely identifies the CreateAccount request. You can get the value from the CreateAccountStatus response in an earlier CreateAccount request, or from the ListCreateAccountStatus operation.",
       "type": "string",
       "pattern": "^car-[a-z0-9]{8,32}$",
       "minLength": 1,
@@ -175,15 +175,16 @@
         "organizations:DescribeCreateAccountStatus",
         "organizations:MoveAccount",
         "organizations:ListParents",
+        "organizations:TagResource",
         "account:PutAlternateContact"
       ]
     },
     "read": {
       "permissions": [
         "organizations:DescribeAccount",
-        "account:GetAlternateContact",
         "organizations:ListParents",
-        "organizations:ListTagsForResource"
+        "organizations:ListTagsForResource",
+        "account:GetAlternateContact"
       ]
     },
     "update": {

@@ -39,8 +39,17 @@ public class CreateHandler extends BaseHandlerStd {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
                 "Account cannot be created without account name and email!");
         }
-        logger.log(String.format("Entered %s create handler with caller account Id [%s], AccountName [%s], Email [%s]",
-            ResourceModel.TYPE_NAME, request.getAwsAccountId(), model.getAccountName(), model.getEmail()));
+
+        // currently only support 1 parent id
+        Set<String> parentIds = model.getParentIds();
+        if (parentIds != null && parentIds.size() > 1) {
+            String errorMessage = String.format("Can not specify more than one parent id in request for account name [%s].", model.getAccountName());
+            logger.log(errorMessage);
+            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest, errorMessage);
+        }
+
+        logger.log(String.format("Entered %s create handler with management account Id [%s] and account name [%s].",
+            ResourceModel.TYPE_NAME, request.getAwsAccountId(), model.getAccountName()));
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
                    .then(progress -> {
                            if (progress.getCallbackContext().isAccountCreated()) {
@@ -53,7 +62,7 @@ public class CreateHandler extends BaseHandlerStd {
                                       .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(organizationsRequest, e, proxyClient1, model1, context, logger))
                                       .done(CreateAccountResponse -> {
                                           model.setCreateAccountRequestId(CreateAccountResponse.createAccountStatus().id());
-                                          logger.log(String.format("Successfully Initiated new account creation request with Id [%s]", model.getCreateAccountRequestId()));
+                                          logger.log(String.format("Successfully initiated new account creation request with CreateAccountRequestId [%s]", model.getCreateAccountRequestId()));
                                           return ProgressEvent.progress(model, callbackContext);
                                       });
                        }
@@ -70,7 +79,7 @@ public class CreateHandler extends BaseHandlerStd {
                                          ProgressEvent.defaultInProgressHandler(progress.getCallbackContext(), 0, progress.getResourceModel())
                    )
                    .then(progress -> model.getAlternateContacts() != null && model.getAlternateContacts().getSecurity() != null ?
-                                         putAlternateContactByType(awsClientProxy, model, callbackContext, accountClientProxyClient, logger, ALTERNATE_CONTACT_TYPE_SECURITY, model.getAlternateContacts().getOperations()) :
+                                         putAlternateContactByType(awsClientProxy, model, callbackContext, accountClientProxyClient, logger, ALTERNATE_CONTACT_TYPE_SECURITY, model.getAlternateContacts().getSecurity()) :
                                          ProgressEvent.defaultInProgressHandler(progress.getCallbackContext(), 0, progress.getResourceModel())
                    )
                    .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, accountClientProxyClient, logger));
@@ -91,30 +100,29 @@ public class CreateHandler extends BaseHandlerStd {
         for (int attempt = 0; attempt < MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS; attempt++) {
             try {
                 int wait = computeDelayBeforeNextRetry(attempt);
-                logger.log(String.format("Enter describeCreateAccountStatus with request id: [%s] Wait time for propagation: %s millisecond.", model.getCreateAccountRequestId(), wait));
+                logger.log(String.format("Enter describeCreateAccountStatus with CreateAccountRequestId [%s] and attempt %s. Wait time for propagation: %s millisecond.", model.getCreateAccountRequestId(), attempt + 1, wait));
                 Thread.sleep(wait);
             } catch (InterruptedException e) {
                 log.log(e.getMessage());
             }
             final ProgressEvent<ResourceModel, CallbackContext> progressEvent = awsClientProxy
-                .initiate("AWS-Organizations-Account::DescribeCreateAccountStatus-Attempt" + attempt, orgsClient, model, callbackContext)
-                .translateToServiceRequest((resourceModel) -> Translator.translateToDescribeCreateAccountStatusRequest(model))
-                .makeServiceCall((describeCreateAccountStatusRequest, client) -> {
-                    DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = orgsClient.injectCredentialsAndInvokeV2(describeCreateAccountStatusRequest,
-                        orgsClient.client()::describeCreateAccountStatus);
-                    String state = describeCreateAccountStatusResponse.createAccountStatus().state().toString();
-                    logger.log(String.format("DescribeCreateAccountStatus returns status [%s] for request id [%s].", state, model.getCreateAccountRequestId()));
-                    if (state.equals(ACCOUNT_CREATION_STATUS_IN_PROGRESS)) {
-                    } else if (state.equals(ACCOUNT_CREATION_STATUS_FAILED)) {
-                        model.setFailureReason(describeCreateAccountStatusResponse.createAccountStatus().failureReasonAsString());
-                    } else {
-                        model.setAccountId(describeCreateAccountStatusResponse.createAccountStatus().accountId());
-                        callbackContext.setAccountCreated(true);
-                    }
-                    return describeCreateAccountStatusResponse;
-                })
-                .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(organizationsRequest, e, proxyClient1, model1, context, logger))
-                .success();
+                                                                                    .initiate("AWS-Organizations-Account::DescribeCreateAccountStatus-Attempt" + attempt, orgsClient, model, callbackContext)
+                                                                                    .translateToServiceRequest((resourceModel) -> Translator.translateToDescribeCreateAccountStatusRequest(model))
+                                                                                    .makeServiceCall((describeCreateAccountStatusRequest, client) -> {
+                                                                                        DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = orgsClient.injectCredentialsAndInvokeV2(describeCreateAccountStatusRequest,
+                                                                                            orgsClient.client()::describeCreateAccountStatus);
+                                                                                        String state = describeCreateAccountStatusResponse.createAccountStatus().state().toString();
+                                                                                        logger.log(String.format("DescribeCreateAccountStatus returns status [%s] for request id [%s].", state, model.getCreateAccountRequestId()));
+                                                                                        if (state.equals(ACCOUNT_CREATION_STATUS_SUCCEEDED)) {
+                                                                                            model.setAccountId(describeCreateAccountStatusResponse.createAccountStatus().accountId());
+                                                                                            callbackContext.setAccountCreated(true);
+                                                                                        } else if (state.equals(ACCOUNT_CREATION_STATUS_FAILED)) {
+                                                                                            model.setFailureReason(describeCreateAccountStatusResponse.createAccountStatus().failureReasonAsString());
+                                                                                        }
+                                                                                        return describeCreateAccountStatusResponse;
+                                                                                    })
+                                                                                    .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(organizationsRequest, e, proxyClient1, model1, context, logger))
+                                                                                    .success();
             // cases to exist for loop (retry)
             // case 1: exceptions from DescribeCreateAccountStatus API
             if (!progressEvent.isSuccess()) {
@@ -122,15 +130,15 @@ public class CreateHandler extends BaseHandlerStd {
             }
             // case 2: create account already failed with a failure reason
             if (model.getFailureReason() != null) {
-                return handleAccountCreationError(model,callbackContext,logger);
+                return handleAccountCreationError(model, callbackContext, logger);
             }
             // case 3: create account succeed
             if (model.getAccountId() != null) {
                 logger.log(String.format("Successfully created account with id: [%s]", model.getAccountId()));
-                return ProgressEvent.progress(model,callbackContext);
+                return ProgressEvent.progress(model, callbackContext);
             }
         }
-        String errMsg = String.format("DescribeCreateAccountStatus keeps returning IN_PROGRESS state after %s attempts for account creation: [%s]", MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS, model.getCreateAccountRequestId());
+        String errMsg = String.format("DescribeCreateAccountStatus keeps returning IN_PROGRESS state after %s attempts for account creation with CreateAccountRequestID [%s]", MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS, model.getCreateAccountRequestId());
         return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.ServiceInternalError, errMsg);
     }
 
@@ -142,14 +150,14 @@ public class CreateHandler extends BaseHandlerStd {
         switch (failureReason) {
             case CREATE_ACCOUNT_FAILURE_REASON_EMAIL_ALREADY_EXISTS:
             case CREATE_ACCOUNT_FAILURE_REASON_GOVCLOUD_ACCOUNT_ALREADY_EXISTS:
-                return ProgressEvent.failed(model,callbackContext,HandlerErrorCode.AlreadyExists, errMsg);
+                return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists, errMsg);
             case CREATE_ACCOUNT_FAILURE_REASON_ACCOUNT_LIMIT_EXCEEDED:
-                return ProgressEvent.failed(model,callbackContext,HandlerErrorCode.ServiceLimitExceeded, errMsg);
+                return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.ServiceLimitExceeded, errMsg);
             case CREATE_ACCOUNT_FAILURE_REASON_INVALID_ADDRESS:
             case CREATE_ACCOUNT_FAILURE_REASON_INVALID_EMAIL:
-                return ProgressEvent.failed(model,callbackContext,HandlerErrorCode.InvalidRequest, errMsg);
+                return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest, errMsg);
         }
-        return ProgressEvent.failed(model,callbackContext,HandlerErrorCode.GeneralServiceException, errMsg);
+        return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.GeneralServiceException, errMsg);
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> moveAccount(
@@ -166,15 +174,9 @@ public class CreateHandler extends BaseHandlerStd {
             logger.log(String.format("No parent id found in request for account [%s]. Skip move account.", accountId));
             return ProgressEvent.progress(model, callbackContext);
         }
-        // currently only support 1 parent id
-        if (parentIds.size() > 1) {
-            String errorMessage = String.format("Can not specify more than one parent id in request for account [%s].", accountId);
-            logger.log(errorMessage);
-            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest, errorMessage);
-        }
 
         String destinationId = parentIds.iterator().next();
-        String sourceId = getMoveAccountSourceId(awsClientProxy, orgsClient, accountId);
+        String sourceId = getParentIdForAccount(awsClientProxy, orgsClient, accountId);
         return ProgressEvent.progress(model, callbackContext)
                    .then(progress ->
                              awsClientProxy.initiate("AWS-Organizations-Account::MoveAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
@@ -192,11 +194,10 @@ public class CreateHandler extends BaseHandlerStd {
                                              int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
                                              logger.log(String.format("Got %s when calling %s for "
                                                                           + "Account [%s]. Retrying %s of %s with callback delay %s seconds.",
-                                                 e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), currentAttempt+1, MAX_NUMBER_OF_ATTEMPT_FOR_MOVE_ACCOUNT_CALLBACK, callbackDelaySeconds));
-                                             context.setCurrentAttemptToCheckAccountCreationStatus(currentAttempt+1);
+                                                 e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), currentAttempt + 1, MAX_NUMBER_OF_ATTEMPT_FOR_MOVE_ACCOUNT_CALLBACK, callbackDelaySeconds));
+                                             context.setCurrentAttemptToCheckAccountCreationStatus(currentAttempt + 1);
                                              return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
-                                         }
-                                         else {
+                                         } else {
                                              logger.log(String.format("All retry attempts exhausted for account Id [%s], return exception to CloudFormation for further handling.", model.getAccountId()));
                                              return handleError(organizationsRequest, e, proxyClient1, model, context, logger);
                                          }
@@ -217,7 +218,7 @@ public class CreateHandler extends BaseHandlerStd {
         final String alternateContactType,
         final AlternateContact alternateContact
     ) {
-        logger.log(String.format("Put alternate contact for [%s] with alternate contact [%s].", model.getAccountId(), alternateContact.toString()));
+        logger.log(String.format("Put alternate contact for account id [%s] with alternate contact [%s].", model.getAccountId(), alternateContact.toString()));
         return ProgressEvent.progress(model, callbackContext)
                    .then(progress ->
                              awsClientProxy.initiate(String.format("AWS-Organizations-Account::PutAlternateContact-", alternateContactType), accountClient, progress.getResourceModel(), progress.getCallbackContext())
@@ -230,7 +231,7 @@ public class CreateHandler extends BaseHandlerStd {
                    );
     }
 
-    protected String getMoveAccountSourceId(
+    protected String getParentIdForAccount(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ProxyClient<OrganizationsClient> orgsClient,
         final String childId

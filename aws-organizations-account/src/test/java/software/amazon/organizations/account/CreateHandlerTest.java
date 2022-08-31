@@ -1,9 +1,13 @@
 package software.amazon.organizations.account;
 
-import java.time.Duration;
-
 import com.google.common.collect.ImmutableSet;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.account.AccountClient;
+import software.amazon.awssdk.services.account.model.AlternateContact;
 import software.amazon.awssdk.services.account.model.AlternateContactType;
 import software.amazon.awssdk.services.account.model.GetAlternateContactRequest;
 import software.amazon.awssdk.services.account.model.GetAlternateContactResponse;
@@ -36,11 +40,8 @@ import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,7 +49,6 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -106,7 +106,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ListParentsResponse listParentsResponseAfterMoveAccountResponse = getListParentsResponseAfterMoveAccount();
         final GetAlternateContactResponse getAlternateContactResponseBilling = GetAlternateContactResponse.builder()
-                                                                                   .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
+                                                                                   .alternateContact(AlternateContact.builder()
                                                                                                          .alternateContactType(AlternateContactType.BILLING)
                                                                                                          .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_BILLING)
                                                                                                          .name(TEST_ALTERNATE_CONTACT_NAME_BILLING)
@@ -116,7 +116,7 @@ public class CreateHandlerTest extends AbstractTestBase {
                                                                                    .build();
 
         final GetAlternateContactResponse getAlternateContactResponseOperations = GetAlternateContactResponse.builder()
-                                                                                      .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
+                                                                                      .alternateContact(AlternateContact.builder()
                                                                                                             .alternateContactType(AlternateContactType.OPERATIONS)
                                                                                                             .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_OPERATIONS)
                                                                                                             .name(TEST_ALTERNATE_CONTACT_NAME_OPERATIONS)
@@ -126,7 +126,7 @@ public class CreateHandlerTest extends AbstractTestBase {
                                                                                       .build();
 
         final GetAlternateContactResponse getAlternateContactResponseSecurity = GetAlternateContactResponse.builder()
-                                                                                    .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
+                                                                                    .alternateContact(AlternateContact.builder()
                                                                                                           .alternateContactType(AlternateContactType.SECURITY)
                                                                                                           .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_SECURITY)
                                                                                                           .name(TEST_ALTERNATE_CONTACT_NAME_SECURITY)
@@ -142,7 +142,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponseAfterMoveAccountResponse);
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
-        //
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
 
         assertThat(response).isNotNull();
@@ -166,6 +165,38 @@ public class CreateHandlerTest extends AbstractTestBase {
         verify(mockProxyClient.client()).moveAccount(any(MoveAccountRequest.class));
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockAccountProxyClient.client(), times(3)).putAlternateContact(any(PutAlternateContactRequest.class));
+    }
+
+    @Test
+    public void handleRequest_FailedIfRequestPartitionIsGovCloud() {
+        final ResourceModel model = generateCreateResourceModel();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                                                                  .awsPartition(GOV_CLOUD_PARTITION)
+                                                                  .desiredResourceState(model)
+                                                                  .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNotNull();
+        assertThat(response.getResourceModel().getCreateAccountRequestId()).isNull();
+        assertThat(response.getResourceModel().getFailureReason()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InvalidRequest);
+        assertThat(response.getResourceModel().getAccountId()).isNull();
+        assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
+        assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
+        assertThat(response.getResourceModel().getParentIds()).isEqualTo(TEST_PARENT_IDS);
+        assertThat(response.getResourceModel().getAlternateContacts().getBilling().getName()).isEqualTo(TEST_ALTERNATE_CONTACT_NAME_BILLING);
+        assertThat(response.getResourceModel().getAlternateContacts().getBilling()).isEqualTo(TEST_ALTERNATE_CONTACT_BILLING);
+        assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
+
+        verify(mockProxyClient.client(), times(0)).createAccount(any(CreateAccountRequest.class));
+        verify(mockProxyClient.client(), times(0)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
+        verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
+        verify(mockAccountProxyClient.client(), times(0)).putAlternateContact(any(PutAlternateContactRequest.class));
     }
 
     @Test
@@ -212,17 +243,13 @@ public class CreateHandlerTest extends AbstractTestBase {
                                                                   .desiredResourceState(model)
                                                                   .build();
 
-        final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
-        final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = getDescribeCreateAccountStatusResponse(SUCCEEDED);
-        when(mockProxyClient.client().createAccount(any(CreateAccountRequest.class))).thenReturn(createAccountResponse);
-        when(mockProxyClient.client().describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class))).thenReturn(describeCreateAccountStatusResponse);
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel().getAccountId()).isEqualTo(TEST_ACCOUNT_ID);
+        assertThat(response.getResourceModel().getAccountId()).isNull();
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
         assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
         assertThat(response.getResourceModel().getAlternateContacts().getBilling().getName()).isEqualTo(TEST_ALTERNATE_CONTACT_NAME_BILLING);
@@ -230,13 +257,11 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InvalidRequest);
 
-        verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
-        verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
+        verify(mockProxyClient.client(), times(0)).createAccount(any(CreateAccountRequest.class));
+        verify(mockProxyClient.client(), times(0)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
         verify(mockAccountProxyClient.client(), times(0)).putAlternateContact(any(PutAlternateContactRequest.class));
     }
-
-
 
     @Test
     public void handleRequest_SuccessWhenMoveAccountThrowsDuplicateAccountException() {
@@ -258,8 +283,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().moveAccount(any(MoveAccountRequest.class))).thenThrow(DuplicateAccountException.class);
         when(mockAccountProxyClient.client().putAlternateContact(any(PutAlternateContactRequest.class))).thenReturn(putAlternateContactResponse);
 
-
-
         // read
         final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
                                                                                                               .arn(TEST_ACCOUNT_ARN)
@@ -269,7 +292,7 @@ public class CreateHandlerTest extends AbstractTestBase {
                                                                                                               .build()).build();
 
         final GetAlternateContactResponse getAlternateContactResponseBilling = GetAlternateContactResponse.builder()
-                                                                                   .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
+                                                                                   .alternateContact(AlternateContact.builder()
                                                                                                          .alternateContactType(AlternateContactType.BILLING)
                                                                                                          .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_BILLING)
                                                                                                          .name(TEST_ALTERNATE_CONTACT_NAME_BILLING)
@@ -279,7 +302,7 @@ public class CreateHandlerTest extends AbstractTestBase {
                                                                                    .build();
 
         final GetAlternateContactResponse getAlternateContactResponseOperations = GetAlternateContactResponse.builder()
-                                                                                      .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
+                                                                                      .alternateContact(AlternateContact.builder()
                                                                                                             .alternateContactType(AlternateContactType.OPERATIONS)
                                                                                                             .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_OPERATIONS)
                                                                                                             .name(TEST_ALTERNATE_CONTACT_NAME_OPERATIONS)
@@ -289,7 +312,7 @@ public class CreateHandlerTest extends AbstractTestBase {
                                                                                       .build();
 
         final GetAlternateContactResponse getAlternateContactResponseSecurity = GetAlternateContactResponse.builder()
-                                                                                    .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
+                                                                                    .alternateContact(AlternateContact.builder()
                                                                                                           .alternateContactType(AlternateContactType.SECURITY)
                                                                                                           .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_SECURITY)
                                                                                                           .name(TEST_ALTERNATE_CONTACT_NAME_SECURITY)
@@ -307,7 +330,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         lenient().when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponseAfterMove);
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
-        //
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
 
         assertThat(response).isNotNull();
@@ -331,36 +353,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         verify(mockAccountProxyClient.client(), times(3)).putAlternateContact(any(PutAlternateContactRequest.class));
     }
 
-//    @Test
-//    public void handleRequest_TestAccountCreationInProgressStabilization() {
-//        final ResourceModel model = generateCreateResourceModel();
-//
-//        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-//                                                                  .desiredResourceState(model)
-//                                                                  .build();
-//
-//        final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
-//        final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = getDescribeCreateAccountStatusResponse(IN_PROGRESS);
-//        when(mockProxyClient.client().createAccount(any(CreateAccountRequest.class))).thenReturn(createAccountResponse);
-//        when(mockProxyClient.client().describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class))).thenReturn(describeCreateAccountStatusResponse);
-//        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
-//
-//        assertThat(response).isNotNull();
-//        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
-//        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
-//        assertThat(response.getResourceModel()).isNotNull();
-//        assertThat(response.getResourceModel().getAccountId()).isNull();
-//        assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
-//        assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
-//        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
-//
-//        verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
-//        verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
-//        verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
-//        verify(mockAccountProxyClient.client(), times(0)).putAlternateContact(any(PutAlternateContactRequest.class));
-//    }
-
-
     @Test
     public void handleRequest_SkipCreateAccountAndDescribeCreateAccountStatusIfAccountAlreadyCreated() {
         final ResourceModel model = generateCreateResourceModel();
@@ -378,7 +370,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponse);
         when(mockProxyClient.client().moveAccount(any(MoveAccountRequest.class))).thenThrow(ConcurrentModificationException.class);
 
-        // first attempt, succeeded in create account, failed in moveAccount
         CallbackContext context = new CallbackContext();
         ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, mockAccountProxyClient, logger);
         assertThat(response).isNotNull();
@@ -585,7 +576,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponseAfterMoveAccountResponse);
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
-        //
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
 
         assertThat(response).isNotNull();
@@ -622,10 +612,6 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         when(mockProxyClient.client().createAccount(any(CreateAccountRequest.class))).thenReturn(createAccountResponse);
         when(mockProxyClient.client().describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class))).thenReturn(describeCreateAccountStatusResponse);
-        //        final MoveAccountResponse moveAccountResponse = getMoveAccountResponse();
-//        final ListParentsResponse listParentsResponseBeforeMoveAccountResponse = getListParentsResponseBeforeMoveAccount();
-//        lenient().when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponseBeforeMoveAccountResponse);
-//        when(mockProxyClient.client().moveAccount(any(MoveAccountRequest.class))).thenReturn(moveAccountResponse);
 
         // read
         final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
@@ -646,7 +632,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponseAfterMoveAccountResponse);
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
-        //
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
 
         assertThat(response).isNotNull();
@@ -694,7 +679,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InvalidRequest);
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
         assertThat(response.getResourceModel().getAccountId()).isEqualTo(TEST_ACCOUNT_ID);
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
         assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
@@ -839,7 +824,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         return CreateAccountResponse.builder()
                    .createAccountStatus(CreateAccountStatus
                                             .builder()
-                       .id(CREATE_ACCOUNT_STATUS_ID)
+                                            .id(CREATE_ACCOUNT_STATUS_ID)
                                             .build())
                    .build();
 
@@ -848,18 +833,17 @@ public class CreateHandlerTest extends AbstractTestBase {
     protected DescribeCreateAccountStatusResponse getDescribeCreateAccountStatusResponse(String status) {
         if (status.equals(FAILED)) {
             return DescribeCreateAccountStatusResponse.builder()
-                .createAccountStatus(CreateAccountStatusFailedWithAlreadyExist)
-                .build();
-        }
-        else if (status.equals(IN_PROGRESS)) {
+                       .createAccountStatus(CreateAccountStatusFailedWithAlreadyExist)
+                       .build();
+        } else if (status.equals(IN_PROGRESS)) {
             return DescribeCreateAccountStatusResponse.builder()
                        .createAccountStatus(CreateAccountStatusInProgress)
                        .build();
         }
-            return DescribeCreateAccountStatusResponse.builder()
-                       .createAccountStatus(CreateAccountStatusSucceeded)
-                       .build();
-        }
+        return DescribeCreateAccountStatusResponse.builder()
+                   .createAccountStatus(CreateAccountStatusSucceeded)
+                   .build();
+    }
 
 
     protected MoveAccountResponse getMoveAccountResponse() {

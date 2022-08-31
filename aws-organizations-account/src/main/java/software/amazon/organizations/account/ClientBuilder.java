@@ -6,8 +6,8 @@ import software.amazon.awssdk.core.retry.backoff.BackoffStrategy;
 import software.amazon.awssdk.core.retry.backoff.EqualJitterBackoffStrategy;
 import software.amazon.awssdk.core.retry.conditions.RetryCondition;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.account.AccountClient;
+import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.cloudformation.LambdaWrapper;
 
 import java.time.Duration;
@@ -49,6 +49,7 @@ public class ClientBuilder {
 
     public static AccountClient getAccountClient() {
         return AccountClient.builder()
+                   .region(getGlobalRegion())
                    .httpClient(LambdaWrapper.HTTP_CLIENT)
                    .build();
     }

@@ -1,9 +1,10 @@
 package software.amazon.organizations.account;
 
-import java.time.Duration;
-
-import org.mockito.ArgumentMatcher;
-import static org.mockito.ArgumentMatchers.argThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.account.AccountClient;
 import software.amazon.awssdk.services.account.model.AlternateContactType;
 import software.amazon.awssdk.services.account.model.GetAlternateContactRequest;
@@ -25,16 +26,12 @@ import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -72,34 +69,34 @@ public class ReadHandlerTest extends AbstractTestBase {
                                                                   .build();
 
         final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
-            .arn(TEST_ACCOUNT_ARN)
-            .email(TEST_ACCOUNT_EMAIL)
-            .id(TEST_ACCOUNT_ID)
-            .name(TEST_ACCOUNT_NAME)
-          .build()).build();
+                                                                                                              .arn(TEST_ACCOUNT_ARN)
+                                                                                                              .email(TEST_ACCOUNT_EMAIL)
+                                                                                                              .id(TEST_ACCOUNT_ID)
+                                                                                                              .name(TEST_ACCOUNT_NAME)
+                                                                                                              .build()).build();
 
         final GetAlternateContactResponse getAlternateContactResponseBilling = GetAlternateContactResponse.builder()
-                .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
-                    .alternateContactType(AlternateContactType.BILLING)
-                    .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_BILLING)
-                    .name(TEST_ALTERNATE_CONTACT_NAME_BILLING)
-                    .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_BILLING)
-                    .title(TEST_ALTERNATE_CONTACT_TITLE_BILLING)
-               .build())
-        .build();
+                                                                                   .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
+                                                                                                         .alternateContactType(AlternateContactType.BILLING)
+                                                                                                         .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_BILLING)
+                                                                                                         .name(TEST_ALTERNATE_CONTACT_NAME_BILLING)
+                                                                                                         .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_BILLING)
+                                                                                                         .title(TEST_ALTERNATE_CONTACT_TITLE_BILLING)
+                                                                                                         .build())
+                                                                                   .build();
 
         final GetAlternateContactResponse getAlternateContactResponseOperations = GetAlternateContactResponse.builder()
-                                                                                  .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
-                                                                                                        .alternateContactType(AlternateContactType.OPERATIONS)
-                                                                                                        .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_OPERATIONS)
-                                                                                                        .name(TEST_ALTERNATE_CONTACT_NAME_OPERATIONS)
-                                                                                                        .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_OPERATIONS)
-                                                                                                        .title(TEST_ALTERNATE_CONTACT_TITLE_OPERATIONS)
-                                                                                                        .build())
-                                                                                  .build();
+                                                                                      .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
+                                                                                                            .alternateContactType(AlternateContactType.OPERATIONS)
+                                                                                                            .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_OPERATIONS)
+                                                                                                            .name(TEST_ALTERNATE_CONTACT_NAME_OPERATIONS)
+                                                                                                            .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_OPERATIONS)
+                                                                                                            .title(TEST_ALTERNATE_CONTACT_TITLE_OPERATIONS)
+                                                                                                            .build())
+                                                                                      .build();
 
         final GetAlternateContactResponse getAlternateContactResponseSecurity = GetAlternateContactResponse.builder()
-                                                                                      .build();
+                                                                                    .build();
 
         final ListParentsResponse listParentsResponse = ListParentsResponse.builder()
                                                             .parents(Parent.builder()

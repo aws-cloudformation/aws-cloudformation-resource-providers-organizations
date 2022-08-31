@@ -31,6 +31,7 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import java.util.Random;
 
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
+    protected static final String GOV_CLOUD_PARTITION = "aws-us-gov";
     protected final String ALTERNATE_CONTACT_TYPE_BILLING = "BILLING";
     protected final String ALTERNATE_CONTACT_TYPE_OPERATIONS = "OPERATIONS";
     protected final String ALTERNATE_CONTACT_TYPE_SECURITY = "SECURITY";
@@ -42,9 +43,6 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected final String CREATE_ACCOUNT_FAILURE_REASON_ACCOUNT_LIMIT_EXCEEDED = "ACCOUNT_LIMIT_EXCEEDED";
     protected final String CREATE_ACCOUNT_FAILURE_REASON_INVALID_ADDRESS = "INVALID_ADDRESS";
     protected final String CREATE_ACCOUNT_FAILURE_REASON_INVALID_EMAIL = "INVALID_EMAIL";
-    protected final String CREATE_ACCOUNT_FAILURE_REASON_CONCURRENT_ACCOUNT_MODIFICATION = "CONCURRENT_ACCOUNT_MODIFICATION";
-    protected final String CREATE_ACCOUNT_FAILURE_REASON_INTERNAL_FAILURE = "INTERNAL_FAILURE";
-    protected final String ACCOUNT_CREATION_STATUS_IN_PROGRESS = "IN_PROGRESS";
     protected final String ACCOUNT_CREATION_STATUS_SUCCEEDED = "SUCCEEDED";
     protected final String ACCOUNT_CREATION_STATUS_FAILED = "FAILED";
     // ExponentialBackoffJitter Constants
@@ -57,6 +55,13 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final Logger logger) {
+        // Fail directly if this is GovCloud
+        final ResourceModel model = request.getDesiredResourceState();
+        if (request.getAwsPartition().equals(GOV_CLOUD_PARTITION)) {
+            String errMsg = "Can not create account for GovCloud in AWS::Organizations::Account resource type. Please use AWS::Organizations::GovCloudAccount.";
+            logger.log(errMsg);
+            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest, errMsg);
+        }
         return handleRequest(
             awsClientProxy,
             request,
@@ -108,6 +113,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
                 || e instanceof AccountNotFoundException
                 || e instanceof ChildNotFoundException
                 || e instanceof AccountAlreadyClosedException
+                || e instanceof DestinationParentNotFoundException
+                || e instanceof SourceParentNotFoundException
         ) {
             errorCode = HandlerErrorCode.NotFound;
         } else if (e instanceof AccessDeniedException || e instanceof AccessDeniedForDependencyException) {
@@ -116,9 +123,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             errorCode = HandlerErrorCode.ResourceConflict;
         } else if (e instanceof ConstraintViolationException) {
             errorCode = HandlerErrorCode.ServiceLimitExceeded;
-        } else if (e instanceof InvalidInputException
-                       || e instanceof DestinationParentNotFoundException
-                       || e instanceof SourceParentNotFoundException) {
+        } else if (e instanceof InvalidInputException) {
             errorCode = HandlerErrorCode.InvalidRequest;
         } else if (e instanceof ServiceException) {
             errorCode = HandlerErrorCode.ServiceInternalError;

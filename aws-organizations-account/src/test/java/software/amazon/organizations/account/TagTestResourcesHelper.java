@@ -46,9 +46,9 @@ public class TagTestResourcesHelper {
         final Set<software.amazon.organizations.account.Tag> tagsToReturn = new HashSet<>();
         for (Tag inputTags : tags) {
             software.amazon.organizations.account.Tag tag = software.amazon.organizations.account.Tag.builder()
-                                                                           .key(inputTags.key())
-                                                                           .value(inputTags.value())
-                                                                           .build();
+                                                                .key(inputTags.key())
+                                                                .value(inputTags.value())
+                                                                .build();
             tagsToReturn.add(tag);
         }
 
@@ -70,7 +70,7 @@ public class TagTestResourcesHelper {
         return tagsToReturn;
     }
 
-    static boolean tagsEqual(Set<?> set1, Set<?> set2){
+    static boolean tagsEqual(Set<?> set1, Set<?> set2) {
         if (set1 == null || set2 == null) {
             return false;
         }

@@ -135,7 +135,7 @@ If the account was created successfully, the unique identifier (ID) of the new a
 
 #### CreateAccountRequestId
 
-Specifies the Id value that uniquely identifies the CreateAccount request. You can get the value from the CreateAccountStatus.Id response in an earlier CreateAccount request, or from the ListCreateAccountStatus operation.
+Specifies the Id value that uniquely identifies the CreateAccount request. You can get the value from the CreateAccountStatus response in an earlier CreateAccount request, or from the ListCreateAccountStatus operation.
 
 #### FailureReason
 

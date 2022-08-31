@@ -1,13 +1,13 @@
 package software.amazon.organizations.account;
 
 import software.amazon.awssdk.services.account.AccountClient;
+import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.CloseAccountRequest;
 import software.amazon.awssdk.services.organizations.model.CloseAccountResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
-import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 public class DeleteHandler extends BaseHandlerStd {
@@ -28,12 +28,12 @@ public class DeleteHandler extends BaseHandlerStd {
         logger.log(String.format("Requesting CloseAccount w/ account id: %s.\n", accountId));
         return ProgressEvent.progress(model, callbackContext)
                    .then(progress ->
-                         awsClientProxy.initiate("AWS-Organizations-Account::CloseAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                             .translateToServiceRequest(Translator::translateToCloseAccountRequest)
-                             .makeServiceCall(this::closeAccount)
-                             .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                                 organizationsRequest, e, orgsClient1, model1, context, logger))
-                             .done((deleteRequest) ->  ProgressEvent.defaultSuccessHandler(null))
+                             awsClientProxy.initiate("AWS-Organizations-Account::CloseAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
+                                 .translateToServiceRequest(Translator::translateToCloseAccountRequest)
+                                 .makeServiceCall(this::closeAccount)
+                                 .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
+                                     organizationsRequest, e, orgsClient1, model1, context, logger))
+                                 .done((deleteRequest) -> ProgressEvent.defaultSuccessHandler(null))
                    );
     }
 

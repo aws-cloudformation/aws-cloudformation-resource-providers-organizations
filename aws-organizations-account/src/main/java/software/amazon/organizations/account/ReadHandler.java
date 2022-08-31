@@ -88,19 +88,26 @@ public class ReadHandler extends BaseHandlerStd {
                                  .done(getAlternateContactResponse -> {
                                      if (getAlternateContactResponse.alternateContact() != null) {
                                          AlternateContact alternateContact = buildAlternateContact(getAlternateContactResponse);
-                                         log.log(String.format(""));
                                          AlternateContacts alternateContacts = new AlternateContacts();
                                          if (model.getAlternateContacts() == null) {
                                              model.setAlternateContacts(alternateContacts);
                                          }
-                                         if (alternateContactType.equals(ALTERNATE_CONTACT_TYPE_BILLING)) {
-                                             model.getAlternateContacts().setBilling(alternateContact);
-                                         } else if (alternateContactType.equals(ALTERNATE_CONTACT_TYPE_OPERATIONS)) {
-                                             model.getAlternateContacts().setOperations(alternateContact);
-                                         } else {
-                                             model.getAlternateContacts().setSecurity(alternateContact);
+                                         switch (alternateContactType) {
+                                             case ALTERNATE_CONTACT_TYPE_BILLING:
+                                                 log.log(String.format("Read alternate contact for type %s", ALTERNATE_CONTACT_TYPE_BILLING));
+                                                 model.getAlternateContacts().setBilling(alternateContact);
+                                                 break;
+                                             case ALTERNATE_CONTACT_TYPE_OPERATIONS:
+                                                 log.log(String.format("Read alternate contact for type %s", ALTERNATE_CONTACT_TYPE_OPERATIONS));
+                                                 model.getAlternateContacts().setOperations(alternateContact);
+                                                 break;
+                                             case ALTERNATE_CONTACT_TYPE_SECURITY:
+                                                 log.log(String.format("Read alternate contact for type %s", ALTERNATE_CONTACT_TYPE_SECURITY));
+                                                 model.getAlternateContacts().setSecurity(alternateContact);
+                                                 break;
                                          }
                                      }
+                                     log.log("Empty alternate contact response, continue to next step...");
                                      return ProgressEvent.progress(model, callbackContext);
                                  })
                    );
@@ -141,7 +148,7 @@ public class ReadHandler extends BaseHandlerStd {
         String accountId = model.getAccountId();
         logger.log(String.format("Listing tags for account id: %s.\n", accountId));
         return awsClientProxy.initiate("AWS-Organizations-Account::ListTagsForResource", orgsClient, model, callbackContext)
-                   .translateToServiceRequest(resourceModel -> Translator.translateToListTagsForResourceRequest(accountId))
+                   .translateToServiceRequest(resourceModel -> Translator.translateToListTagsForResourceRequest(model))
                    .makeServiceCall(this::listTagsForResource)
                    .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
                        organizationsRequest, e, orgsClient1, model1, context, logger))
@@ -150,20 +157,17 @@ public class ReadHandler extends BaseHandlerStd {
 
     protected ListTagsForResourceResponse listTagsForResource(final ListTagsForResourceRequest listTagsForResourceRequest, final ProxyClient<OrganizationsClient> orgsClient) {
         log.log(String.format("Calling ListTagsForResource API for resource [%s].", listTagsForResourceRequest.resourceId()));
-        final ListTagsForResourceResponse listTagsForResourceResponse = orgsClient.injectCredentialsAndInvokeV2(listTagsForResourceRequest, orgsClient.client()::listTagsForResource);
-        return listTagsForResourceResponse;
+        return orgsClient.injectCredentialsAndInvokeV2(listTagsForResourceRequest, orgsClient.client()::listTagsForResource);
     }
 
     protected DescribeAccountResponse describeAccount(final DescribeAccountRequest describeAccountRequest, final ProxyClient<OrganizationsClient> orgsClient) {
         log.log(String.format("Calling DescribeAccount API for AccountId [%s].", describeAccountRequest.accountId()));
-        final DescribeAccountResponse describeAccountResponse = orgsClient.injectCredentialsAndInvokeV2(describeAccountRequest, orgsClient.client()::describeAccount);
-        return describeAccountResponse;
+        return orgsClient.injectCredentialsAndInvokeV2(describeAccountRequest, orgsClient.client()::describeAccount);
     }
 
     protected ListParentsResponse listParents(final ListParentsRequest listParentsRequest, final ProxyClient<OrganizationsClient> orgsClient) {
         log.log(String.format("Calling ListParents API for AccountId [%s].", listParentsRequest.childId()));
-        final ListParentsResponse listParentsResponse = orgsClient.injectCredentialsAndInvokeV2(listParentsRequest, orgsClient.client()::listParents);
-        return listParentsResponse;
+        return orgsClient.injectCredentialsAndInvokeV2(listParentsRequest, orgsClient.client()::listParents);
     }
 
     protected AlternateContact buildAlternateContact(final GetAlternateContactResponse getAlternateContactResponse) {

@@ -1,8 +1,8 @@
 package software.amazon.organizations.account;
 
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.account.AccountClient;
+import software.amazon.awssdk.services.organizations.OrganizationsClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
