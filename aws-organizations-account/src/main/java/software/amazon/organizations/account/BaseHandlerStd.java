@@ -107,14 +107,11 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final Exception e,
         final Logger logger
     ) {
-        logger.log(String.format("e in handleErrorTranslation [%s]", e.toString()));
         HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
         if (e instanceof AwsOrganizationsNotInUseException
                 || e instanceof AccountNotFoundException
                 || e instanceof ChildNotFoundException
                 || e instanceof AccountAlreadyClosedException
-                || e instanceof DestinationParentNotFoundException
-                || e instanceof SourceParentNotFoundException
         ) {
             errorCode = HandlerErrorCode.NotFound;
         } else if (e instanceof AccessDeniedException || e instanceof AccessDeniedForDependencyException) {
@@ -123,21 +120,20 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             errorCode = HandlerErrorCode.ResourceConflict;
         } else if (e instanceof ConstraintViolationException) {
             errorCode = HandlerErrorCode.ServiceLimitExceeded;
-        } else if (e instanceof InvalidInputException) {
+        } else if (e instanceof InvalidInputException || e instanceof DestinationParentNotFoundException) {
             errorCode = HandlerErrorCode.InvalidRequest;
         } else if (e instanceof ServiceException) {
             errorCode = HandlerErrorCode.ServiceInternalError;
         } else if (e instanceof TooManyRequestsException) {
             errorCode = HandlerErrorCode.Throttling;
         } else if (e instanceof CfnResourceConflictException) {
-            logger.log(String.format("e in CfnResourceConflictException [%s]", e.toString()));
             errorCode = HandlerErrorCode.ResourceConflict;
+        } else if (e instanceof SourceParentNotFoundException) {
+            errorCode = HandlerErrorCode.InternalFailure;
         }
         logger.log(String.format("[Exception] Failed with exception. Message: [%s], ErrorCode: [%s] for Account [%s].",
             e.getMessage(), errorCode, resourceModel.getAccountName()));
-        ProgressEvent<ResourceModel, CallbackContext> result = ProgressEvent.failed(resourceModel, callbackContext, errorCode, e.getMessage());
-        logger.log(String.format("check result in exception handler: [%s]", result.toString()));
-        return result;
+        return ProgressEvent.failed(resourceModel, callbackContext, errorCode, e.getMessage());
     }
 
     public final int computeDelayBeforeNextRetry(int retryAttempt) {
