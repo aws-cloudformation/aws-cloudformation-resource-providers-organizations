@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project
-    xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+        xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>software.amazon.organizations.policy</groupId>
-    <artifactId>aws-organizations-policy-handler</artifactId>
-    <name>aws-organizations-policy-handler</name>
+    <groupId>software.amazon.organizations.account</groupId>
+    <artifactId>aws-organizations-account-handler</artifactId>
+    <name>aws-organizations-account-handler</name>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -95,6 +95,11 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>organizations</artifactId>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/account -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>account</artifactId>
         </dependency>
     </dependencies>
 
@@ -261,7 +266,7 @@
             <resource>
                 <directory>${project.basedir}</directory>
                 <includes>
-                    <include>aws-organizations-policy.json</include>
+                    <include>aws-organizations-account.json</include>
                 </includes>
             </resource>
         </resources>

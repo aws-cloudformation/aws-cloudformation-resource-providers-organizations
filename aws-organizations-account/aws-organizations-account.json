@@ -1,0 +1,210 @@
+{
+  "typeName": "AWS::Organizations::Account",
+  "description": "You can use AWS::Organizations::Account to manage accounts in organization.",
+  "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-organizations.git",
+  "properties": {
+    "AccountName": {
+      "description": "The friendly name of the member account.",
+      "type": "string",
+      "pattern": "[\\u0020-\\u007E]+",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "Email": {
+      "description": "The email address of the owner to assign to the new member account.",
+      "type": "string",
+      "pattern": "[^\\s@]+@[^\\s@]+\\.[^\\s@]+",
+      "minLength": 6,
+      "maxLength": 64
+    },
+    "RoleName": {
+      "description": "The name of an IAM role that AWS Organizations automatically preconfigures in the new member account. Default name is OrganizationAccountAccessRole if not specified.",
+      "type": "string",
+      "default": "OrganizationAccountAccessRole",
+      "pattern": "[\\w+=,.@-]{1,64}",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "ParentIds": {
+      "description": "List of parent nodes for the member account. Currently only one parent at a time is supported. Default is root.",
+      "type": "array",
+      "insertionOrder": false,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^(r-[0-9a-z]{4,32})|(ou-[0-9a-z]{4,32}-[a-z0-9]{8,32})$"
+      }
+    },
+    "CreateAccountRequestId": {
+      "description": "Specifies the Id value that uniquely identifies the CreateAccount request. You can get the value from the CreateAccountStatus response in an earlier CreateAccount request, or from the ListCreateAccountStatus operation.",
+      "type": "string",
+      "pattern": "^car-[a-z0-9]{8,32}$",
+      "minLength": 1,
+      "maxLength": 36
+    },
+    "FailureReason": {
+      "description": "If the create account request failed, a description of the reason for the failure.",
+      "type": "string"
+    },
+    "Tags": {
+      "description": "A list of tags that you want to attach to the newly created account. For each tag in the list, you must specify both a tag key and a value.",
+      "type": "array",
+      "uniqueItems": true,
+      "insertionOrder": false,
+      "items": {
+        "$ref": "#/definitions/Tag"
+      }
+    },
+    "AlternateContacts": {
+      "description": "Alternate contacts you want to put. Your organization must enable all features to manage settings on your member accounts. You need to enable trusted access for AWS Account Management service.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Billing": {
+          "$ref": "#/definitions/AlternateContact"
+        },
+        "Operations": {
+          "$ref": "#/definitions/AlternateContact"
+        },
+        "Security": {
+          "$ref": "#/definitions/AlternateContact"
+        }
+      }
+    },
+    "AccountId": {
+      "description": "If the account was created successfully, the unique identifier (ID) of the new account.",
+      "type": "string",
+      "pattern": "^\\d{12}$",
+      "maxLength": 12
+    }
+  },
+  "definitions": {
+    "Tag": {
+      "description": "A custom key-value pair associated with a resource within your organization.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Key": {
+          "description": "The key identifier, or name, of the tag.",
+          "type": "string",
+          "pattern": "[\\s\\S]*",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "Value": {
+          "description": "The string value that's associated with the key of the tag. You can set the value of a tag to an empty string, but you can't set the value of a tag to null.",
+          "type": "string",
+          "pattern": "[\\s\\S]*",
+          "minLength": 0,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "Value",
+        "Key"
+      ]
+    },
+    "AlternateContact": {
+      "description": "In order to keep the right people in the loop, you can add an alternate contact for billing, operations, and security communications.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "EmailAddress": {
+          "description": "Specifies an email address for the alternate contact. ",
+          "type": "string",
+          "pattern": "^[\\s]*[\\w+=.#!&-]+@[\\w.-]+\\.[\\w]+[\\s]*$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "Name": {
+          "description": "Specifies a name for the alternate contact.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "PhoneNumber": {
+          "description": "Specifies a phone number for the alternate contact.",
+          "type": "string",
+          "pattern": "^[\\s0-9()+-]+$",
+          "minLength": 1,
+          "maxLength": 25
+        },
+        "Title": {
+          "description": "Specifies a title for the alternate contact.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "EmailAddress",
+        "Name",
+        "PhoneNumber",
+        "Title"
+      ]
+    }
+  },
+  "tagging": {
+    "taggable": true,
+    "tagOnCreate": true,
+    "tagUpdatable": true,
+    "cloudFormationSystemTags": false,
+    "tagProperty": "/properties/Tags"
+  },
+  "additionalProperties": false,
+  "required": [
+    "AccountName",
+    "Email"
+  ],
+  "createOnlyProperties": [
+    "/properties/AccountName",
+    "/properties/Email"
+  ],
+  "readOnlyProperties": [
+    "/properties/AccountId",
+    "/properties/CreateAccountRequestId",
+    "/properties/FailureReason"
+  ],
+  "primaryIdentifier": [
+    "/properties/AccountId"
+  ],
+  "handlers": {
+    "create": {
+      "permissions": [
+        "organizations:CreateAccount",
+        "organizations:DescribeCreateAccountStatus",
+        "organizations:MoveAccount",
+        "organizations:ListParents",
+        "organizations:TagResource",
+        "account:PutAlternateContact"
+      ]
+    },
+    "read": {
+      "permissions": [
+        "organizations:DescribeAccount",
+        "organizations:ListParents",
+        "organizations:ListTagsForResource",
+        "account:GetAlternateContact"
+      ]
+    },
+    "update": {
+      "permissions": [
+        "organizations:MoveAccount",
+        "organizations:TagResource",
+        "organizations:UntagResource",
+        "account:PutAlternateContact",
+        "account:DeleteAlternateContact"
+      ]
+    },
+    "delete": {
+      "permissions": [
+        "organizations:CloseAccount"
+      ]
+    },
+    "list": {
+      "permissions": [
+        "organizations:ListAccounts"
+      ]
+    }
+  }
+}
