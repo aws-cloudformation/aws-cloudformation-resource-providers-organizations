@@ -7,17 +7,25 @@ import software.amazon.awssdk.services.organizations.model.CloseAccountRequest;
 import software.amazon.awssdk.services.organizations.model.CreateAccountRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeAccountRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeCreateAccountStatusRequest;
+import software.amazon.awssdk.services.organizations.model.ListAccountsRequest;
+import software.amazon.awssdk.services.organizations.model.ListAccountsResponse;
 import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
+import software.amazon.awssdk.services.organizations.model.ListRootsRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.MoveAccountRequest;
 import software.amazon.awssdk.services.organizations.model.Tag;
+import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
+import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class is a centralized placeholder for
@@ -39,6 +47,28 @@ public class Translator {
                    .build();
     }
 
+    static ListAccountsRequest translateToListAccounts(final String nextToken) {
+        return ListAccountsRequest.builder()
+                   .nextToken(nextToken)
+                   .build();
+    }
+
+    static List<ResourceModel> translateListAccountsResponseToResourceModel(final ListAccountsResponse listAccountsResponse) {
+        return streamOfOrEmpty(listAccountsResponse.accounts())
+                   .map(account -> ResourceModel.builder()
+                           .email(account.email())
+                           .accountId(account.id())
+                           .accountName(account.name())
+                           .build())
+                   .collect(Collectors.toList());
+    }
+
+    private static <T> Stream<T> streamOfOrEmpty(final Collection<T> collection) {
+        return Optional.ofNullable(collection)
+                   .map(Collection::stream)
+                   .orElseGet(Stream::empty);
+    }
+
     static GetAlternateContactRequest translateToGetAlternateContactRequest(final ResourceModel model, final String alternateContactType) {
         return GetAlternateContactRequest.builder()
                    .accountId(model.getAccountId())
@@ -52,12 +82,31 @@ public class Translator {
                    .build();
     }
 
+    static ListRootsRequest translateToListRootsRequest() {
+        return ListRootsRequest.builder()
+                .build();
+    }
+
     static CreateAccountRequest translateToCreateAccountRequest(final ResourceModel model) {
         return CreateAccountRequest.builder()
                    .accountName(model.getAccountName())
                    .email(model.getEmail())
                    .roleName(model.getRoleName())
                    .tags(translateTagsForTagResourceRequest(model.getTags()))
+                   .build();
+    }
+
+    static TagResourceRequest translateToTagResourceRequest(Set<Tag> tags, String accountId) {
+        return TagResourceRequest.builder()
+                   .resourceId(accountId)
+                   .tags(tags)
+                   .build();
+    }
+
+    static UntagResourceRequest translateToUntagResourceRequest(Set<String> tagKeys, String accountId) {
+        return UntagResourceRequest.builder()
+                   .resourceId(accountId)
+                   .tagKeys(tagKeys)
                    .build();
     }
 
@@ -73,7 +122,7 @@ public class Translator {
                    .build();
     }
 
-    static PutAlternateContactRequest translateToPutAlternateContactTypeRequest(final ResourceModel model, String alternateContactType, AlternateContact alternateContact) {
+    static PutAlternateContactRequest translateToPutAlternateContactTypeRequest(final ResourceModel model, String alternateContactType, AlternateContact alternateContact){
         return PutAlternateContactRequest
                    .builder()
                    .accountId(model.getAccountId())

@@ -192,8 +192,7 @@
         "organizations:MoveAccount",
         "organizations:TagResource",
         "organizations:UntagResource",
-        "account:PutAlternateContact",
-        "account:DeleteAlternateContact"
+        "organizations:ListRoots"
       ]
     },
     "delete": {

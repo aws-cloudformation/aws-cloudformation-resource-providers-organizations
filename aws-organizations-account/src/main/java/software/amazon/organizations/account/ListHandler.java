@@ -1,43 +1,60 @@
 package software.amazon.organizations.account;
 
-import software.amazon.awssdk.awscore.AwsRequest;
-import software.amazon.awssdk.awscore.AwsResponse;
+import software.amazon.awssdk.services.account.AccountClient;
+import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.ListAccountsRequest;
+import software.amazon.awssdk.services.organizations.model.ListAccountsResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
-import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.OperationStatus;
+import software.amazon.cloudformation.proxy.ProgressEvent;
+import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListHandler extends BaseHandler<CallbackContext> {
+public class ListHandler extends BaseHandlerStd {
+    private Logger log;
 
-    @Override
-    public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
-        final AmazonWebServicesClientProxy proxy,
-        final ResourceHandlerRequest<ResourceModel> request,
-        final CallbackContext callbackContext,
-        final Logger logger) {
+    protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
+            final AmazonWebServicesClientProxy awsClientProxy,
+            final ResourceHandlerRequest<ResourceModel> request,
+            final CallbackContext callbackContext,
+            final ProxyClient<OrganizationsClient> orgsClient,
+            final ProxyClient<AccountClient> accountClientProxyClient,
+            final Logger logger) {
+
+        this.log = logger;
+        logger.log(String.format("Entered %s list handler with accountId [%s]", ResourceModel.TYPE_NAME, request.getAwsAccountId()));
+
+        final ResourceModel model = request.getDesiredResourceState();
+
+        if (model == null) {
+            return ProgressEvent.failed(ResourceModel.builder().build(), callbackContext, HandlerErrorCode.InvalidRequest,
+                    "Accounts model cannot be empty!");
+        }
 
         final List<ResourceModel> models = new ArrayList<>();
 
-        // STEP 1 [TODO: construct a body of a request]
-        final AwsRequest awsRequest = Translator.translateToListRequest(request.getNextToken());
+        return awsClientProxy.initiate("AWS-Organizations-Account::ListAccounts", orgsClient, model, callbackContext)
+                .translateToServiceRequest(t -> Translator.translateToListAccounts(request.getNextToken()))
+                .makeServiceCall(this::listAccounts)
+                .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
+                        organizationsRequest, e, proxyClient1, model1, context, logger))
+                .done(ListAccountsResponse -> {
+                    models.addAll(Translator.translateListAccountsResponseToResourceModel(ListAccountsResponse));
+                    return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                            .resourceModels(models)
+                            .nextToken(ListAccountsResponse.nextToken())
+                            .status(OperationStatus.SUCCESS)
+                            .build();
+                });
+    }
 
-        // STEP 2 [TODO: make an api call]
-        AwsResponse awsResponse = null; // proxy.injectCredentialsAndInvokeV2(awsRequest, ClientBuilder.getClient()::describeLogGroups);
-
-        // STEP 3 [TODO: get a token for the next page]
-        String nextToken = null;
-
-        // STEP 4 [TODO: construct resource models]
-        // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/master/aws-logs-loggroup/src/main/java/software/amazon/logs/loggroup/ListHandler.java#L19-L21
-
-        return ProgressEvent.<ResourceModel, CallbackContext>builder()
-            .resourceModels(models)
-            .nextToken(nextToken)
-            .status(OperationStatus.SUCCESS)
-            .build();
+    protected ListAccountsResponse listAccounts(final ListAccountsRequest listAccountsRequest, final ProxyClient<OrganizationsClient> orgsClient) {
+        log.log("Start calling listAccounts");
+        return orgsClient.injectCredentialsAndInvokeV2(listAccountsRequest, orgsClient.client()::listAccounts);
     }
 }

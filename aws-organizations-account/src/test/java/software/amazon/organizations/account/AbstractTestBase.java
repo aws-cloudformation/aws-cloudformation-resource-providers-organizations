@@ -40,7 +40,9 @@ public class AbstractTestBase {
     protected static final String TEST_ALTERNATE_CONTACT_TITLE_SECURITY = "TestAlternateContactTitleSecurity";
     protected static final String TEST_SOURCE_PARENT_ID = "r-aaaa";
     protected static final String TEST_DESTINATION_PARENT_ID = "ou-abc1-abcd1234";
+    protected static final String TEST_DESTINATION_UPDATED_PARENT_ID = "ou-abc1-abcd1235";
     protected static final Set<String> TEST_PARENT_IDS = ImmutableSet.of(TEST_DESTINATION_PARENT_ID);
+    protected static final Set<String> TEST_PARENT_UPDATED_IDS = ImmutableSet.of(TEST_DESTINATION_UPDATED_PARENT_ID);
     protected static final Set<String> TEST_MULTIPLE_PARENT_IDS = ImmutableSet.of(TEST_SOURCE_PARENT_ID, TEST_DESTINATION_PARENT_ID);
     protected static final AlternateContact TEST_ALTERNATE_CONTACT_BILLING = AlternateContact.builder()
                                                                                  .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_BILLING)
@@ -77,6 +79,7 @@ public class AbstractTestBase {
     protected static final String FAILED = "FAILED";
     protected static final String SUCCEEDED = "SUCCEEDED";
     protected static final String IN_PROGRESS = "IN_PROGRESS";
+    protected static final String TEST_NEXT_TOKEN = "mockNextTokenItem";
     protected static final CreateAccountStatus CreateAccountStatusInProgress = CreateAccountStatus.builder()
                                                                                    .accountName(TEST_ACCOUNT_NAME)
                                                                                    .id(CREATE_ACCOUNT_STATUS_ID)
