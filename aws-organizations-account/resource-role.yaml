@@ -30,7 +30,6 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                - "account:DeleteAlternateContact"
                 - "account:GetAlternateContact"
                 - "account:PutAlternateContact"
                 - "organizations:CloseAccount"
@@ -39,6 +38,7 @@ Resources:
                 - "organizations:DescribeCreateAccountStatus"
                 - "organizations:ListAccounts"
                 - "organizations:ListParents"
+                - "organizations:ListRoots"
                 - "organizations:ListTagsForResource"
                 - "organizations:MoveAccount"
                 - "organizations:TagResource"

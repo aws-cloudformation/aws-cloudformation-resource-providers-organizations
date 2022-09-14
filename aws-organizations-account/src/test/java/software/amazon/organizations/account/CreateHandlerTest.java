@@ -458,9 +458,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
         assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
         assertThat(response.getResourceModel().getParentIds()).isEqualTo(TEST_PARENT_IDS);
-        assertThat(response.getResourceModel().getAlternateContacts().getBilling()).isEqualTo(TEST_ALTERNATE_CONTACT_BILLING);
-        assertThat(response.getResourceModel().getAlternateContacts().getOperations()).isEqualTo(TEST_ALTERNATE_CONTACT_OPERATIONS);
-        assertThat(response.getResourceModel().getAlternateContacts().getSecurity()).isEqualTo(TEST_ALTERNATE_CONTACT_SECURITY);
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
 
         verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));

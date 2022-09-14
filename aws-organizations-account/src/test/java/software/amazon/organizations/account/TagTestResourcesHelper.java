@@ -23,6 +23,15 @@ public class TagTestResourcesHelper {
         Tag.builder().key("Add").value("Should be added").build()
     ));
 
+    final static Set<Tag> expectedTagsToAddOrUpdate = new HashSet<Tag>(Arrays.asList(
+        Tag.builder().key("Update").value("Has been updated").build(),
+        Tag.builder().key("Add").value("Should be added").build()
+    ));
+
+    final static Set<String> expectedTagsToRemove = new HashSet<String>(Arrays.asList(
+        "Delete"
+    ));
+
     static ListTagsForResourceResponse buildDefaultTagsResponse() {
         return ListTagsForResourceResponse.builder()
                    .tags(defaultTags)
@@ -38,6 +47,12 @@ public class TagTestResourcesHelper {
     static ListTagsForResourceResponse buildEmptyTagsResponse() {
         return ListTagsForResourceResponse.builder()
                    .build();
+    }
+
+    static ListTagsForResourceResponse buildTagsResponse(Set<Tag> tags) {
+        return ListTagsForResourceResponse.builder()
+                .tags(tags)
+                .build();
     }
 
     static Set<software.amazon.organizations.account.Tag> translateOrganizationTagsToAccountTags(Set<Tag> tags) {

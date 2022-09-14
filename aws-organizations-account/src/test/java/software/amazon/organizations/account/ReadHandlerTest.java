@@ -61,48 +61,48 @@ public class ReadHandlerTest extends AbstractTestBase {
     @Test
     public void handleRequest_SimpleSuccess() {
         final ResourceModel model = ResourceModel.builder()
-                                        .accountId(TEST_ACCOUNT_ID)
-                                        .build();
+                .accountId(TEST_ACCOUNT_ID)
+                .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                                                                  .desiredResourceState(model)
-                                                                  .build();
+                .desiredResourceState(model)
+                .build();
 
         final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
-                                                                                                              .arn(TEST_ACCOUNT_ARN)
-                                                                                                              .email(TEST_ACCOUNT_EMAIL)
-                                                                                                              .id(TEST_ACCOUNT_ID)
-                                                                                                              .name(TEST_ACCOUNT_NAME)
-                                                                                                              .build()).build();
+                .arn(TEST_ACCOUNT_ARN)
+                .email(TEST_ACCOUNT_EMAIL)
+                .id(TEST_ACCOUNT_ID)
+                .name(TEST_ACCOUNT_NAME)
+                .build()).build();
 
         final GetAlternateContactResponse getAlternateContactResponseBilling = GetAlternateContactResponse.builder()
-                                                                                   .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
-                                                                                                         .alternateContactType(AlternateContactType.BILLING)
-                                                                                                         .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_BILLING)
-                                                                                                         .name(TEST_ALTERNATE_CONTACT_NAME_BILLING)
-                                                                                                         .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_BILLING)
-                                                                                                         .title(TEST_ALTERNATE_CONTACT_TITLE_BILLING)
-                                                                                                         .build())
-                                                                                   .build();
+                .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
+                        .alternateContactType(AlternateContactType.BILLING)
+                        .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_BILLING)
+                        .name(TEST_ALTERNATE_CONTACT_NAME_BILLING)
+                        .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_BILLING)
+                        .title(TEST_ALTERNATE_CONTACT_TITLE_BILLING)
+                        .build())
+                .build();
 
         final GetAlternateContactResponse getAlternateContactResponseOperations = GetAlternateContactResponse.builder()
-                                                                                      .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
-                                                                                                            .alternateContactType(AlternateContactType.OPERATIONS)
-                                                                                                            .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_OPERATIONS)
-                                                                                                            .name(TEST_ALTERNATE_CONTACT_NAME_OPERATIONS)
-                                                                                                            .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_OPERATIONS)
-                                                                                                            .title(TEST_ALTERNATE_CONTACT_TITLE_OPERATIONS)
-                                                                                                            .build())
-                                                                                      .build();
+                .alternateContact(software.amazon.awssdk.services.account.model.AlternateContact.builder()
+                        .alternateContactType(AlternateContactType.OPERATIONS)
+                        .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_OPERATIONS)
+                        .name(TEST_ALTERNATE_CONTACT_NAME_OPERATIONS)
+                        .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_OPERATIONS)
+                        .title(TEST_ALTERNATE_CONTACT_TITLE_OPERATIONS)
+                        .build())
+                .build();
 
         final GetAlternateContactResponse getAlternateContactResponseSecurity = GetAlternateContactResponse.builder()
-                                                                                    .build();
+                .build();
 
         final ListParentsResponse listParentsResponse = ListParentsResponse.builder()
-                                                            .parents(Parent.builder()
-                                                                         .id(TEST_DESTINATION_PARENT_ID)
-                                                                         .build()
-                                                            ).build();
+                .parents(Parent.builder()
+                        .id(TEST_DESTINATION_PARENT_ID)
+                        .build()
+                ).build();
 
         final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildDefaultTagsResponse();
         when(mockProxyClient.client().describeAccount(any(DescribeAccountRequest.class))).thenReturn(describeAccountResponse);
@@ -135,12 +135,12 @@ public class ReadHandlerTest extends AbstractTestBase {
     @Test
     public void handleRequest_Fails_With_CfnNotFoundException() {
         final ResourceModel model = ResourceModel.builder()
-                                        .accountId(TEST_ACCOUNT_ID)
-                                        .build();
+                .accountId(TEST_ACCOUNT_ID)
+                .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                                                                  .desiredResourceState(model)
-                                                                  .build();
+                .desiredResourceState(model)
+                .build();
 
         when(mockProxyClient.client().describeAccount(any(DescribeAccountRequest.class))).thenThrow(AccountNotFoundException.class);
 
@@ -155,26 +155,26 @@ public class ReadHandlerTest extends AbstractTestBase {
     @Test
     public void handleRequest_SuccessAfterResourceNotFoundExceptionForAlternateContact() {
         final ResourceModel model = ResourceModel.builder()
-                                        .accountId(TEST_ACCOUNT_ID)
-                                        .build();
+                .accountId(TEST_ACCOUNT_ID)
+                .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                                                                  .desiredResourceState(model)
-                                                                  .build();
+                .desiredResourceState(model)
+                .build();
 
         final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
-                                                                                                              .arn(TEST_ACCOUNT_ARN)
-                                                                                                              .email(TEST_ACCOUNT_EMAIL)
-                                                                                                              .id(TEST_ACCOUNT_ID)
-                                                                                                              .name(TEST_ACCOUNT_NAME)
-                                                                                                              .build()).build();
+                .arn(TEST_ACCOUNT_ARN)
+                .email(TEST_ACCOUNT_EMAIL)
+                .id(TEST_ACCOUNT_ID)
+                .name(TEST_ACCOUNT_NAME)
+                .build()).build();
 
 
         final ListParentsResponse listParentsResponse = ListParentsResponse.builder()
-                                                            .parents(Parent.builder()
-                                                                         .id(TEST_DESTINATION_PARENT_ID)
-                                                                         .build()
-                                                            ).build();
+                .parents(Parent.builder()
+                        .id(TEST_DESTINATION_PARENT_ID)
+                        .build()
+                ).build();
 
         final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildDefaultTagsResponse();
         when(mockProxyClient.client().describeAccount(any(DescribeAccountRequest.class))).thenReturn(describeAccountResponse);
