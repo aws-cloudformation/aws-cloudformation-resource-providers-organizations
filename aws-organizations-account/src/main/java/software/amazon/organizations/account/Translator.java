@@ -1,8 +1,6 @@
 package software.amazon.organizations.account;
 
 import software.amazon.awssdk.awscore.AwsRequest;
-import software.amazon.awssdk.services.account.model.GetAlternateContactRequest;
-import software.amazon.awssdk.services.account.model.PutAlternateContactRequest;
 import software.amazon.awssdk.services.organizations.model.CloseAccountRequest;
 import software.amazon.awssdk.services.organizations.model.CreateAccountRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeAccountRequest;
@@ -69,13 +67,6 @@ public class Translator {
                    .orElseGet(Stream::empty);
     }
 
-    static GetAlternateContactRequest translateToGetAlternateContactRequest(final ResourceModel model, final String alternateContactType) {
-        return GetAlternateContactRequest.builder()
-                   .accountId(model.getAccountId())
-                   .alternateContactType(alternateContactType)
-                   .build();
-    }
-
     static ListParentsRequest translateToListParentsRequest(final ResourceModel model) {
         return ListParentsRequest.builder()
                    .childId(model.getAccountId())
@@ -122,18 +113,6 @@ public class Translator {
                    .build();
     }
 
-    static PutAlternateContactRequest translateToPutAlternateContactTypeRequest(final ResourceModel model, String alternateContactType, AlternateContact alternateContact){
-        return PutAlternateContactRequest
-                   .builder()
-                   .accountId(model.getAccountId())
-                   .alternateContactType(alternateContactType)
-                   .emailAddress(alternateContact.getEmailAddress())
-                   .name(alternateContact.getName())
-                   .phoneNumber(alternateContact.getPhoneNumber())
-                   .title(alternateContact.getTitle())
-                   .build();
-    }
-
     static ListParentsRequest translateToListParentsRequest(final String childId) {
         return ListParentsRequest.builder().childId(childId).build();
     }
@@ -163,7 +142,6 @@ public class Translator {
                    .accountName(model.getAccountName())
                    .email(model.getEmail())
                    .parentIds(model.getParentIds())
-                   .alternateContacts(model.getAlternateContacts())
                    .tags(translateTagsFromSdkResponse(listTagsForResourceResponse.tags()))
                    .roleName(model.getRoleName())
                    .build();

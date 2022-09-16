@@ -55,22 +55,6 @@
         "$ref": "#/definitions/Tag"
       }
     },
-    "AlternateContacts": {
-      "description": "Alternate contacts you want to put. Your organization must enable all features to manage settings on your member accounts. You need to enable trusted access for AWS Account Management service.",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "Billing": {
-          "$ref": "#/definitions/AlternateContact"
-        },
-        "Operations": {
-          "$ref": "#/definitions/AlternateContact"
-        },
-        "Security": {
-          "$ref": "#/definitions/AlternateContact"
-        }
-      }
-    },
     "AccountId": {
       "description": "If the account was created successfully, the unique identifier (ID) of the new account.",
       "type": "string",
@@ -103,45 +87,6 @@
         "Value",
         "Key"
       ]
-    },
-    "AlternateContact": {
-      "description": "In order to keep the right people in the loop, you can add an alternate contact for billing, operations, and security communications.",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "EmailAddress": {
-          "description": "Specifies an email address for the alternate contact. ",
-          "type": "string",
-          "pattern": "^[\\s]*[\\w+=.#!&-]+@[\\w.-]+\\.[\\w]+[\\s]*$",
-          "minLength": 1,
-          "maxLength": 64
-        },
-        "Name": {
-          "description": "Specifies a name for the alternate contact.",
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 64
-        },
-        "PhoneNumber": {
-          "description": "Specifies a phone number for the alternate contact.",
-          "type": "string",
-          "pattern": "^[\\s0-9()+-]+$",
-          "minLength": 1,
-          "maxLength": 25
-        },
-        "Title": {
-          "description": "Specifies a title for the alternate contact.",
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 50
-        }
-      },
-      "required": [
-        "EmailAddress",
-        "Name",
-        "PhoneNumber",
-        "Title"
-      ]
     }
   },
   "tagging": {
@@ -158,7 +103,8 @@
   ],
   "createOnlyProperties": [
     "/properties/AccountName",
-    "/properties/Email"
+    "/properties/Email",
+    "/properties/RoleName"
   ],
   "readOnlyProperties": [
     "/properties/AccountId",
@@ -175,16 +121,14 @@
         "organizations:DescribeCreateAccountStatus",
         "organizations:MoveAccount",
         "organizations:ListParents",
-        "organizations:TagResource",
-        "account:PutAlternateContact"
+        "organizations:TagResource"
       ]
     },
     "read": {
       "permissions": [
         "organizations:DescribeAccount",
         "organizations:ListParents",
-        "organizations:ListTagsForResource",
-        "account:GetAlternateContact"
+        "organizations:ListTagsForResource"
       ]
     },
     "update": {

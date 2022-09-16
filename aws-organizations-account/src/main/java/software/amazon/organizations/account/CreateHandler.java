@@ -1,7 +1,6 @@
 package software.amazon.organizations.account;
 
 import org.apache.commons.collections4.CollectionUtils;
-import software.amazon.awssdk.services.account.AccountClient;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.CreateAccountRequest;
 import software.amazon.awssdk.services.organizations.model.CreateAccountResponse;
@@ -20,8 +19,6 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 import java.util.Set;
 
-import static software.amazon.organizations.account.Translator.translateToPutAlternateContactTypeRequest;
-
 public class CreateHandler extends BaseHandlerStd {
     private Logger log;
 
@@ -30,7 +27,6 @@ public class CreateHandler extends BaseHandlerStd {
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final ProxyClient<AccountClient> accountClientProxyClient,
         final Logger logger) {
 
         this.log = logger;
@@ -70,19 +66,7 @@ public class CreateHandler extends BaseHandlerStd {
                    )
                    .then(progress -> describeCreateAccountStatus(awsClientProxy, request, model, callbackContext, orgsClient, logger))
                    .then(progress -> moveAccount(awsClientProxy, request, model, callbackContext, orgsClient, logger))
-                   .then(progress -> model.getAlternateContacts() != null && model.getAlternateContacts().getBilling() != null ?
-                                         putAlternateContactByType(awsClientProxy, model, callbackContext, accountClientProxyClient, logger, ALTERNATE_CONTACT_TYPE_BILLING, model.getAlternateContacts().getBilling()) :
-                                         ProgressEvent.defaultInProgressHandler(progress.getCallbackContext(), 0, progress.getResourceModel())
-                   )
-                   .then(progress -> model.getAlternateContacts() != null && model.getAlternateContacts().getOperations() != null ?
-                                         putAlternateContactByType(awsClientProxy, model, callbackContext, accountClientProxyClient, logger, ALTERNATE_CONTACT_TYPE_OPERATIONS, model.getAlternateContacts().getOperations()) :
-                                         ProgressEvent.defaultInProgressHandler(progress.getCallbackContext(), 0, progress.getResourceModel())
-                   )
-                   .then(progress -> model.getAlternateContacts() != null && model.getAlternateContacts().getSecurity() != null ?
-                                         putAlternateContactByType(awsClientProxy, model, callbackContext, accountClientProxyClient, logger, ALTERNATE_CONTACT_TYPE_SECURITY, model.getAlternateContacts().getSecurity()) :
-                                         ProgressEvent.defaultInProgressHandler(progress.getCallbackContext(), 0, progress.getResourceModel())
-                   )
-                   .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, accountClientProxyClient, logger));
+                   .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> describeCreateAccountStatus(
@@ -205,28 +189,6 @@ public class CreateHandler extends BaseHandlerStd {
                                          return handleError(organizationsRequest, e, proxyClient1, model1, context, logger);
                                      }
                                  })
-                                 .progress()
-                   );
-    }
-
-    protected ProgressEvent<ResourceModel, CallbackContext> putAlternateContactByType(
-        final AmazonWebServicesClientProxy awsClientProxy,
-        final ResourceModel model,
-        final CallbackContext callbackContext,
-        final ProxyClient<AccountClient> accountClient,
-        final Logger logger,
-        final String alternateContactType,
-        final AlternateContact alternateContact
-    ) {
-        logger.log(String.format("Put alternate contact for account id [%s] with alternate contact [%s].", model.getAccountId(), alternateContact.toString()));
-        return ProgressEvent.progress(model, callbackContext)
-                   .then(progress ->
-                             awsClientProxy.initiate(String.format("AWS-Organizations-Account::PutAlternateContact-", alternateContactType), accountClient, progress.getResourceModel(), progress.getCallbackContext())
-                                 .translateToServiceRequest(model1 -> translateToPutAlternateContactTypeRequest(model1, alternateContactType, alternateContact))
-                                 .makeServiceCall((request, client) -> accountClient.injectCredentialsAndInvokeV2(request,
-                                     accountClient.client()::putAlternateContact))
-                                 .handleError((request, e, proxyClient1, model1, context) -> handleAccountError(
-                                     request, e, proxyClient1, model1, context, logger))
                                  .progress()
                    );
     }

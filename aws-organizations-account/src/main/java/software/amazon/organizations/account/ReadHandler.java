@@ -1,8 +1,5 @@
 package software.amazon.organizations.account;
 
-import software.amazon.awssdk.services.account.AccountClient;
-import software.amazon.awssdk.services.account.model.GetAlternateContactResponse;
-import software.amazon.awssdk.services.account.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DescribeAccountRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeAccountResponse;
@@ -20,8 +17,6 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import java.util.HashSet;
 import java.util.Set;
 
-import static software.amazon.organizations.account.Translator.translateToGetAlternateContactRequest;
-
 public class ReadHandler extends BaseHandlerStd {
     private Logger log;
 
@@ -30,7 +25,6 @@ public class ReadHandler extends BaseHandlerStd {
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final ProxyClient<AccountClient> accountClientProxyClient,
         final Logger logger) {
 
         this.log = logger;
@@ -51,66 +45,8 @@ public class ReadHandler extends BaseHandlerStd {
                                      return ProgressEvent.progress(model, callbackContext);
                                  })
                    )
-                   .then(progress -> getAlternateContactByType(awsClientProxy, model, callbackContext, accountClientProxyClient, logger, ALTERNATE_CONTACT_TYPE_BILLING))
-                   .then(progress -> getAlternateContactByType(awsClientProxy, model, callbackContext, accountClientProxyClient, logger, ALTERNATE_CONTACT_TYPE_OPERATIONS))
-                   .then(progress -> getAlternateContactByType(awsClientProxy, model, callbackContext, accountClientProxyClient, logger, ALTERNATE_CONTACT_TYPE_SECURITY))
                    .then(progress -> listParents(awsClientProxy, request, model, callbackContext, orgsClient, logger))
                    .then(progress -> listTagsForAccount(awsClientProxy, request, model, callbackContext, orgsClient, logger));
-    }
-
-    protected ProgressEvent<ResourceModel, CallbackContext> getAlternateContactByType(
-        final AmazonWebServicesClientProxy awsClientProxy,
-        final ResourceModel model,
-        final CallbackContext callbackContext,
-        final ProxyClient<AccountClient> accountClient,
-        final Logger logger,
-        final String alternateContactType
-    ) {
-        logger.log(String.format("Get alternate contact for [%s] type, account id [%s].", alternateContactType, model.getAccountId()));
-        return ProgressEvent.progress(model, callbackContext)
-                   .then(progress ->
-                             awsClientProxy.initiate("AWS-Organizations-Account::GetAlternateContact", accountClient, progress.getResourceModel(), progress.getCallbackContext())
-                                 .translateToServiceRequest(model1 -> translateToGetAlternateContactRequest(model1, alternateContactType)
-                                 )
-                                 .makeServiceCall((request, client) -> {
-                                     return accountClient.injectCredentialsAndInvokeV2(request, accountClient.client()::getAlternateContact);
-                                 })
-                                 .handleError((request, e, proxyClient1, model1, context) -> {
-                                     if (e instanceof ResourceNotFoundException) {
-                                         log.log(String.format("Got %s when calling GetAlternateContact for "
-                                                                   + "account id [%s], type [%s]. Continue with next step.",
-                                             e.getClass().getName(), model.getAccountId(), alternateContactType));
-                                         return ProgressEvent.progress(model1, context);
-                                     } else {
-                                         return handleAccountError(request, e, proxyClient1, model1, context, logger);
-                                     }
-                                 })
-                                 .done(getAlternateContactResponse -> {
-                                     if (getAlternateContactResponse.alternateContact() != null) {
-                                         AlternateContact alternateContact = buildAlternateContact(getAlternateContactResponse);
-                                         AlternateContacts alternateContacts = new AlternateContacts();
-                                         if (model.getAlternateContacts() == null) {
-                                             model.setAlternateContacts(alternateContacts);
-                                         }
-                                         switch (alternateContactType) {
-                                             case ALTERNATE_CONTACT_TYPE_BILLING:
-                                                 log.log(String.format("Read alternate contact for type %s", ALTERNATE_CONTACT_TYPE_BILLING));
-                                                 model.getAlternateContacts().setBilling(alternateContact);
-                                                 break;
-                                             case ALTERNATE_CONTACT_TYPE_OPERATIONS:
-                                                 log.log(String.format("Read alternate contact for type %s", ALTERNATE_CONTACT_TYPE_OPERATIONS));
-                                                 model.getAlternateContacts().setOperations(alternateContact);
-                                                 break;
-                                             case ALTERNATE_CONTACT_TYPE_SECURITY:
-                                                 log.log(String.format("Read alternate contact for type %s", ALTERNATE_CONTACT_TYPE_SECURITY));
-                                                 model.getAlternateContacts().setSecurity(alternateContact);
-                                                 break;
-                                         }
-                                     }
-                                     log.log("Empty alternate contact response, continue to next step...");
-                                     return ProgressEvent.progress(model, callbackContext);
-                                 })
-                   );
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> listParents(
@@ -168,14 +104,5 @@ public class ReadHandler extends BaseHandlerStd {
     protected ListParentsResponse listParents(final ListParentsRequest listParentsRequest, final ProxyClient<OrganizationsClient> orgsClient) {
         log.log(String.format("Calling ListParents API for AccountId [%s].", listParentsRequest.childId()));
         return orgsClient.injectCredentialsAndInvokeV2(listParentsRequest, orgsClient.client()::listParents);
-    }
-
-    protected AlternateContact buildAlternateContact(final GetAlternateContactResponse getAlternateContactResponse) {
-        AlternateContact alternateContact = new AlternateContact();
-        alternateContact.setEmailAddress(getAlternateContactResponse.alternateContact().emailAddress());
-        alternateContact.setName(getAlternateContactResponse.alternateContact().name());
-        alternateContact.setPhoneNumber(getAlternateContactResponse.alternateContact().phoneNumber());
-        alternateContact.setTitle(getAlternateContactResponse.alternateContact().title());
-        return alternateContact;
     }
 }

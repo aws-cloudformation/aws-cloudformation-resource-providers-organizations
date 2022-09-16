@@ -1,10 +1,5 @@
 package software.amazon.organizations.account;
 
-import software.amazon.awssdk.services.account.AccountClient;
-import software.amazon.awssdk.services.account.model.AccountRequest;
-import software.amazon.awssdk.services.account.model.InternalServerException;
-import software.amazon.awssdk.services.account.model.ResourceNotFoundException;
-import software.amazon.awssdk.services.account.model.ValidationException;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedForDependencyException;
@@ -20,7 +15,6 @@ import software.amazon.awssdk.services.organizations.model.OrganizationsRequest;
 import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.SourceParentNotFoundException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
-import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
@@ -32,9 +26,6 @@ import java.util.Random;
 
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected static final String GOV_CLOUD_PARTITION = "aws-us-gov";
-    protected final String ALTERNATE_CONTACT_TYPE_BILLING = "BILLING";
-    protected final String ALTERNATE_CONTACT_TYPE_OPERATIONS = "OPERATIONS";
-    protected final String ALTERNATE_CONTACT_TYPE_SECURITY = "SECURITY";
     protected final int MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 5;
     protected final int MAX_NUMBER_OF_ATTEMPT_FOR_MOVE_ACCOUNT_CALLBACK = 3;
     // CreateAccount Constants
@@ -67,7 +58,6 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             request,
             callbackContext != null ? callbackContext : new CallbackContext(),
             awsClientProxy.newProxy(ClientBuilder::getClient),
-            awsClientProxy.newProxy(ClientBuilder::getAccountClient),
             logger
         );
     }
@@ -77,7 +67,6 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> proxyClient,
-        final ProxyClient<AccountClient> proxyAccountClient,
         final Logger logger
     );
 
@@ -126,8 +115,6 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             errorCode = HandlerErrorCode.ServiceInternalError;
         } else if (e instanceof TooManyRequestsException) {
             errorCode = HandlerErrorCode.Throttling;
-        } else if (e instanceof CfnResourceConflictException) {
-            errorCode = HandlerErrorCode.ResourceConflict;
         } else if (e instanceof SourceParentNotFoundException) {
             errorCode = HandlerErrorCode.InternalFailure;
         }
@@ -141,31 +128,6 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         int exponentialBackoff = (int) Math.pow(2, retryAttempt) * BASE_DELAY;
         int jitter = random.nextInt((int) Math.ceil(exponentialBackoff * RANDOMIZATION_FACTOR));
         return exponentialBackoff + jitter;
-    }
-
-    public ProgressEvent<ResourceModel, CallbackContext> handleAccountError(
-        final AccountRequest request,
-        final Exception e,
-        final ProxyClient<AccountClient> proxyClient,
-        final ResourceModel resourceModel,
-        final CallbackContext callbackContext,
-        final Logger logger
-    ) {
-        HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
-        if (e instanceof AccessDeniedException) {
-            errorCode = HandlerErrorCode.AccessDenied;
-        } else if (e instanceof ValidationException) {
-            errorCode = HandlerErrorCode.InvalidRequest;
-        } else if (e instanceof InternalServerException) {
-            errorCode = HandlerErrorCode.InternalFailure;
-        } else if (e instanceof TooManyRequestsException) {
-            errorCode = HandlerErrorCode.Throttling;
-        } else if (e instanceof ResourceNotFoundException) {
-            errorCode = HandlerErrorCode.NotFound;
-        }
-        logger.log(String.format("[Exception] Failed with exception in AccountClient: [%s]. Message: [%s], ErrorCode: [%s] for account id [%s].",
-            e.getClass().getSimpleName(), e.getMessage(), errorCode, resourceModel.getAccountId()));
-        return ProgressEvent.failed(resourceModel, callbackContext, errorCode, e.getMessage());
     }
 
     public final boolean isRetriableException(Exception e) {
