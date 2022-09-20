@@ -65,6 +65,8 @@ _Minimum_: <code>6</code>
 
 _Maximum_: <code>64</code>
 
+_Pattern_: <code>[^\s@]+@[^\s@]+\.[^\s@]+</code>
+
 _Update requires_: [Replacement](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-replacement)
 
 #### RoleName

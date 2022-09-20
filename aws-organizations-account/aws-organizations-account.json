@@ -13,6 +13,7 @@
     "Email": {
       "description": "The email address of the owner to assign to the new member account.",
       "type": "string",
+      "pattern": "[^\\s@]+@[^\\s@]+\\.[^\\s@]+",
       "minLength": 6,
       "maxLength": 64
     },
