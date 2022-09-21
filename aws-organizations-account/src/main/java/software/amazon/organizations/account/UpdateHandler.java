@@ -2,7 +2,6 @@ package software.amazon.organizations.account;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import software.amazon.awssdk.services.account.AccountClient;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DuplicateAccountException;
 import software.amazon.awssdk.services.organizations.model.ListRootsRequest;
@@ -31,7 +30,6 @@ public class UpdateHandler extends BaseHandlerStd {
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final ProxyClient<AccountClient> accountClientProxyClient,
         final Logger logger) {
 
         this.log = logger;
@@ -59,7 +57,7 @@ public class UpdateHandler extends BaseHandlerStd {
                         convertAccountTagToOrganizationTag(model.getTags()),
                         convertAccountTagToOrganizationTag(previousModel.getTags()),
                         model.getAccountId(), orgsClient, logger))
-                .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, accountClientProxyClient, logger));
+                .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> moveAccount(

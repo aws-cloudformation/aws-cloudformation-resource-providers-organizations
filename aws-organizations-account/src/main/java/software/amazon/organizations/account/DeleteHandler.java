@@ -1,6 +1,5 @@
 package software.amazon.organizations.account;
 
-import software.amazon.awssdk.services.account.AccountClient;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.CloseAccountRequest;
 import software.amazon.awssdk.services.organizations.model.CloseAccountResponse;
@@ -18,7 +17,6 @@ public class DeleteHandler extends BaseHandlerStd {
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final ProxyClient<AccountClient> accountClientProxyClient,
         final Logger logger) {
 
         this.log = logger;

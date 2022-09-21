@@ -6,7 +6,6 @@ import software.amazon.awssdk.core.retry.backoff.BackoffStrategy;
 import software.amazon.awssdk.core.retry.backoff.EqualJitterBackoffStrategy;
 import software.amazon.awssdk.core.retry.conditions.RetryCondition;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.account.AccountClient;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.cloudformation.LambdaWrapper;
 
@@ -42,13 +41,6 @@ public class ClientBuilder {
                    .overrideConfiguration(ClientOverrideConfiguration.builder()
                                               .retryPolicy(ORGANIZATIONS_RETRY_POLICY)
                                               .build())
-                   .region(getGlobalRegion())
-                   .httpClient(LambdaWrapper.HTTP_CLIENT)
-                   .build();
-    }
-
-    public static AccountClient getAccountClient() {
-        return AccountClient.builder()
                    .region(getGlobalRegion())
                    .httpClient(LambdaWrapper.HTTP_CLIENT)
                    .build();

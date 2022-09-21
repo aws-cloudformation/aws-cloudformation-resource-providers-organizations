@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.services.account.AccountClient;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.Account;
 import software.amazon.awssdk.services.organizations.model.ListAccountsRequest;
@@ -33,12 +32,10 @@ public class ListHandlerTest extends AbstractTestBase{
 
     @Mock
     OrganizationsClient mockOrgsClient;
-    AccountClient mockAccountClient;
     @Mock
     private AmazonWebServicesClientProxy mockAwsClientProxy;
     @Mock
     private ProxyClient<OrganizationsClient> mockProxyClient;
-    private ProxyClient<AccountClient> mockAccountProxyClient;
     private ListHandler listHandler;
 
     @BeforeEach
@@ -46,9 +43,7 @@ public class ListHandlerTest extends AbstractTestBase{
         listHandler = new ListHandler();
         mockAwsClientProxy = new AmazonWebServicesClientProxy(logger, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
         mockOrgsClient = mock(OrganizationsClient.class);
-        mockAccountClient = mock(AccountClient.class);
         mockProxyClient = MOCK_PROXY(mockAwsClientProxy, mockOrgsClient);
-        mockAccountProxyClient = MOCK_ACCOUNT_PROXY(mockAwsClientProxy, mockAccountClient);
     }
 
     @Test
@@ -67,7 +62,7 @@ public class ListHandlerTest extends AbstractTestBase{
         when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
@@ -96,7 +91,7 @@ public class ListHandlerTest extends AbstractTestBase{
                 .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);

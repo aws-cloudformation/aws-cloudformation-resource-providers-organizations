@@ -6,9 +6,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.services.account.AccountClient;
-import software.amazon.awssdk.services.account.model.GetAlternateContactRequest;
-import software.amazon.awssdk.services.account.model.GetAlternateContactResponse;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.Account;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
@@ -55,12 +52,10 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
     @Mock
     OrganizationsClient mockOrgsClient;
-    AccountClient mockAccountClient;
     @Mock
     private AmazonWebServicesClientProxy mockAwsClientProxy;
     @Mock
     private ProxyClient<OrganizationsClient> mockProxyClient;
-    private ProxyClient<AccountClient> mockAccountProxyClient;
     private UpdateHandler updateHandler;
 
     @BeforeEach
@@ -68,9 +63,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         updateHandler = new UpdateHandler();
         mockAwsClientProxy = new AmazonWebServicesClientProxy(logger, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
         mockOrgsClient = mock(OrganizationsClient.class);
-        mockAccountClient = mock(AccountClient.class);
         mockProxyClient = MOCK_PROXY(mockAwsClientProxy, mockOrgsClient);
-        mockAccountProxyClient = MOCK_ACCOUNT_PROXY(mockAwsClientProxy, mockAccountClient);
     }
 
     @Test
@@ -91,7 +84,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         whenReadMockSetup(request, null);
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         // Verify Response
         verifyHandlerSuccess(response, request);
@@ -126,7 +119,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         whenReadMockSetup(request, TagTestResourcesHelper.updatedTags);
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         // Verify Response
         verifyHandlerSuccess(response, request);
@@ -168,7 +161,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         whenReadMockSetup(request, null);
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         // Verify Response
         verifyHandlerSuccess(response, request);
@@ -202,7 +195,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         whenReadMockSetup(request, null);
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         // Verify Response
         verifyHandlerSuccess(response, request);
@@ -232,7 +225,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         whenReadMockSetup(request, null);
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         // Verify Response
         verifyHandlerSuccess(response, request);
@@ -257,7 +250,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         whenReadMockSetup(request, null);
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         // Verify Orgs API calls
         verifyHandlerSuccess(response, request);
@@ -279,7 +272,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().untagResource(any(UntagResourceRequest.class))).thenThrow(ConstraintViolationException.class);
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -305,7 +298,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().tagResource(any(TagResourceRequest.class))).thenThrow(ConstraintViolationException.class);
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -332,7 +325,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
                 .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -354,7 +347,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
                 .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -376,7 +369,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
                 .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -398,7 +391,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
                     .build();
 
             final ProgressEvent<ResourceModel, CallbackContext> response =
-                    updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                    updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -423,7 +416,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().moveAccount(any(MoveAccountRequest.class))).thenThrow(ConcurrentModificationException.class);
 
         final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, mockAccountProxyClient, logger);
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -443,19 +436,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
                 .name(TEST_ACCOUNT_NAME)
                 .build()).build();
 
-
-        final GetAlternateContactResponse getAlternateContactResponseBilling = GetAlternateContactResponse.builder()
-                .alternateContact(translateOrgsAlternateContactToSDKModel(request.getDesiredResourceState().getAlternateContacts().getBilling()))
-                .build();
-
-        final GetAlternateContactResponse getAlternateContactResponseOperation = GetAlternateContactResponse.builder()
-                .alternateContact(translateOrgsAlternateContactToSDKModel(request.getDesiredResourceState().getAlternateContacts().getOperations()))
-                .build();
-
-        final GetAlternateContactResponse getAlternateContactResponseSecurity = GetAlternateContactResponse.builder()
-                .alternateContact(translateOrgsAlternateContactToSDKModel(request.getDesiredResourceState().getAlternateContacts().getSecurity()))
-                .build();
-
         final ListParentsResponse listParentsResponse = ListParentsResponse.builder()
                 .parents(Parent.builder()
                         .id(TEST_DESTINATION_PARENT_ID)
@@ -464,7 +444,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildTagsResponse(tags);
         when(mockProxyClient.client().describeAccount(any(DescribeAccountRequest.class))).thenReturn(describeAccountResponse);
-        when(mockAccountProxyClient.client().getAlternateContact(any(GetAlternateContactRequest.class))).thenReturn(getAlternateContactResponseBilling, getAlternateContactResponseOperation, getAlternateContactResponseSecurity);
         when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponse);
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
     }
@@ -473,7 +452,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
         verify(mockProxyClient.client()).describeAccount(any(DescribeAccountRequest.class));
         verify(mockProxyClient.client()).listParents(any(ListParentsRequest.class));
         verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
-        verify(mockAccountProxyClient.client(), times(3)).getAlternateContact(any(GetAlternateContactRequest.class));
     }
 
     private void verifyHandlerSuccess(ProgressEvent<ResourceModel, CallbackContext> response, ResourceHandlerRequest<ResourceModel> request){
@@ -491,17 +469,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
         verify(mockOrgsClient, atLeastOnce()).serviceName();
         verifyNoMoreInteractions(mockOrgsClient);
     }
-
-    private software.amazon.awssdk.services.account.model.AlternateContact translateOrgsAlternateContactToSDKModel (AlternateContact contact){
-        return software.amazon.awssdk.services.account.model.AlternateContact.builder()
-                .alternateContactType(contact.getName())
-                .emailAddress(contact.getEmailAddress())
-                .phoneNumber(contact.getPhoneNumber())
-                .title(contact.getTitle())
-                .build();
-    }
-
-
 
     protected MoveAccountResponse getMoveAccountResponse() {
         return MoveAccountResponse.builder().build();
@@ -521,7 +488,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
                 .accountId(TEST_ACCOUNT_ID)
                 .email(TEST_ACCOUNT_EMAIL)
                 .parentIds(TEST_PARENT_IDS)
-                .alternateContacts(TEST_ALTERNATE_CONTACTS)
                 .tags(TagTestResourcesHelper.translateOrganizationTagsToAccountTags(tags))
                 .build();
     }
@@ -531,7 +497,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
                 .accountName(TEST_ACCOUNT_NAME)
                 .accountId(TEST_ACCOUNT_ID)
                 .email(TEST_ACCOUNT_EMAIL)
-                .alternateContacts(TEST_ALTERNATE_CONTACTS)
                 .parentIds(TEST_PARENT_UPDATED_IDS)
                 .tags(TagTestResourcesHelper.translateOrganizationTagsToAccountTags(tags))
                 .build();

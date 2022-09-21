@@ -96,11 +96,6 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>organizations</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/account -->
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>account</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

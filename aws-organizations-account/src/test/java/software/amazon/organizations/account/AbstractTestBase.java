@@ -6,7 +6,6 @@ import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
-import software.amazon.awssdk.services.account.AccountClient;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.CreateAccountStatus;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
@@ -26,49 +25,12 @@ public class AbstractTestBase {
     protected static final String TEST_ACCOUNT_ARN = "arn:aws:organizations::111111111111:account/o-1111111111/111111111111";
     protected static final String TEST_ACCOUNT_EMAIL = "testAccountEmail@amazon.com";
     protected static final String TEST_ACCOUNT_NAME = "TestAccountName";
-    protected static final String TEST_ALTERNATE_CONTACT_EMAIL_BILLING = "testAlternateContactEmailBilling@amazon.com";
-    protected static final String TEST_ALTERNATE_CONTACT_NAME_BILLING = "TestAlternateContactNameBilling";
-    protected static final String TEST_ALTERNATE_CONTACT_PHONE_BILLING = "1111111111";
-    protected static final String TEST_ALTERNATE_CONTACT_TITLE_BILLING = "TestAlternateContactTitleBilling";
-    protected static final String TEST_ALTERNATE_CONTACT_EMAIL_OPERATIONS = "testAlternateContactEmailOperations@amazon.com";
-    protected static final String TEST_ALTERNATE_CONTACT_NAME_OPERATIONS = "TestAlternateContactNameOperations";
-    protected static final String TEST_ALTERNATE_CONTACT_PHONE_OPERATIONS = "2222222222";
-    protected static final String TEST_ALTERNATE_CONTACT_TITLE_OPERATIONS = "TestAlternateContactTitleOperations";
-    protected static final String TEST_ALTERNATE_CONTACT_EMAIL_SECURITY = "testAlternateContactEmailSecurity@amazon.com";
-    protected static final String TEST_ALTERNATE_CONTACT_NAME_SECURITY = "TestAlternateContactNameSecurity";
-    protected static final String TEST_ALTERNATE_CONTACT_PHONE_SECURITY = "3333333333";
-    protected static final String TEST_ALTERNATE_CONTACT_TITLE_SECURITY = "TestAlternateContactTitleSecurity";
     protected static final String TEST_SOURCE_PARENT_ID = "r-aaaa";
     protected static final String TEST_DESTINATION_PARENT_ID = "ou-abc1-abcd1234";
     protected static final String TEST_DESTINATION_UPDATED_PARENT_ID = "ou-abc1-abcd1235";
     protected static final Set<String> TEST_PARENT_IDS = ImmutableSet.of(TEST_DESTINATION_PARENT_ID);
     protected static final Set<String> TEST_PARENT_UPDATED_IDS = ImmutableSet.of(TEST_DESTINATION_UPDATED_PARENT_ID);
     protected static final Set<String> TEST_MULTIPLE_PARENT_IDS = ImmutableSet.of(TEST_SOURCE_PARENT_ID, TEST_DESTINATION_PARENT_ID);
-    protected static final AlternateContact TEST_ALTERNATE_CONTACT_BILLING = AlternateContact.builder()
-                                                                                 .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_BILLING)
-                                                                                 .name(TEST_ALTERNATE_CONTACT_NAME_BILLING)
-                                                                                 .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_BILLING)
-                                                                                 .title(TEST_ALTERNATE_CONTACT_TITLE_BILLING)
-                                                                                 .build();
-    protected static final AlternateContact TEST_ALTERNATE_CONTACT_OPERATIONS = AlternateContact.builder()
-                                                                                    .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_OPERATIONS)
-                                                                                    .name(TEST_ALTERNATE_CONTACT_NAME_OPERATIONS)
-                                                                                    .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_OPERATIONS)
-                                                                                    .title(TEST_ALTERNATE_CONTACT_TITLE_OPERATIONS)
-                                                                                    .build();
-    protected static final AlternateContact TEST_ALTERNATE_CONTACT_SECURITY = AlternateContact.builder()
-                                                                                  .emailAddress(TEST_ALTERNATE_CONTACT_EMAIL_SECURITY)
-                                                                                  .name(TEST_ALTERNATE_CONTACT_NAME_SECURITY)
-                                                                                  .phoneNumber(TEST_ALTERNATE_CONTACT_PHONE_SECURITY)
-                                                                                  .title(TEST_ALTERNATE_CONTACT_TITLE_SECURITY)
-                                                                                  .build();
-
-    protected static final AlternateContacts TEST_ALTERNATE_CONTACTS = AlternateContacts.builder()
-                                                                           .billing(TEST_ALTERNATE_CONTACT_BILLING)
-                                                                           .operations(TEST_ALTERNATE_CONTACT_OPERATIONS)
-                                                                           .security(TEST_ALTERNATE_CONTACT_SECURITY)
-                                                                           .build();
-
     protected static final String EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS";
     protected static final String ACCOUNT_LIMIT_EXCEEDED = "ACCOUNT_LIMIT_EXCEEDED";
     protected static final String INVALID_EMAIL = "INVALID_EMAIL";
@@ -172,50 +134,6 @@ public class AbstractTestBase {
             }
         };
     }
-
-    static ProxyClient<AccountClient> MOCK_ACCOUNT_PROXY(
-        final AmazonWebServicesClientProxy proxy,
-        final AccountClient accountClient) {
-        return new ProxyClient<AccountClient>() {
-            @Override
-            public <RequestT extends AwsRequest, ResponseT extends AwsResponse> ResponseT
-            injectCredentialsAndInvokeV2(RequestT request, Function<RequestT, ResponseT> requestFunction) {
-                return proxy.injectCredentialsAndInvokeV2(request, requestFunction);
-            }
-
-            @Override
-            public <RequestT extends AwsRequest, ResponseT extends AwsResponse>
-            CompletableFuture<ResponseT>
-            injectCredentialsAndInvokeV2Async(RequestT request, Function<RequestT, CompletableFuture<ResponseT>> requestFunction) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public <RequestT extends AwsRequest, ResponseT extends AwsResponse, IterableT extends SdkIterable<ResponseT>>
-            IterableT
-            injectCredentialsAndInvokeIterableV2(RequestT request, Function<RequestT, IterableT> requestFunction) {
-                return proxy.injectCredentialsAndInvokeIterableV2(request, requestFunction);
-            }
-
-            @Override
-            public <RequestT extends AwsRequest, ResponseT extends AwsResponse> ResponseInputStream<ResponseT>
-            injectCredentialsAndInvokeV2InputStream(RequestT requestT, Function<RequestT, ResponseInputStream<ResponseT>> function) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public <RequestT extends AwsRequest, ResponseT extends AwsResponse> ResponseBytes<ResponseT>
-            injectCredentialsAndInvokeV2Bytes(RequestT requestT, Function<RequestT, ResponseBytes<ResponseT>> function) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public AccountClient client() {
-                return accountClient;
-            }
-        };
-    }
-
 
     protected ResourceModel generateDeleteResourceModel() {
         ResourceModel model = ResourceModel.builder()
