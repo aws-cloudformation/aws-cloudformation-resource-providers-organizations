@@ -7,7 +7,10 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.Account;
+import software.amazon.awssdk.services.organizations.model.AccountStatus;
 import software.amazon.awssdk.services.organizations.model.CreateAccountStatus;
+import software.amazon.awssdk.services.organizations.model.DescribeAccountResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Credentials;
 import software.amazon.cloudformation.proxy.LoggerProxy;
@@ -42,6 +45,18 @@ public class AbstractTestBase {
     protected static final String SUCCEEDED = "SUCCEEDED";
     protected static final String IN_PROGRESS = "IN_PROGRESS";
     protected static final String TEST_NEXT_TOKEN = "mockNextTokenItem";
+    protected static final String TEST_JOINED_METHOD = "CREATED";
+    protected static final Instant TEST_JOINED_TIMESTAMP = Instant.parse("2017-02-03T10:47:30.00Z");
+
+    protected static final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
+                                                                                                          .arn(TEST_ACCOUNT_ARN)
+                                                                                                          .email(TEST_ACCOUNT_EMAIL)
+                                                                                                          .id(TEST_ACCOUNT_ID)
+                                                                                                          .name(TEST_ACCOUNT_NAME)
+                                                                                                          .status(AccountStatus.ACTIVE)
+                                                                                                          .joinedMethod(TEST_JOINED_METHOD)
+                                                                                                          .joinedTimestamp(TEST_JOINED_TIMESTAMP)
+                                                                                                          .build()).build();
     protected static final CreateAccountStatus CreateAccountStatusInProgress = CreateAccountStatus.builder()
                                                                                    .accountName(TEST_ACCOUNT_NAME)
                                                                                    .id(CREATE_ACCOUNT_STATUS_ID)

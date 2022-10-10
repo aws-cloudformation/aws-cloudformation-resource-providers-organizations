@@ -49,7 +49,7 @@ public class CreateHandler extends BaseHandlerStd {
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
                    .then(progress -> {
                            if (progress.getCallbackContext().isAccountCreated()) {
-                               log.log(String.format("Account has already been created in previous handler invoke, account Id: [%s]. Skip create account.", model.getAccountId()));
+                               log.log(String.format("Account has already been created in previous handler invoke with account Id: [%s]. Skip create account.", model.getAccountId()));
                                return ProgressEvent.progress(model, callbackContext);
                            }
                            return awsClientProxy.initiate("AWS-Organizations-Account::CreateAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
@@ -57,8 +57,8 @@ public class CreateHandler extends BaseHandlerStd {
                                       .makeServiceCall(this::createAccount)
                                       .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(organizationsRequest, e, proxyClient1, model1, context, logger))
                                       .done(CreateAccountResponse -> {
-                                          model.setCreateAccountRequestId(CreateAccountResponse.createAccountStatus().id());
-                                          logger.log(String.format("Successfully initiated new account creation request with CreateAccountRequestId [%s]", model.getCreateAccountRequestId()));
+                                          callbackContext.setCreateAccountRequestId(CreateAccountResponse.createAccountStatus().id());
+                                          logger.log(String.format("Successfully initiated new account creation request with CreateAccountRequestId [%s]", callbackContext.getCreateAccountRequestId()));
                                           return ProgressEvent.progress(model, callbackContext);
                                       });
                        }
@@ -66,7 +66,7 @@ public class CreateHandler extends BaseHandlerStd {
                    )
                    .then(progress -> describeCreateAccountStatus(awsClientProxy, request, model, callbackContext, orgsClient, logger))
                    .then(progress -> moveAccount(awsClientProxy, request, model, callbackContext, orgsClient, logger))
-                   .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
+                   .then(progress -> ProgressEvent.success(progress.getResourceModel(), progress.getCallbackContext()));
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> describeCreateAccountStatus(
@@ -76,32 +76,36 @@ public class CreateHandler extends BaseHandlerStd {
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
         final Logger logger) {
+        // skip if account is created
         if (callbackContext.isAccountCreated()) {
-            log.log(String.format("Account has already been created in previous handler invoke, account name: [%s]. Skip describeCreateAccountStatus.", model.getAccountName()));
+            log.log(String.format("Account has already been created in previous handler invoke with account id: [%s]. Skip describeCreateAccountStatus.", model.getAccountId()));
             return ProgressEvent.progress(model, callbackContext);
         }
 
+        // all attempts add up should be less than 60s because single progress needs to return within 60s
         for (int attempt = 0; attempt < MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS; attempt++) {
             try {
                 int wait = computeDelayBeforeNextRetry(attempt);
-                logger.log(String.format("Enter describeCreateAccountStatus with CreateAccountRequestId [%s] and attempt %s. Wait time for propagation: %s millisecond.", model.getCreateAccountRequestId(), attempt + 1, wait));
+                logger.log(String.format("Enter describeCreateAccountStatus with CreateAccountRequestId [%s] and attempt %s. Wait %s millisecond for propagation.", callbackContext.getCreateAccountRequestId(), attempt, wait));
                 Thread.sleep(wait);
             } catch (InterruptedException e) {
                 log.log(e.getMessage());
             }
             final ProgressEvent<ResourceModel, CallbackContext> progressEvent = awsClientProxy
                                                                                     .initiate("AWS-Organizations-Account::DescribeCreateAccountStatus-Attempt" + attempt, orgsClient, model, callbackContext)
-                                                                                    .translateToServiceRequest((resourceModel) -> Translator.translateToDescribeCreateAccountStatusRequest(model))
+                                                                                    .translateToServiceRequest((resourceModel) -> Translator.translateToDescribeCreateAccountStatusRequest(callbackContext))
                                                                                     .makeServiceCall((describeCreateAccountStatusRequest, client) -> {
                                                                                         DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = orgsClient.injectCredentialsAndInvokeV2(describeCreateAccountStatusRequest,
                                                                                             orgsClient.client()::describeCreateAccountStatus);
                                                                                         String state = describeCreateAccountStatusResponse.createAccountStatus().state().toString();
-                                                                                        logger.log(String.format("DescribeCreateAccountStatus returns status [%s] for request id [%s].", state, model.getCreateAccountRequestId()));
+                                                                                        logger.log(String.format("DescribeCreateAccountStatus returns status [%s] for request id [%s].", state, callbackContext.getCreateAccountRequestId()));
                                                                                         if (state.equals(ACCOUNT_CREATION_STATUS_SUCCEEDED)) {
                                                                                             model.setAccountId(describeCreateAccountStatusResponse.createAccountStatus().accountId());
                                                                                             callbackContext.setAccountCreated(true);
+                                                                                            callbackContext.setFailureReason(null);
                                                                                         } else if (state.equals(ACCOUNT_CREATION_STATUS_FAILED)) {
-                                                                                            model.setFailureReason(describeCreateAccountStatusResponse.createAccountStatus().failureReasonAsString());
+                                                                                            callbackContext.setFailureReason(describeCreateAccountStatusResponse.createAccountStatus().failureReasonAsString());
+                                                                                            model.setAccountId(null);
                                                                                         }
                                                                                         return describeCreateAccountStatusResponse;
                                                                                     })
@@ -113,22 +117,24 @@ public class CreateHandler extends BaseHandlerStd {
                 return progressEvent;
             }
             // case 2: create account already failed with a failure reason
-            if (model.getFailureReason() != null) {
+            if (callbackContext.getFailureReason() != null) {
                 return handleAccountCreationError(model, callbackContext, logger);
             }
             // case 3: create account succeed
             if (model.getAccountId() != null) {
-                logger.log(String.format("Successfully created account with id: [%s]", model.getAccountId()));
+                logger.log(String.format("Successfully created account with id: [%s] for account name: %s", model.getAccountId(), model.getAccountName()));
+                model.setStatus("ACTIVE");
                 return ProgressEvent.progress(model, callbackContext);
             }
         }
-        String errMsg = String.format("DescribeCreateAccountStatus keeps returning IN_PROGRESS state after %s attempts for account creation with CreateAccountRequestID [%s]", MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS, model.getCreateAccountRequestId());
+        String errMsg = String.format("DescribeCreateAccountStatus keeps returning IN_PROGRESS state " +
+                                          "after %s attempts for account creation with CreateAccountRequestID [%s]. ", MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS, callbackContext.getCreateAccountRequestId());
         return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.ServiceInternalError, errMsg);
     }
 
     private ProgressEvent<ResourceModel, CallbackContext> handleAccountCreationError(ResourceModel model, CallbackContext callbackContext, Logger logger) {
-        String failureReason = model.getFailureReason();
-        String errMsg = String.format("Account creation failed with reason [%s] for request id: %s", failureReason, model.getCreateAccountRequestId());
+        String failureReason = callbackContext.getFailureReason();
+        String errMsg = String.format("Account creation failed with reason [%s] for request id: %s", failureReason, callbackContext.getCreateAccountRequestId());
         logger.log(errMsg);
 
         switch (failureReason) {
@@ -173,18 +179,7 @@ public class CreateHandler extends BaseHandlerStd {
                                              e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), sourceId, destinationId));
                                          return ProgressEvent.progress(model1, context);
                                      } else if (isRetriableException(e)) {
-                                         final int currentAttempt = context.getCurrentAttemptToCheckAccountCreationStatus();
-                                         if (currentAttempt < MAX_NUMBER_OF_ATTEMPT_FOR_MOVE_ACCOUNT_CALLBACK) {
-                                             int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
-                                             logger.log(String.format("Got %s when calling %s for "
-                                                                          + "Account [%s]. Retrying %s of %s with callback delay %s seconds.",
-                                                 e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), currentAttempt + 1, MAX_NUMBER_OF_ATTEMPT_FOR_MOVE_ACCOUNT_CALLBACK, callbackDelaySeconds));
-                                             context.setCurrentAttemptToCheckAccountCreationStatus(currentAttempt + 1);
-                                             return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
-                                         } else {
-                                             logger.log(String.format("All retry attempts exhausted for account Id [%s], return exception to CloudFormation for further handling.", model.getAccountId()));
-                                             return handleError(organizationsRequest, e, proxyClient1, model, context, logger);
-                                         }
+                                         return handleRetriableException(organizationsRequest, proxyClient1, context, logger, e, model1, AccountConstants.Action.MOVE_ACCOUNT);
                                      } else {
                                          return handleError(organizationsRequest, e, proxyClient1, model1, context, logger);
                                      }

@@ -1,6 +1,7 @@
 package software.amazon.organizations.account;
 
 import software.amazon.awssdk.awscore.AwsRequest;
+import software.amazon.awssdk.services.organizations.model.AccountStatus;
 import software.amazon.awssdk.services.organizations.model.CloseAccountRequest;
 import software.amazon.awssdk.services.organizations.model.CreateAccountRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeAccountRequest;
@@ -33,9 +34,9 @@ import java.util.stream.Stream;
  */
 
 public class Translator {
-    static DescribeCreateAccountStatusRequest translateToDescribeCreateAccountStatusRequest(final ResourceModel model) {
+    static DescribeCreateAccountStatusRequest translateToDescribeCreateAccountStatusRequest(final CallbackContext callbackContext) {
         return DescribeCreateAccountStatusRequest.builder()
-                   .createAccountRequestId(model.getCreateAccountRequestId())
+                   .createAccountRequestId(callbackContext.getCreateAccountRequestId())
                    .build();
     }
 
@@ -53,11 +54,12 @@ public class Translator {
 
     static List<ResourceModel> translateListAccountsResponseToResourceModel(final ListAccountsResponse listAccountsResponse) {
         return streamOfOrEmpty(listAccountsResponse.accounts())
+                   .filter(account -> account.status().equals(AccountStatus.ACTIVE))
                    .map(account -> ResourceModel.builder()
-                           .email(account.email())
-                           .accountId(account.id())
-                           .accountName(account.name())
-                           .build())
+                                       .email(account.email())
+                                       .accountId(account.id())
+                                       .accountName(account.name())
+                                       .build())
                    .collect(Collectors.toList());
     }
 
@@ -75,7 +77,7 @@ public class Translator {
 
     static ListRootsRequest translateToListRootsRequest() {
         return ListRootsRequest.builder()
-                .build();
+                   .build();
     }
 
     static CreateAccountRequest translateToCreateAccountRequest(final ResourceModel model) {
@@ -141,6 +143,10 @@ public class Translator {
                    .accountId(model.getAccountId())
                    .accountName(model.getAccountName())
                    .email(model.getEmail())
+                   .arn(model.getArn())
+                   .status(model.getStatus())
+                   .joinedTimestamp(model.getJoinedTimestamp())
+                   .joinedMethod(model.getJoinedMethod())
                    .parentIds(model.getParentIds())
                    .tags(translateTagsFromSdkResponse(listTagsForResourceResponse.tags()))
                    .roleName(model.getRoleName())

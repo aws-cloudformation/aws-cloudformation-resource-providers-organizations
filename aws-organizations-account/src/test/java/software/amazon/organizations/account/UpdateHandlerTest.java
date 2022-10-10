@@ -7,11 +7,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.Account;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
 import software.amazon.awssdk.services.organizations.model.ConstraintViolationException;
 import software.amazon.awssdk.services.organizations.model.DescribeAccountRequest;
-import software.amazon.awssdk.services.organizations.model.DescribeAccountResponse;
 import software.amazon.awssdk.services.organizations.model.DuplicateAccountException;
 import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
 import software.amazon.awssdk.services.organizations.model.ListParentsResponse;
@@ -42,7 +40,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -429,13 +426,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     private void whenReadMockSetup(ResourceHandlerRequest<ResourceModel> request, Set<Tag> tags){
-        final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
-                .arn(TEST_ACCOUNT_ARN)
-                .email(TEST_ACCOUNT_EMAIL)
-                .id(TEST_ACCOUNT_ID)
-                .name(TEST_ACCOUNT_NAME)
-                .build()).build();
-
         final ListParentsResponse listParentsResponse = ListParentsResponse.builder()
                 .parents(Parent.builder()
                         .id(TEST_DESTINATION_PARENT_ID)

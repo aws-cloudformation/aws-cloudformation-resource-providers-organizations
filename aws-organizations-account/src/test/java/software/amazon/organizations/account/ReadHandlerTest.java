@@ -1,5 +1,6 @@
 package software.amazon.organizations.account;
 
+import com.google.common.collect.ImmutableSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -8,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.Account;
 import software.amazon.awssdk.services.organizations.model.AccountNotFoundException;
+import software.amazon.awssdk.services.organizations.model.AccountStatus;
 import software.amazon.awssdk.services.organizations.model.DescribeAccountRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeAccountResponse;
 import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
@@ -59,13 +61,6 @@ public class ReadHandlerTest extends AbstractTestBase {
                 .desiredResourceState(model)
                 .build();
 
-        final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
-                .arn(TEST_ACCOUNT_ARN)
-                .email(TEST_ACCOUNT_EMAIL)
-                .id(TEST_ACCOUNT_ID)
-                .name(TEST_ACCOUNT_NAME)
-                .build()).build();
-
         final ListParentsResponse listParentsResponse = ListParentsResponse.builder()
                 .parents(Parent.builder()
                         .id(TEST_DESTINATION_PARENT_ID)
@@ -85,7 +80,12 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel()).isNotNull();
         assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
         assertThat(response.getResourceModel().getAccountId()).isEqualTo(TEST_ACCOUNT_ID);
+        assertThat(response.getResourceModel().getArn()).isEqualTo(TEST_ACCOUNT_ARN);
+        assertThat(response.getResourceModel().getStatus()).isEqualTo(AccountStatus.ACTIVE.toString());
+        assertThat(response.getResourceModel().getJoinedMethod()).isEqualTo(TEST_JOINED_METHOD);
+        assertThat(response.getResourceModel().getJoinedTimestamp()).isEqualTo(TEST_JOINED_TIMESTAMP.toString());
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
+        assertThat(response.getResourceModel().getParentIds()).isEqualTo(ImmutableSet.of(TEST_DESTINATION_PARENT_ID));
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
@@ -114,5 +114,37 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
+    }
+
+    @Test
+    public void handleRequest_shouldReturnFailedIfAccountIsSuspended() {
+        final ResourceModel model = ResourceModel.builder()
+                                        .accountId(TEST_ACCOUNT_ID)
+                                        .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                                                                  .desiredResourceState(model)
+                                                                  .build();
+
+        final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
+                                                                                                              .arn(TEST_ACCOUNT_ARN)
+                                                                                                              .email(TEST_ACCOUNT_EMAIL)
+                                                                                                              .id(TEST_ACCOUNT_ID)
+                                                                                                              .name(TEST_ACCOUNT_NAME)
+                                                                                                              .status(AccountStatus.SUSPENDED)
+                                                                                                              .build()).build();
+
+        when(mockProxyClient.client().describeAccount(any(DescribeAccountRequest.class))).thenReturn(describeAccountResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNotNull();
+        assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
+
+        verify(mockProxyClient.client()).describeAccount(any(DescribeAccountRequest.class));
     }
 }

@@ -1,6 +1,8 @@
 package software.amazon.organizations.account;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.Account;
+import software.amazon.awssdk.services.organizations.model.AccountStatus;
 import software.amazon.awssdk.services.organizations.model.DescribeAccountRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeAccountResponse;
 import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
@@ -9,6 +11,7 @@ import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRe
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.Parent;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
@@ -30,18 +33,29 @@ public class ReadHandler extends BaseHandlerStd {
         this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();
         String accountId = model.getAccountId();
+
         logger.log(String.format("Requesting DescribeAccount w/ Account id: %s.\n", accountId));
         return ProgressEvent.progress(model, callbackContext)
                    .then(progress ->
-                             awsClientProxy.initiate("AWS-Organizations-Account::DescribeAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
+                             awsClientProxy.initiate("AWS-Organizations-Account::Read::DescribeAccount" + System.currentTimeMillis(), orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                                  .translateToServiceRequest(Translator::translateToDescribeAccountRequest)
                                  .makeServiceCall(this::describeAccount)
                                  .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
                                      organizationsRequest, e, orgsClient1, model1, context, logger))
                                  .done(describeAccountResponse -> {
-                                     model.setAccountId(describeAccountResponse.account().id());
-                                     model.setAccountName(describeAccountResponse.account().name());
-                                     model.setEmail(describeAccountResponse.account().email());
+                                     if (describeAccountResponse.account().status() != AccountStatus.ACTIVE) {
+                                         String errMsg = String.format("Account [%s] in state [%s], suspended account will not be managed by CloudFormation, return NotFound.", model.getAccountId(), describeAccountResponse.account().status());
+                                         logger.log(errMsg);
+                                         return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.NotFound, errMsg);
+                                     }
+                                     Account account = describeAccountResponse.account();
+                                     model.setAccountId(account.id());
+                                     model.setAccountName(account.name());
+                                     model.setEmail(account.email());
+                                     model.setStatus(account.status().toString());
+                                     model.setJoinedMethod(account.joinedMethodAsString());
+                                     model.setJoinedTimestamp(account.joinedTimestamp().toString());
+                                     model.setArn(account.arn());
                                      return ProgressEvent.progress(model, callbackContext);
                                  })
                    )

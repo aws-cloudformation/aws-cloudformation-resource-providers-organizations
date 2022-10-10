@@ -26,18 +26,23 @@ public class DeleteHandler extends BaseHandlerStd {
         logger.log(String.format("Requesting CloseAccount w/ account id: %s.\n", accountId));
         return ProgressEvent.progress(model, callbackContext)
                    .then(progress ->
-                             awsClientProxy.initiate("AWS-Organizations-Account::CloseAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
+                             awsClientProxy.initiate("AWS-Organizations-Account::Delete::CloseAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                                  .translateToServiceRequest(Translator::translateToCloseAccountRequest)
                                  .makeServiceCall(this::closeAccount)
-                                 .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                                     organizationsRequest, e, orgsClient1, model1, context, logger))
-                                 .done((deleteRequest) -> ProgressEvent.defaultSuccessHandler(null))
-                   );
+                                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> {
+                                     if (isRetriableException(e)) {
+                                         return handleRetriableException(organizationsRequest, proxyClient1, context, logger, e, model1, AccountConstants.Action.CLOSE_ACCOUNT);
+                                     } else {
+                                         return handleError(organizationsRequest, e, proxyClient1, model1, context, logger);
+                                     }
+                                 })
+                                 .progress()
+                   )
+                   .then(progress -> ProgressEvent.defaultSuccessHandler(null));
     }
 
     protected CloseAccountResponse closeAccount(final CloseAccountRequest closeAccountRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log(String.format("Calling closeAccount API."));
-        final CloseAccountResponse closeAccountResponse = orgsClient.injectCredentialsAndInvokeV2(closeAccountRequest, orgsClient.client()::closeAccount);
-        return closeAccountResponse;
+        log.log("Calling closeAccount API.");
+        return orgsClient.injectCredentialsAndInvokeV2(closeAccountRequest, orgsClient.client()::closeAccount);
     }
 }
