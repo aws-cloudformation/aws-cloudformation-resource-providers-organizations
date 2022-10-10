@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.Account;
+import software.amazon.awssdk.services.organizations.model.AccountStatus;
 import software.amazon.awssdk.services.organizations.model.ListAccountsRequest;
 import software.amazon.awssdk.services.organizations.model.ListAccountsResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
@@ -105,6 +106,7 @@ public class ListHandlerTest extends AbstractTestBase{
                 .email(TEST_ACCOUNT_EMAIL)
                 .name(TEST_ACCOUNT_NAME)
                 .id(TEST_ACCOUNT_ID)
+                .status(AccountStatus.ACTIVE)
                 .build();
     }
 }

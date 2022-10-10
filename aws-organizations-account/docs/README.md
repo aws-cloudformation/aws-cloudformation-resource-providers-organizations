@@ -51,7 +51,7 @@ _Maximum_: <code>50</code>
 
 _Pattern_: <code>[\u0020-\u007E]+</code>
 
-_Update requires_: [Replacement](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-replacement)
+_Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 
 #### Email
 
@@ -67,7 +67,7 @@ _Maximum_: <code>64</code>
 
 _Pattern_: <code>[^\s@]+@[^\s@]+\.[^\s@]+</code>
 
-_Update requires_: [Replacement](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-replacement)
+_Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 
 #### RoleName
 
@@ -83,7 +83,7 @@ _Maximum_: <code>64</code>
 
 _Pattern_: <code>[\w+=,.@-]{1,64}</code>
 
-_Update requires_: [Replacement](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-replacement)
+_Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 
 #### ParentIds
 
@@ -121,10 +121,18 @@ For more information about using the `Fn::GetAtt` intrinsic function, see [Fn::G
 
 If the account was created successfully, the unique identifier (ID) of the new account.
 
-#### CreateAccountRequestId
+#### Status
 
-Specifies the Id value that uniquely identifies the CreateAccount request. You can get the value from the CreateAccountStatus response in an earlier CreateAccount request, or from the ListCreateAccountStatus operation.
+The status of the account in the organization.
 
-#### FailureReason
+#### JoinedTimestamp
 
-If the create account request failed, a description of the reason for the failure.
+The date the account became a part of the organization.
+
+#### JoinedMethod
+
+The method by which the account joined the organization.
+
+#### Arn
+
+The Amazon Resource Name (ARN) of the account.

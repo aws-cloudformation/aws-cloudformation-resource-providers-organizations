@@ -35,17 +35,6 @@
         "pattern": "^(r-[0-9a-z]{4,32})|(ou-[0-9a-z]{4,32}-[a-z0-9]{8,32})$"
       }
     },
-    "CreateAccountRequestId": {
-      "description": "Specifies the Id value that uniquely identifies the CreateAccount request. You can get the value from the CreateAccountStatus response in an earlier CreateAccount request, or from the ListCreateAccountStatus operation.",
-      "type": "string",
-      "pattern": "^car-[a-z0-9]{8,32}$",
-      "minLength": 1,
-      "maxLength": 36
-    },
-    "FailureReason": {
-      "description": "If the create account request failed, a description of the reason for the failure.",
-      "type": "string"
-    },
     "Tags": {
       "description": "A list of tags that you want to attach to the newly created account. For each tag in the list, you must specify both a tag key and a value.",
       "type": "array",
@@ -60,6 +49,32 @@
       "type": "string",
       "pattern": "^\\d{12}$",
       "maxLength": 12
+    },
+    "Arn": {
+      "description": "The Amazon Resource Name (ARN) of the account.",
+      "type": "string",
+      "pattern": "^arn:aws.*:organizations::\\d{12}:account\\/o-[a-z0-9]{10,32}\\/\\d{12}"
+    },
+    "JoinedMethod": {
+      "description": "The method by which the account joined the organization.",
+      "type": "string",
+      "enum": [
+        "INVITED",
+        "CREATED"
+      ]
+    },
+    "JoinedTimestamp": {
+      "description": "The date the account became a part of the organization.",
+      "type": "string"
+    },
+    "Status": {
+      "description": "The status of the account in the organization.",
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "SUSPENDED",
+        "PENDING_CLOSURE"
+      ]
     }
   },
   "definitions": {
@@ -101,15 +116,12 @@
     "AccountName",
     "Email"
   ],
-  "createOnlyProperties": [
-    "/properties/AccountName",
-    "/properties/Email",
-    "/properties/RoleName"
-  ],
   "readOnlyProperties": [
     "/properties/AccountId",
-    "/properties/CreateAccountRequestId",
-    "/properties/FailureReason"
+    "/properties/Status",
+    "/properties/JoinedTimestamp",
+    "/properties/JoinedMethod",
+    "/properties/Arn"
   ],
   "writeOnlyProperties": [
     "/properties/RoleName"

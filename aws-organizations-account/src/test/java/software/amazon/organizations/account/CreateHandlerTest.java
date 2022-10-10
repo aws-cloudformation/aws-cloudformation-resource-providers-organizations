@@ -1,6 +1,5 @@
 package software.amazon.organizations.account;
 
-import com.google.common.collect.ImmutableSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -8,21 +7,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
-import software.amazon.awssdk.services.organizations.model.Account;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
 import software.amazon.awssdk.services.organizations.model.CreateAccountRequest;
 import software.amazon.awssdk.services.organizations.model.CreateAccountResponse;
 import software.amazon.awssdk.services.organizations.model.CreateAccountStatus;
-import software.amazon.awssdk.services.organizations.model.DescribeAccountRequest;
-import software.amazon.awssdk.services.organizations.model.DescribeAccountResponse;
 import software.amazon.awssdk.services.organizations.model.DescribeCreateAccountStatusRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeCreateAccountStatusResponse;
 import software.amazon.awssdk.services.organizations.model.DestinationParentNotFoundException;
 import software.amazon.awssdk.services.organizations.model.DuplicateAccountException;
 import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
 import software.amazon.awssdk.services.organizations.model.ListParentsResponse;
-import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
-import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.MoveAccountRequest;
 import software.amazon.awssdk.services.organizations.model.MoveAccountResponse;
 import software.amazon.awssdk.services.organizations.model.Parent;
@@ -82,22 +76,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         lenient().when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponseBeforeMoveAccountResponse);
         when(mockProxyClient.client().moveAccount(any(MoveAccountRequest.class))).thenReturn(moveAccountResponse);
 
-        // read
-        final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
-                                                                                                              .arn(TEST_ACCOUNT_ARN)
-                                                                                                              .email(TEST_ACCOUNT_EMAIL)
-                                                                                                              .id(TEST_ACCOUNT_ID)
-                                                                                                              .name(TEST_ACCOUNT_NAME)
-                                                                                                              .build()).build();
-
-        final ListParentsResponse listParentsResponseAfterMoveAccountResponse = getListParentsResponseAfterMoveAccount();
-
-
-        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildDefaultTagsResponse();
-        when(mockProxyClient.client().describeAccount(any(DescribeAccountRequest.class))).thenReturn(describeAccountResponse);
-        when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponseAfterMoveAccountResponse);
-        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
-
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
@@ -133,8 +111,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel().getCreateAccountRequestId()).isNull();
-        assertThat(response.getResourceModel().getFailureReason()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InvalidRequest);
         assertThat(response.getResourceModel().getAccountId()).isNull();
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
@@ -165,8 +141,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel().getCreateAccountRequestId()).isEqualTo(CREATE_ACCOUNT_STATUS_ID);
-        assertThat(response.getResourceModel().getFailureReason()).isEqualTo(EMAIL_ALREADY_EXISTS);
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AlreadyExists);
         assertThat(response.getResourceModel().getAccountId()).isNull();
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
@@ -222,21 +196,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class))).thenReturn(describeCreateAccountStatusResponse);
         lenient().when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponse);
         when(mockProxyClient.client().moveAccount(any(MoveAccountRequest.class))).thenThrow(DuplicateAccountException.class);
-
-        // read
-        final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
-                                                                                                              .arn(TEST_ACCOUNT_ARN)
-                                                                                                              .email(TEST_ACCOUNT_EMAIL)
-                                                                                                              .id(TEST_ACCOUNT_ID)
-                                                                                                              .name(TEST_ACCOUNT_NAME)
-                                                                                                              .build()).build();
-
-        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildDefaultTagsResponse();
-        final ListParentsResponse listParentsResponseAfterMove = getListParentsResponseAfterMoveAccount();
-
-        when(mockProxyClient.client().describeAccount(any(DescribeAccountRequest.class))).thenReturn(describeAccountResponse);
-        lenient().when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponseAfterMove);
-        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
@@ -314,8 +273,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel().getCreateAccountRequestId()).isEqualTo(CREATE_ACCOUNT_STATUS_ID);
-        assertThat(response.getResourceModel().getFailureReason()).isEqualTo(ACCOUNT_LIMIT_EXCEEDED);
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceLimitExceeded);
         assertThat(response.getResourceModel().getAccountId()).isNull();
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
@@ -349,8 +306,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel().getCreateAccountRequestId()).isEqualTo(CREATE_ACCOUNT_STATUS_ID);
-        assertThat(response.getResourceModel().getFailureReason()).isEqualTo(INVALID_EMAIL);
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InvalidRequest);
         assertThat(response.getResourceModel().getAccountId()).isNull();
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
@@ -384,8 +339,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel().getCreateAccountRequestId()).isEqualTo(CREATE_ACCOUNT_STATUS_ID);
-        assertThat(response.getResourceModel().getFailureReason()).isEqualTo(INTERNAL_FAILURE);
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.GeneralServiceException);
         assertThat(response.getResourceModel().getAccountId()).isNull();
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
@@ -412,8 +365,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel().getCreateAccountRequestId()).isNull();
-        assertThat(response.getResourceModel().getFailureReason()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InvalidRequest);
         assertThat(response.getResourceModel().getAccountId()).isNull();
         assertThat(response.getResourceModel().getEmail()).isNull();
@@ -441,21 +392,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().createAccount(any(CreateAccountRequest.class))).thenReturn(createAccountResponse);
         when(mockProxyClient.client().describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class))).thenReturn(describeCreateAccountStatusResponse);
 
-        // read
-        final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
-                                                                                                              .arn(TEST_ACCOUNT_ARN)
-                                                                                                              .email(TEST_ACCOUNT_EMAIL)
-                                                                                                              .id(TEST_ACCOUNT_ID)
-                                                                                                              .name(TEST_ACCOUNT_NAME)
-                                                                                                              .build()).build();
-
-        final ListParentsResponse listParentsResponseAfterMoveAccountResponse = getListParentsResponseBeforeMoveAccount();
-
-        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildDefaultTagsResponse();
-        when(mockProxyClient.client().describeAccount(any(DescribeAccountRequest.class))).thenReturn(describeAccountResponse);
-        when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponseAfterMoveAccountResponse);
-        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
-
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
@@ -465,7 +401,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getAccountId()).isEqualTo(TEST_ACCOUNT_ID);
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
         assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
-        assertThat(response.getResourceModel().getParentIds()).isEqualTo(ImmutableSet.of(TEST_SOURCE_PARENT_ID));
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
