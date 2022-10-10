@@ -86,7 +86,7 @@ public class CreateHandler extends BaseHandlerStd {
         for (int attempt = 0; attempt < MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS; attempt++) {
             try {
                 int wait = computeDelayBeforeNextRetry(attempt);
-                logger.log(String.format("Enter describeCreateAccountStatus with CreateAccountRequestId [%s] and attempt %s. Wait %s millisecond for propagation.", callbackContext.getCreateAccountRequestId(), attempt, wait));
+                logger.log(String.format("Enter describeCreateAccountStatus with CreateAccountRequestId [%s] and attempt %s. Wait %s millisecond for propagation.", callbackContext.getCreateAccountRequestId(), attempt+1, wait));
                 Thread.sleep(wait);
             } catch (InterruptedException e) {
                 log.log(e.getMessage());
@@ -128,7 +128,7 @@ public class CreateHandler extends BaseHandlerStd {
             }
         }
         String errMsg = String.format("DescribeCreateAccountStatus keeps returning IN_PROGRESS state " +
-                                          "after %s attempts for account creation with CreateAccountRequestID [%s]. ", MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS, callbackContext.getCreateAccountRequestId());
+                                          "for account creation with CreateAccountRequestID [%s]. ", callbackContext.getCreateAccountRequestId());
         return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.ServiceInternalError, errMsg);
     }
 

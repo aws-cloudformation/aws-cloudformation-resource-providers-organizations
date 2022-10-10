@@ -37,7 +37,7 @@ public class ReadHandler extends BaseHandlerStd {
         logger.log(String.format("Requesting DescribeAccount w/ Account id: %s.\n", accountId));
         return ProgressEvent.progress(model, callbackContext)
                    .then(progress ->
-                             awsClientProxy.initiate("AWS-Organizations-Account::Read::DescribeAccount" + System.currentTimeMillis(), orgsClient, progress.getResourceModel(), progress.getCallbackContext())
+                             awsClientProxy.initiate("AWS-Organizations-Account::Read::DescribeAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                                  .translateToServiceRequest(Translator::translateToDescribeAccountRequest)
                                  .makeServiceCall(this::describeAccount)
                                  .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
