@@ -39,13 +39,13 @@ public class CreateHandler extends BaseHandlerStd {
         // currently only support 1 parent id
         Set<String> parentIds = model.getParentIds();
         if (parentIds != null && parentIds.size() > 1) {
-            String errorMessage = String.format("Can not specify more than one parent id in request for account name [%s].", model.getAccountName());
+            String errorMessage = String.format("Can not specify more than one parent id in request.");
             logger.log(errorMessage);
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest, errorMessage);
         }
 
-        logger.log(String.format("Entered %s create handler with management account Id [%s] and account name [%s].",
-            ResourceModel.TYPE_NAME, request.getAwsAccountId(), model.getAccountName()));
+        logger.log(String.format("Entered %s create handler with management account Id [%s].",
+            ResourceModel.TYPE_NAME, request.getAwsAccountId()));
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
                    .then(progress -> {
                            if (progress.getCallbackContext().isAccountCreated()) {
@@ -122,7 +122,7 @@ public class CreateHandler extends BaseHandlerStd {
             }
             // case 3: create account succeed
             if (model.getAccountId() != null) {
-                logger.log(String.format("Successfully created account with id: [%s] for account name: %s", model.getAccountId(), model.getAccountName()));
+                logger.log(String.format("Successfully created account with id: [%s].", model.getAccountId()));
                 model.setStatus("ACTIVE");
                 return ProgressEvent.progress(model, callbackContext);
             }
@@ -199,9 +199,8 @@ public class CreateHandler extends BaseHandlerStd {
     }
 
     protected CreateAccountResponse createAccount(final CreateAccountRequest createAccountRequest, final ProxyClient<OrganizationsClient> orgsClient) {
-        log.log(String.format("Calling createAccount API for AccountName [%s].", createAccountRequest.accountName()));
-        final CreateAccountResponse createAccountResponse = orgsClient.injectCredentialsAndInvokeV2(createAccountRequest, orgsClient.client()::createAccount);
-        return createAccountResponse;
+        log.log("Calling createAccount API.");
+        return orgsClient.injectCredentialsAndInvokeV2(createAccountRequest, orgsClient.client()::createAccount);
     }
 
     protected MoveAccountResponse moveAccount(final MoveAccountRequest moveAccountRequest, final ProxyClient<OrganizationsClient> orgsClient) {

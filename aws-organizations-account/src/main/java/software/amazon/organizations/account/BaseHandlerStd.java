@@ -119,8 +119,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         } else if (e instanceof SourceParentNotFoundException || e instanceof CreateAccountStatusNotFoundException) {
             errorCode = HandlerErrorCode.InternalFailure;
         }
-        logger.log(String.format("[Exception] Failed with exception [%s]. Message: [%s], ErrorCode: [%s] for Account [%s].",
-            e.getClass().getSimpleName(), e.getMessage(), errorCode, resourceModel.getAccountName()));
+        logger.log(String.format("[Exception] Failed with exception [%s]. Message: [%s], ErrorCode: [%s].",
+            e.getClass().getSimpleName(), e.getMessage(), errorCode));
         return ProgressEvent.failed(resourceModel, callbackContext, errorCode, e.getMessage());
     }
 
