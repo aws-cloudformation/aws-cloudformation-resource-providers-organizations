@@ -44,7 +44,7 @@ public class ListHandler extends BaseHandlerStd {
             listOrganizationalUnitsForParentResponse = awsClientProxy.injectCredentialsAndInvokeV2(
                 listOrganizationalUnitsForParentRequest, orgsClient.client()::listOrganizationalUnitsForParent);
         } catch(Exception e) {
-            return handleError(listOrganizationalUnitsForParentRequest, e, orgsClient, model, callbackContext, logger);
+            return handleErrorInGeneral(listOrganizationalUnitsForParentRequest, e, orgsClient, model, callbackContext, logger, Constants.Action.LIST_OU_FOR_PARENT, Constants.Handler.LIST);
         }
 
         final List<ResourceModel> models = listOrganizationalUnitsForParentResponse.organizationalUnits().stream().map(organizationalUnit ->

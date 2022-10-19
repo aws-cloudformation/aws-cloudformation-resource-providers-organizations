@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.Arrays;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.AttachPolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
@@ -32,6 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
@@ -183,7 +185,25 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         when(mockProxyClient.client().listTargetsForPolicy(any(ListTargetsForPolicyRequest.class))).thenThrow(ServiceException.class);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        CallbackContext context = new CallbackContext();
+        ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        // retry attempt 1
+        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TARGETS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+        // retry attempt 2
+        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TARGETS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(2);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+        // retry attempt 3
+        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TARGETS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(3);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+
+        // CloudFormation retry
+        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -191,7 +211,7 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
 
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
-        verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
+        verify(mockProxyClient.client(), atLeast(3)).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
     }
 
     @Test
@@ -236,7 +256,25 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenThrow(ServiceException.class);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        CallbackContext context = new CallbackContext();
+        ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        // retry attempt 1
+        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TAGS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+        // retry attempt 2
+        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TAGS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(2);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+        // retry attempt 3
+        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TAGS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(3);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+
+        // CloudFormation retry
+        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -244,7 +282,7 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
 
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
-        verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
-        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(mockProxyClient.client(), atLeast(3)).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
+        verify(mockProxyClient.client(), atLeast(3)).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 }

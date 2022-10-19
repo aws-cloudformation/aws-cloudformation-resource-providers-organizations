@@ -74,7 +74,7 @@ public class ListHandlerTest extends AbstractTestBase {
 
         when(mockProxyClient.client().listOrganizationalUnitsForParent(any(ListOrganizationalUnitsForParentRequest.class))).thenReturn(listOrganizationalUnitsForParentResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+        final ProgressEvent<ResourceModel, CallbackContext> response = listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
@@ -92,7 +92,7 @@ public class ListHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .build();
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+        final ProgressEvent<ResourceModel, CallbackContext> response = listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -107,7 +107,7 @@ public class ListHandlerTest extends AbstractTestBase {
             .desiredResourceState(model)
             .build();
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+        final ProgressEvent<ResourceModel, CallbackContext> response = listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);

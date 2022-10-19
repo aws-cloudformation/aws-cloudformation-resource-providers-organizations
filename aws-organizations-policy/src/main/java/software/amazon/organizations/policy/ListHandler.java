@@ -40,8 +40,8 @@ public class ListHandler extends BaseHandlerStd {
         return awsClientProxy.initiate("AWS-Organizations-Policy::ListPolicy", orgsClient, model, callbackContext)
             .translateToServiceRequest(t -> Translator.translateToListPoliciesRequest(model, request.getNextToken()))
             .makeServiceCall(this::listPolicies)
-            .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
-                organizationsRequest, e, proxyClient1, model1, context, logger))
+            .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
+                             handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, PolicyConstants.Action.LIST_POLICIES, PolicyConstants.Handler.LIST))
             .done(listPoliciesResponse -> {
                 String nextToken = listPoliciesResponse.nextToken();
                 models.addAll(Translator.translateListPoliciesResponseToResourceModels(listPoliciesResponse));

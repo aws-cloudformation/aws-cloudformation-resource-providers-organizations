@@ -58,8 +58,7 @@ public class UpdateHandler extends BaseHandlerStd {
                 awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::UpdateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                 .translateToServiceRequest(Translator::translateToUpdateOrganizationalUnitRequest)
                 .makeServiceCall(this::updateOrganizationalUnit)
-                .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                            organizationsRequest, e, orgsClient1, model1, context, logger))
+                .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, Constants.Action.UPDATE_OU, Constants.Handler.UPDATE))
                 .progress()
             )
             .then(progress -> handleTagging(awsClientProxy, model, callbackContext, desiredTags, previousTags, ouId, orgsClient, logger))
@@ -101,7 +100,7 @@ public class UpdateHandler extends BaseHandlerStd {
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(untagResourceRequest, orgsClient.client()::untagResource);
             } catch (Exception e) {
-                return handleError(untagResourceRequest, e, orgsClient, model, callbackContext, logger);
+                return handleErrorInGeneral(untagResourceRequest, e, orgsClient, model, callbackContext, logger, Constants.Action.UNTAG_RESOURCE, Constants.Handler.UPDATE);
             }
         }
 
@@ -112,7 +111,7 @@ public class UpdateHandler extends BaseHandlerStd {
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(tagResourceRequest, orgsClient.client()::tagResource);
             } catch(Exception e) {
-                return handleError(tagResourceRequest, e, orgsClient, model, callbackContext, logger);
+                return handleErrorInGeneral(tagResourceRequest, e, orgsClient, model, callbackContext, logger, Constants.Action.TAG_RESOURCE, Constants.Handler.UPDATE);
             }
         }
 

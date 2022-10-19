@@ -59,7 +59,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
         when(mockProxyClient.client().deleteOrganizationalUnit(any(DeleteOrganizationalUnitRequest.class))).thenReturn(deleteOrganizationalUnitResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+        final ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
@@ -82,7 +82,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
         when(mockProxyClient.client().deleteOrganizationalUnit(any(DeleteOrganizationalUnitRequest.class))).thenThrow(OrganizationalUnitNotFoundException.class);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+        final ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -100,7 +100,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
         when(mockProxyClient.client().deleteOrganizationalUnit(any(DeleteOrganizationalUnitRequest.class))).thenThrow(OrganizationalUnitNotEmptyException.class);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(false), mockProxyClient, logger);
+        final ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);

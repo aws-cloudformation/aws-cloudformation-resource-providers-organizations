@@ -35,8 +35,8 @@ public class ReadHandler extends BaseHandlerStd {
             .then(progress -> awsClientProxy.initiate("AWS-Organizations-Policy::DescribePolicy", orgsClient, model, callbackContext)
                 .translateToServiceRequest(t -> Translator.translateToReadRequest(model))
                 .makeServiceCall(this::describePolicy)
-                .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
-                    organizationsRequest, e, proxyClient1, model1, context, logger))
+                .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
+                                 handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, PolicyConstants.Action.DESCRIBE_POLICY, PolicyConstants.Handler.READ))
                 .done(describePolicyResponse -> {
                     model.setArn(describePolicyResponse.policy().policySummary().arn().toString());
                     model.setDescription(describePolicyResponse.policy().policySummary().description());
@@ -81,7 +81,7 @@ public class ReadHandler extends BaseHandlerStd {
                     listTargetsRequest,
                     orgsClient.client()::listTargetsForPolicy);
             } catch (Exception e) {
-                return handleError(listTargetsRequest, e, orgsClient, model, callbackContext, logger);
+                return handleErrorInGeneral(listTargetsRequest, e, orgsClient, model, callbackContext, logger, PolicyConstants.Action.LIST_TARGETS_FOR_POLICY, PolicyConstants.Handler.READ);
             }
 
             for (PolicyTargetSummary targetSummary : pageResult.targets()) {
@@ -110,8 +110,8 @@ public class ReadHandler extends BaseHandlerStd {
         return awsClientProxy.initiate("AWS-Organizations-Policy::ListTagsForResource", orgsClient, model, callbackContext)
             .translateToServiceRequest(resourceModel -> Translator.translateToListTagsForResourceRequest(policyId))
             .makeServiceCall(this::listTagsForResource)
-            .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                organizationsRequest, e, orgsClient1, model1, context, logger))
+            .handleError((organizationsRequest, e, orgsClient1, model1, context) ->
+                             handleErrorInGeneral(organizationsRequest, e, orgsClient1, model1, context, logger, PolicyConstants.Action.LIST_TAGS_FOR_POLICY, PolicyConstants.Handler.READ))
             .done(listTagsForResourceResponse -> {
                 model.setTags(Translator.translateTagsFromSdkResponse(listTagsForResourceResponse.tags()));
                 return ProgressEvent.defaultSuccessHandler(model);

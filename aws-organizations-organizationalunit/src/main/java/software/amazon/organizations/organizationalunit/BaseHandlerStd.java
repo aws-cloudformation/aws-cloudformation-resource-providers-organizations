@@ -7,8 +7,8 @@ import software.amazon.awssdk.services.organizations.model.ConcurrentModificatio
 import software.amazon.awssdk.services.organizations.model.ConstraintViolationException;
 import software.amazon.awssdk.services.organizations.model.DuplicateOrganizationalUnitException;
 import software.amazon.awssdk.services.organizations.model.InvalidInputException;
-import software.amazon.awssdk.services.organizations.model.ParentNotFoundException;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnitNotFoundException;
+import software.amazon.awssdk.services.organizations.model.ParentNotFoundException;
 import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
 
@@ -22,7 +22,16 @@ import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
+
+import java.util.Random;
+
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
+    // ExponentialBackoffJitter Constants
+    private final double RANDOMIZATION_FACTOR = 0.5;
+    private final int BASE_DELAY = 3;
+    private final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 3;
+    final int MAX_RETRY_ATTEMPT_FOR_CREATE_OU = 2;
+
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -32,7 +41,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             return handleRequest(
                 awsClientProxy,
                 request,
-                callbackContext != null ? callbackContext : new CallbackContext(false),
+                callbackContext != null ? callbackContext : new CallbackContext(),
                 awsClientProxy.newProxy(ClientBuilder::getClient),
                 logger
         );
@@ -49,27 +58,20 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     public ProgressEvent<ResourceModel, CallbackContext> handleError(
         final OrganizationsRequest request,
         final Exception e,
-        final ProxyClient<OrganizationsClient> awsClientProxy,
+        final ProxyClient<OrganizationsClient> proxyClient,
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
         final Logger logger
     ) {
-        return handleErrorTranslation(resourceModel, callbackContext, e, logger);
-    }
-
-    public ProgressEvent<ResourceModel, CallbackContext> handleError(
-        final ResourceModel resourceModel,
-        final CallbackContext callbackContext,
-        final Exception e,
-        final Logger logger
-    ) {
-        return handleErrorTranslation(resourceModel, callbackContext, e, logger);
+        return handleErrorTranslation(request, e, proxyClient, resourceModel, callbackContext, logger);
     }
 
     public ProgressEvent<ResourceModel, CallbackContext> handleErrorTranslation(
+        final OrganizationsRequest request,
+        final Exception e,
+        final ProxyClient<OrganizationsClient> proxyClient,
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
-        final Exception e,
         final Logger logger
     ) {
         HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
@@ -91,9 +93,70 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         } else if (e instanceof TooManyRequestsException) {
           errorCode = HandlerErrorCode.Throttling;
         }
+        String ouInfo = resourceModel.getId() == null ? resourceModel.getName() : resourceModel.getId();
         logger.log(String.format("[Exception] Failed with exception: [%s]. Message: [%s], ErrorCode: [%s] for OrganizationalUnit [%s].",
-            e.getClass().getSimpleName(), e.getMessage(), errorCode, resourceModel.getName()));
-
+            e.getClass().getSimpleName(), e.getMessage(), errorCode, ouInfo));
         return ProgressEvent.failed(resourceModel, callbackContext, errorCode, e.getMessage());
+    }
+
+    public ProgressEvent<ResourceModel, CallbackContext> handleErrorInGeneral(
+        final OrganizationsRequest request,
+        final Exception e,
+        final ProxyClient<OrganizationsClient> proxyClient,
+        final ResourceModel resourceModel,
+        final CallbackContext callbackContext,
+        final Logger logger,
+        final Constants.Action actionName,
+        final Constants.Handler handlerName
+    ) {
+        if (isRetriableException(e)) {
+            return handleRetriableException(request, proxyClient, callbackContext, logger, e, resourceModel, actionName, handlerName);
+        }
+        return handleError(request, e, proxyClient, resourceModel, callbackContext, logger);
+    }
+
+    public final int computeDelayBeforeNextRetry(int retryAttempt) {
+        Random random = new Random();
+        int exponentialBackoff = (int) Math.pow(2, retryAttempt) * BASE_DELAY;
+        int jitter = random.nextInt((int) Math.ceil(exponentialBackoff * RANDOMIZATION_FACTOR));
+        return exponentialBackoff + jitter;
+    }
+
+    public final boolean isRetriableException (Exception e){
+        return (e instanceof ConcurrentModificationException
+                    || e instanceof TooManyRequestsException
+                    || e instanceof ServiceException);
+    }
+
+    public final ProgressEvent<ResourceModel, CallbackContext> handleRetriableException(
+        final OrganizationsRequest organizationsRequest,
+        final ProxyClient<OrganizationsClient> proxyClient,
+        final CallbackContext context,
+        final Logger logger,
+        final Exception e,
+        final ResourceModel model,
+        final Constants.Action actionName,
+        final Constants.Handler handlerName
+    ) {
+        try {
+            String ouInfo = model.getId() == null ? model.getName() : model.getId();
+            if (actionName != Constants.Action.CREATE_OU) {
+                int currentAttempt = context.getCurrentRetryAttempt(actionName,handlerName);
+                if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
+                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
+                    context.setCurrentRetryAttempt(actionName,handlerName);
+                    logger.log(String.format("Got %s when calling %s for "
+                                                 + "organizational unit [%s]. Retrying %s of %s with callback delay %s seconds.",
+                        e.getClass().getName(), organizationsRequest.getClass().getName(), ouInfo, currentAttempt+1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
+                    return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
+                } else {
+                    logger.log(String.format("All retry exhausted. Return exception to CloudFormation for ou [%s].", ouInfo));
+                    return handleError(organizationsRequest, e, proxyClient, model, context, logger);
+                }
+            }
+            return handleError(organizationsRequest, e, proxyClient, model, context, logger);
+        } catch (Exception exception){
+            return ProgressEvent.failed(model, context, HandlerErrorCode.GeneralServiceException, exception.getMessage());
+        }
     }
 }

@@ -21,7 +21,6 @@ import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.TargetNotFoundException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
 
-import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -37,7 +36,9 @@ import java.util.Random;
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     // ExponentialBackoffJitter Constants
     private final double RANDOMIZATION_FACTOR = 0.5;
-    private final int BASE_DELAY = 5;
+    private final int BASE_DELAY = 3;
+    private final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 3;
+    final int MAX_RETRY_ATTEMPT_FOR_CREATE_POLICY = 3;
 
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -91,9 +92,26 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         } else if (e instanceof TooManyRequestsException) {
             errorCode = HandlerErrorCode.Throttling;
         }
+        String policyInfo = resourceModel.getId() == null ? resourceModel.getName() : resourceModel.getId();
         logger.log(String.format("[Exception] Failed with exception: [%s]. Message: [%s], ErrorCode: [%s] for policy [%s].",
-            e.getClass().getSimpleName(), e.getMessage(), errorCode, resourceModel.getName()));
+            e.getClass().getSimpleName(), e.getMessage(), errorCode, policyInfo));
         return ProgressEvent.failed(resourceModel, callbackContext, errorCode,e.getMessage());
+    }
+
+    public ProgressEvent<ResourceModel, CallbackContext> handleErrorInGeneral(
+        final OrganizationsRequest request,
+        final Exception e,
+        final ProxyClient<OrganizationsClient> proxyClient,
+        final ResourceModel resourceModel,
+        final CallbackContext callbackContext,
+        final Logger logger,
+        final PolicyConstants.Action actionName,
+        final PolicyConstants.Handler handlerName
+    ) {
+        if (isRetriableException(e)) {
+            return handleRetriableException(request, proxyClient, callbackContext, logger, e, resourceModel, actionName, handlerName);
+        }
+        return handleError(request, e, proxyClient, resourceModel, callbackContext, logger);
     }
 
     public final int computeDelayBeforeNextRetry(int retryAttempt) {
@@ -110,28 +128,59 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             || e instanceof ServiceException);
     }
 
-    private int getCurrentAttempt(final PolicyConstants.Action actionName, final CallbackContext context){
-        if (actionName == PolicyConstants.Action.DELETE_POLICY) {
-            return context.getRetryDeleteAttempt();
-        } else if (actionName == PolicyConstants.Action.ATTACH_POLICY) {
-            return context.getRetryAttachAttempt();
-        } else if (actionName == PolicyConstants.Action.DETACH_POLICY) {
-            return context.getRetryDetachAttempt();
-        } else {
-            throw new CfnGeneralServiceException("Error in getting current retry attempt from callback context!");
-        }
-    }
-
-    private CallbackContext setCurrentAttempt(final PolicyConstants.Action actionName, final CallbackContext context){
-        if (actionName == PolicyConstants.Action.DELETE_POLICY) {
-            context.setRetryDeleteAttempt(context.getRetryDeleteAttempt() + 1);
-        } else if (actionName == PolicyConstants.Action.ATTACH_POLICY) {
-            context.setRetryAttachAttempt(context.getRetryAttachAttempt() + 1);
-        } else if (actionName == PolicyConstants.Action.DETACH_POLICY) {
-            context.setRetryDetachAttempt(context.getRetryDetachAttempt() + 1);
-        }
-        return context;
-    }
+//    private int getCurrentAttempt(
+//        final PolicyConstants.Action actionName,
+//        final PolicyConstants.Handler handlerName,
+//        final CallbackContext context
+//    ){
+//        if (handlerName == PolicyConstants.Handler.CREATE) {
+////            if (actionName == PolicyConstants.Action.CREATE_POLICY) return context.getRetryCreatePolicyAttempt();
+//            if (actionName == PolicyConstants.Action.ATTACH_POLICY) return context.getRetryAttachPolicyAttemptInCreate();
+//        } else if (handlerName == PolicyConstants.Handler.UPDATE) {
+//            if (actionName == PolicyConstants.Action.UPDATE_POLICY) return context.getRetryUpdatePolicyAttempt();
+//            if (actionName == PolicyConstants.Action.ATTACH_POLICY) return context.getRetryAttachPolicyAttemptInUpdate();
+//            if (actionName == PolicyConstants.Action.DETACH_POLICY) return context.getRetryDetachPolicyAttemptInUpdate();
+//            if (actionName == PolicyConstants.Action.TAG_RESOURCE) return context.getRetryTagResourceAttemptInUpdate();
+//            if (actionName == PolicyConstants.Action.UNTAG_RESOURCE) return context.getRetryUnTagResourceAttemptInUpdate();
+//        } else if (handlerName == PolicyConstants.Handler.DELETE) {
+//            if (actionName == PolicyConstants.Action.DELETE_POLICY) return context.getRetryDeletePolicyAttempt();
+//            if (actionName == PolicyConstants.Action.DETACH_POLICY) return context.getRetryDetachPolicyAttemptInDelete();
+//        } else if (handlerName == PolicyConstants.Handler.READ) {
+//            if (actionName == PolicyConstants.Action.DESCRIBE_POLICY) return context.getRetryDescribePolicyAttemptInRead();
+//            if (actionName == PolicyConstants.Action.LIST_TAGS_FOR_POLICY) return context.getRetryListTagsForPolicyAttemptInRead();
+//            if (actionName == PolicyConstants.Action.LIST_TARGETS_FOR_POLICY) return context.getRetryListTargetsForPolicyAttemptInRead();
+//        } else if (handlerName == PolicyConstants.Handler.LIST) {
+//            if (actionName == PolicyConstants.Action.LIST_POLICIES) return context.getRetryListPoliciesAttemptInList();
+//        }
+//        throw new CfnGeneralServiceException("Error in getting current retry attempt from callback context!");
+//    }
+//
+//    private CallbackContext setCurrentAttempt(
+//        final PolicyConstants.Action actionName,
+//        final PolicyConstants.Handler handlerName,
+//        final CallbackContext context
+//    ){
+//        if (handlerName == PolicyConstants.Handler.CREATE) {
+////            if (actionName == PolicyConstants.Action.CREATE_POLICY) context.setRetryCreatePolicyAttempt(context.getRetryCreatePolicyAttempt()+1);
+//            if (actionName == PolicyConstants.Action.ATTACH_POLICY) context.setRetryAttachPolicyAttemptInCreate(context.getRetryAttachPolicyAttemptInCreate()+1);
+//        } else if (handlerName == PolicyConstants.Handler.UPDATE) {
+//            if (actionName == PolicyConstants.Action.UPDATE_POLICY) context.setRetryUpdatePolicyAttempt(context.getRetryUpdatePolicyAttempt()+1);
+//            if (actionName == PolicyConstants.Action.ATTACH_POLICY) context.setRetryAttachPolicyAttemptInUpdate(context.getRetryAttachPolicyAttemptInUpdate()+1);
+//            if (actionName == PolicyConstants.Action.DETACH_POLICY) context.setRetryDetachPolicyAttemptInUpdate(context.getRetryDetachPolicyAttemptInUpdate()+1);
+//            if (actionName == PolicyConstants.Action.TAG_RESOURCE) context.setRetryTagResourceAttemptInUpdate(context.getRetryTagResourceAttemptInUpdate()+1);
+//            if (actionName == PolicyConstants.Action.UNTAG_RESOURCE) context.setRetryUnTagResourceAttemptInUpdate(context.getRetryUnTagResourceAttemptInUpdate()+1);
+//        } else if (handlerName == PolicyConstants.Handler.DELETE) {
+//            if (actionName == PolicyConstants.Action.DELETE_POLICY) context.setRetryDeletePolicyAttempt(context.getRetryDeletePolicyAttempt()+1);
+//            if (actionName == PolicyConstants.Action.DETACH_POLICY) context.setRetryDetachPolicyAttemptInDelete(context.getRetryDetachPolicyAttemptInDelete()+1);
+//        } else if (handlerName == PolicyConstants.Handler.READ) {
+//            if (actionName == PolicyConstants.Action.DESCRIBE_POLICY)  context.setRetryDescribePolicyAttemptInRead(context.getRetryDescribePolicyAttemptInRead()+1);
+//            if (actionName == PolicyConstants.Action.LIST_TAGS_FOR_POLICY) context.setRetryListTagsForPolicyAttemptInRead(context.getRetryListTagsForPolicyAttemptInRead()+1);
+//            if (actionName == PolicyConstants.Action.LIST_TARGETS_FOR_POLICY) context.setRetryListTargetsForPolicyAttemptInRead(context.getRetryListTargetsForPolicyAttemptInRead()+1);
+//        } else if (handlerName == PolicyConstants.Handler.LIST) {
+//            if (actionName == PolicyConstants.Action.LIST_POLICIES) context.setRetryListPoliciesAttemptInList(context.getRetryListPoliciesAttemptInList()+1);
+//        }
+//        return context;
+//    }
 
     public final ProgressEvent<ResourceModel, CallbackContext> handleRetriableException(
         final OrganizationsRequest organizationsRequest,
@@ -140,21 +189,25 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final Logger logger,
         final Exception e,
         final ResourceModel model,
-        final PolicyConstants.Action actionName
+        final PolicyConstants.Action actionName,
+        final PolicyConstants.Handler handlerName
     ) {
         try {
-            final int currentAttempt = getCurrentAttempt(actionName,context);
-            if (currentAttempt < context.getMaxRetryCount()) {
-                int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
-                logger.log(String.format("Got %s when calling %s for "
-                                             + "policy [%s]. Retrying %s of %s with callback delay %s seconds.",
-                    e.getClass().getName(), organizationsRequest.getClass().getName(), model.getName(), currentAttempt+1, context.getMaxRetryCount(), callbackDelaySeconds));
-                setCurrentAttempt(actionName,context);
-                return ProgressEvent.defaultInProgressHandler(context,callbackDelaySeconds, model);
-            } else {
-                logger.log(String.format("All retry attempts exhausted for policy [%s], return exception to CloudFormation for further handling.", model.getName()));
-                return handleError(organizationsRequest, e, proxyClient, model, context, logger);
+            if (actionName != PolicyConstants.Action.CREATE_POLICY) {
+                int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
+                if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
+                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
+                    context.setCurrentRetryAttempt(actionName, handlerName);
+                    logger.log(String.format("Got %s when calling %s for "
+                                                 + "policy [%s]. Retrying %s of %s with callback delay %s seconds.",
+                        e.getClass().getName(), organizationsRequest.getClass().getName(), model.getName(), currentAttempt+1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
+                    return ProgressEvent.defaultInProgressHandler(context,callbackDelaySeconds, model);
+                } else {
+                    logger.log(String.format("All retry attempts exhausted for policy [%s], return CloudFormation exception.", model.getName()));
+                    return handleError(organizationsRequest, e, proxyClient, model, context, logger);
+                }
             }
+            return handleError(organizationsRequest, e, proxyClient, model, context, logger);
         } catch (Exception exception){
             return ProgressEvent.failed(model, context, HandlerErrorCode.GeneralServiceException, exception.getMessage());
         }

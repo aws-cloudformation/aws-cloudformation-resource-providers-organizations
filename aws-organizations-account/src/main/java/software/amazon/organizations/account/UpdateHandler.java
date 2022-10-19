@@ -52,8 +52,8 @@ public class UpdateHandler extends BaseHandlerStd {
 
         logger.log(String.format("Requesting Account Update w/ id: %s", model.getAccountId()));
         return ProgressEvent.progress(model, callbackContext)
-                .then(progress -> moveAccount(awsClientProxy, previousModel, model, callbackContext, orgsClient, logger))
-                .then(progress -> handleTagging(awsClientProxy, model, callbackContext,
+                .then(progress -> moveAccount(awsClientProxy, request, previousModel, model, callbackContext, orgsClient, logger))
+                .then(progress -> handleTagging(awsClientProxy, request, model, callbackContext,
                         convertAccountTagToOrganizationTag(model.getTags()),
                         convertAccountTagToOrganizationTag(previousModel.getTags()),
                         model.getAccountId(), orgsClient, logger))
@@ -62,6 +62,7 @@ public class UpdateHandler extends BaseHandlerStd {
 
     protected ProgressEvent<ResourceModel, CallbackContext> moveAccount(
             final AmazonWebServicesClientProxy awsClientProxy,
+            final ResourceHandlerRequest<ResourceModel> request,
             final ResourceModel previousModel,
             final ResourceModel model,
             final CallbackContext callbackContext,
@@ -105,7 +106,7 @@ public class UpdateHandler extends BaseHandlerStd {
                                                 e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), sourceId, destinationId));
                                         return ProgressEvent.progress(model1, context);
                                     }
-                                    return handleError(organizationsRequest, e, proxyClient1, model1, context, logger);
+                                    return handleErrorInGeneral(organizationsRequest, request, e, proxyClient1, model1, context, logger, AccountConstants.Action.MOVE_ACCOUNT, AccountConstants.Handler.UPDATE);
                                 })
                                 .progress()
                 );
@@ -113,6 +114,7 @@ public class UpdateHandler extends BaseHandlerStd {
 
     private ProgressEvent<ResourceModel, CallbackContext> handleTagging(
             final AmazonWebServicesClientProxy awsClientProxy,
+            final ResourceHandlerRequest<ResourceModel> request,
             final ResourceModel model,
             final CallbackContext callbackContext,
             final Set<Tag> desiredTags,
@@ -134,7 +136,7 @@ public class UpdateHandler extends BaseHandlerStd {
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(untagResourceRequest, orgsClient.client()::untagResource);
             } catch (Exception e) {
-                return handleError(untagResourceRequest, e, orgsClient, model, callbackContext, logger);
+                return handleErrorInGeneral(untagResourceRequest, request, e, orgsClient, model, callbackContext, logger, AccountConstants.Action.UNTAG_RESOURCE, AccountConstants.Handler.UPDATE);
             }
         }
 
@@ -145,7 +147,7 @@ public class UpdateHandler extends BaseHandlerStd {
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(tagResourceRequest, orgsClient.client()::tagResource);
             } catch (Exception e) {
-                return handleError(tagResourceRequest, e, orgsClient, model, callbackContext, logger);
+                return handleErrorInGeneral(tagResourceRequest, request, e, orgsClient, model, callbackContext, logger, AccountConstants.Action.TAG_RESOURCE, AccountConstants.Handler.UPDATE);
             }
         }
 

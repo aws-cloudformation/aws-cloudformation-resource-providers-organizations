@@ -16,7 +16,6 @@ import software.amazon.awssdk.services.organizations.model.OrganizationsRequest;
 import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.SourceParentNotFoundException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
-import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
@@ -29,6 +28,8 @@ import java.util.Random;
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected static final String GOV_CLOUD_PARTITION = "aws-us-gov";
     protected final int MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 4;
+    private final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 3;
+    protected final int MAX_RETRY_ATTEMPT_FOR_CREATE_ACCOUNT = 2;
     // CreateAccount Constants
     protected final String CREATE_ACCOUNT_FAILURE_REASON_EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS";
     protected final String CREATE_ACCOUNT_FAILURE_REASON_GOVCLOUD_ACCOUNT_ALREADY_EXISTS = "GOVCLOUD_ACCOUNT_ALREADY_EXISTS";
@@ -73,25 +74,45 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
 
     public ProgressEvent<ResourceModel, CallbackContext> handleError(
         final OrganizationsRequest request,
+        final ResourceHandlerRequest<ResourceModel> handlerRequest,
         final Exception e,
         final ProxyClient<OrganizationsClient> awsClientProxy,
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
         final Logger logger
     ) {
-        return handleErrorTranslation(resourceModel, callbackContext, e, logger);
+        return handleErrorTranslation(handlerRequest, resourceModel, callbackContext, e, logger);
     }
 
     public ProgressEvent<ResourceModel, CallbackContext> handleError(
+        final ResourceHandlerRequest<ResourceModel> handlerRequest,
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
         final Exception e,
         final Logger logger
     ) {
-        return handleErrorTranslation(resourceModel, callbackContext, e, logger);
+        return handleErrorTranslation(handlerRequest, resourceModel, callbackContext, e, logger);
+    }
+
+    public ProgressEvent<ResourceModel, CallbackContext> handleErrorInGeneral(
+        final OrganizationsRequest request,
+        final ResourceHandlerRequest<ResourceModel> handlerRequest,
+        final Exception e,
+        final ProxyClient<OrganizationsClient> proxyClient,
+        final ResourceModel resourceModel,
+        final CallbackContext callbackContext,
+        final Logger logger,
+        final AccountConstants.Action actionName,
+        final AccountConstants.Handler handlerName
+    ) {
+        if (isRetriableException(e)) {
+            return handleRetriableException(request, handlerRequest, proxyClient, callbackContext, logger, e, resourceModel, actionName, handlerName);
+        }
+        return handleError(request, handlerRequest, e, proxyClient, resourceModel, callbackContext, logger);
     }
 
     public ProgressEvent<ResourceModel, CallbackContext> handleErrorTranslation(
+        final ResourceHandlerRequest<ResourceModel> handlerRequest,
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
         final Exception e,
@@ -119,8 +140,9 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         } else if (e instanceof SourceParentNotFoundException || e instanceof CreateAccountStatusNotFoundException) {
             errorCode = HandlerErrorCode.InternalFailure;
         }
-        logger.log(String.format("[Exception] Failed with exception [%s]. Message: [%s], ErrorCode: [%s].",
-            e.getClass().getSimpleName(), e.getMessage(), errorCode));
+        String accountInfo = resourceModel.getAccountId() == null ? handlerRequest.getLogicalResourceIdentifier() : resourceModel.getAccountId();
+        logger.log(String.format("[Exception] Failed with exception [%s]. Message: [%s], ErrorCode: [%s] for Account [%s].",
+            e.getClass().getSimpleName(), e.getMessage(), errorCode, accountInfo));
         return ProgressEvent.failed(resourceModel, callbackContext, errorCode, e.getMessage());
     }
 
@@ -138,47 +160,34 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         );
     }
 
-    private int getCurrentAttempt(final AccountConstants.Action actionName, final CallbackContext context) {
-        if (actionName == AccountConstants.Action.MOVE_ACCOUNT) {
-            return context.getCurrentAttemptToMoveAccount();
-        } else if (actionName == AccountConstants.Action.CLOSE_ACCOUNT) {
-            return context.getCurrentAttemptToCloseAccount();
-        } else {
-            throw new CfnGeneralServiceException(String.format("Error in getting current retry attempt from callback context for action: %s!", actionName));
-        }
-    }
-
-    private CallbackContext setCurrentAttempt(final AccountConstants.Action actionName, final CallbackContext context) {
-        if (actionName == AccountConstants.Action.MOVE_ACCOUNT) {
-            context.setCurrentAttemptToMoveAccount(context.getCurrentAttemptToMoveAccount() + 1);
-        } else if (actionName == AccountConstants.Action.CLOSE_ACCOUNT) {
-            context.setCurrentAttemptToCloseAccount(context.getCurrentAttemptToCloseAccount() + 1);
-        }
-        return context;
-    }
-
     public final ProgressEvent<ResourceModel, CallbackContext> handleRetriableException(
         final OrganizationsRequest organizationsRequest,
+        final ResourceHandlerRequest<ResourceModel> handlerRequest,
         final ProxyClient<OrganizationsClient> proxyClient,
         final CallbackContext context,
         final Logger logger,
         final Exception e,
         final ResourceModel model,
-        final AccountConstants.Action actionName
+        final AccountConstants.Action actionName,
+        final AccountConstants.Handler handlerName
     ) {
         try {
-            final int currentAttempt = getCurrentAttempt(actionName, context);
-            if (currentAttempt < context.getMaxRetryAttempt()) {
-                int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt) / 1000; // in seconds
-                logger.log(String.format("Got %s when calling %s for "
-                                             + "account Id [%s]. Retrying %s of %s with callback delay %s seconds.",
-                    e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), currentAttempt + 1, context.getMaxRetryAttempt(), callbackDelaySeconds));
-                setCurrentAttempt(actionName, context);
-                return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
-            } else {
-                logger.log(String.format("All retry attempts exhausted for account Id [%s], return exception to CloudFormation for further handling.", model.getAccountId()));
-                return handleError(organizationsRequest, e, proxyClient, model, context, logger);
+            String accountInfo = model.getAccountId() == null ? handlerRequest.getLogicalResourceIdentifier() : model.getAccountId();
+            if (actionName != AccountConstants.Action.CREATE_ACCOUNT) {
+                int currentAttempt = context.getCurrentRetryAttempt(actionName,handlerName);
+                if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
+                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt) / 1000; // in seconds
+                    context.setCurrentRetryAttempt(actionName,handlerName);
+                    logger.log(String.format("Got %s when calling %s for "
+                                                 + "account [%s]. Retrying %s of %s with callback delay %s seconds.",
+                        e.getClass().getName(), organizationsRequest.getClass().getName(), accountInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
+                    return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
+                } else {
+                    logger.log(String.format("All retry attempts exhausted for account [%s], return exception to CloudFormation for further handling.", accountInfo));
+                    return handleError(organizationsRequest, handlerRequest, e, proxyClient, model, context, logger);
+                }
             }
+            return handleError(organizationsRequest, handlerRequest, e, proxyClient, model, context, logger);
         } catch (Exception exception) {
             return ProgressEvent.failed(model, context, HandlerErrorCode.GeneralServiceException, exception.getMessage());
         }

@@ -211,18 +211,18 @@ public class DeleteHandlerTest extends AbstractTestBase {
         CallbackContext context = new CallbackContext();
         ProgressEvent<ResourceModel, CallbackContext> response = deleteHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
         // retry attempt 1
-        assertThat(context.isPolicyDetached()).isEqualTo(true);
-        assertThat(context.getRetryDeleteAttempt()).isEqualTo(1);
+        assertThat(context.isPolicyDetachedInDelete()).isEqualTo(true);
+        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.DELETE_POLICY, PolicyConstants.Handler.DELETE)).isEqualTo(1);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
         // retry attempt 2
         response = deleteHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        assertThat(context.getRetryDeleteAttempt()).isEqualTo(2);
+        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.DELETE_POLICY, PolicyConstants.Handler.DELETE)).isEqualTo(2);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
         // retry attempt 3
         response = deleteHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        assertThat(context.getRetryDeleteAttempt()).isEqualTo(3);
+        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.DELETE_POLICY, PolicyConstants.Handler.DELETE)).isEqualTo(3);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
 
