@@ -26,19 +26,18 @@ public class CreateHandler extends BaseHandlerStd {
         String name = model.getName();
         String parentId = model.getParentId();
 
-        // Call CreateOrganizationalUnit API
         logger.log(String.format("Requesting CreateOrganizationalUnit w/ name: %s and parentId: %s.", name, parentId));
         return ProgressEvent.progress(model, callbackContext)
-            .then(progress ->
-                awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::CreateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                .translateToServiceRequest(Translator::translateToCreateOrganizationalUnitRequest)
-                .makeServiceCall(this::createOrganizationalUnit)
-                .stabilize(this::stabilized)
-                .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                    organizationsRequest, e, orgsClient1, model1, context, logger))
-                .progress()
-            )
-            .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
+                   .then(progress ->
+                             awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::CreateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
+                                 .translateToServiceRequest(Translator::translateToCreateOrganizationalUnitRequest)
+                                 .makeServiceCall(this::createOrganizationalUnit)
+                                 .stabilize(this::stabilized)
+                                 .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
+                                                  handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, Constants.Action.CREATE_OU, Constants.Handler.CREATE))
+                                 .progress()
+                   )
+                   .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
     protected CreateOrganizationalUnitResponse createOrganizationalUnit(final CreateOrganizationalUnitRequest createOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {

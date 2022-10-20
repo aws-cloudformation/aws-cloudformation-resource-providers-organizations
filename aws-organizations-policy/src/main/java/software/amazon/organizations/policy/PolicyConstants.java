@@ -22,8 +22,24 @@ public class PolicyConstants {
 
     // constants used for handleRetriableException
     public enum Action {
+        CREATE_POLICY,
         ATTACH_POLICY,
         DETACH_POLICY,
-        DELETE_POLICY
+        DELETE_POLICY,
+        UPDATE_POLICY,
+        TAG_RESOURCE,
+        UNTAG_RESOURCE,
+        DESCRIBE_POLICY,
+        LIST_TARGETS_FOR_POLICY,
+        LIST_TAGS_FOR_POLICY,
+        LIST_POLICIES
+    }
+
+    public enum Handler {
+        CREATE,
+        DELETE,
+        UPDATE,
+        READ,
+        LIST
     }
 }

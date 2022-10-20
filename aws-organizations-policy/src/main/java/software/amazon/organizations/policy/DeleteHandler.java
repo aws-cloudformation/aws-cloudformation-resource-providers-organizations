@@ -28,7 +28,7 @@ public class DeleteHandler extends BaseHandlerStd {
 
         this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();
-        logger.log(String.format("Entered %s delete handler with policy Id: [%s], policy name: [%s].", ResourceModel.TYPE_NAME, model.getId(), model.getName()));
+        logger.log(String.format("Entered %s delete handler with policy Id: [%s].", ResourceModel.TYPE_NAME, model.getId()));
 
         return ProgressEvent.progress(model, callbackContext)
             .then(progress -> detachPolicyFromTargets(awsClientProxy, request, model, callbackContext, orgsClient, logger))
@@ -53,15 +53,7 @@ public class DeleteHandler extends BaseHandlerStd {
             .initiate("AWS-Organizations-Policy::DeletePolicy", orgsClient, model, callbackContext)
             .translateToServiceRequest((resourceModel) -> Translator.translateToDeleteRequest(model))
             .makeServiceCall(this::deletePolicy)
-            .handleError((organizationsRequest, e, proxyClient1, model1, context) -> {
-                // retry on exceptions that map to CloudFormation retriable exceptions
-                // reference: https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-test-contract-errors.html
-                if (isRetriableException(e)) {
-                    return handleRetriableException(organizationsRequest, proxyClient1, context, logger, e, model1, PolicyConstants.Action.DELETE_POLICY);
-                } else {
-                    return handleError(organizationsRequest, e, proxyClient1, model1, context, logger);
-                }
-            })
+            .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, PolicyConstants.Action.DELETE_POLICY, PolicyConstants.Handler.DELETE))
             .success();
 
         if (!progressEvent.isSuccess()) { return progressEvent; }
@@ -78,18 +70,18 @@ public class DeleteHandler extends BaseHandlerStd {
         final Logger logger) {
 
         Set<String> targets = model.getTargetIds();
-        String policyName = model.getName();
+        String policyId = model.getId();
         if (CollectionUtils.isEmpty(targets)) {
-            logger.log(String.format("No target id found in request. Skip detaching policy for [%s].", policyName));
+            logger.log(String.format("No target id found in request. Skip detaching policy for [%s].", policyId));
             return ProgressEvent.progress(model, callbackContext);
         }
-        if (callbackContext.isPolicyDetached()){
-            logger.log(String.format("All policy detached from previous invoke. Skip to delete policy for policy [%s].", policyName));
+        if (callbackContext.isPolicyDetachedInDelete()){
+            logger.log(String.format("All policy detached from previous invoke. Skip to delete policy for policy [%s].", policyId));
             return ProgressEvent.progress(model, callbackContext);
         }
-        logger.log(String.format("Target Ids found in request for policy [%s]. Start detaching policy to provided targets.", policyName));
+        logger.log(String.format("Target Ids found in request for policy [%s]. Start detaching policy to provided targets.", policyId));
         for (final String targetId : targets) {
-            logger.log(String.format("Start detaching policy from targetId [%s] for policy [%s].", targetId, policyName));
+            logger.log(String.format("Start detaching policy from targetId [%s] for policy [%s].", targetId, policyId));
             DetachPolicyRequest detachPolicyRequest = Translator.translateToDetachRequest(model.getId(), targetId);
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(detachPolicyRequest, orgsClient.client()::detachPolicy);
@@ -98,15 +90,12 @@ public class DeleteHandler extends BaseHandlerStd {
                     logger.log(String.format("Got %s when calling detachPolicy for "
                         + "policyId [%s], targetId [%s]. Continuing with delete...",
                         e.getClass().getName(), model.getId(), targetId));
-                } else if (isRetriableException(e)) {
-                    return handleRetriableException(detachPolicyRequest, orgsClient, callbackContext, logger, e, model, PolicyConstants.Action.DETACH_POLICY);
-                }
-                else {
-                    return handleError(detachPolicyRequest, e, orgsClient, model, callbackContext, logger);
+                } else {
+                    return handleErrorInGeneral(detachPolicyRequest, e, orgsClient, model, callbackContext, logger, PolicyConstants.Action.DETACH_POLICY, PolicyConstants.Handler.DELETE);
                 }
             }
         }
-        callbackContext.setPolicyDetached(true);
+        callbackContext.setPolicyDetachedInDelete(true);
         return ProgressEvent.progress(model, callbackContext);
     }
 }

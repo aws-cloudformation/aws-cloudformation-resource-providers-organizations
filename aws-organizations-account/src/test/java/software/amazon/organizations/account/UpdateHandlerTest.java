@@ -37,6 +37,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -411,16 +412,27 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         // Update Handler Mocks
         when(mockProxyClient.client().moveAccount(any(MoveAccountRequest.class))).thenThrow(ConcurrentModificationException.class);
+        CallbackContext context = new CallbackContext();
+        ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        // retry attempt 1
+        assertThat(context.getCurrentRetryAttempt(AccountConstants.Action.MOVE_ACCOUNT, AccountConstants.Handler.UPDATE)).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+        // retry attempt 2
+        response = updateHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        assertThat(context.getCurrentRetryAttempt(AccountConstants.Action.MOVE_ACCOUNT, AccountConstants.Handler.UPDATE)).isEqualTo(2);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response =
-                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
-
+        response = updateHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
         assertThat(response.getResourceModel()).isEqualTo(request.getDesiredResourceState());
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ResourceConflict);
+
+        verify(mockProxyClient.client(), atLeast(3)).moveAccount(any(MoveAccountRequest.class));
 
         tearDown();
     }

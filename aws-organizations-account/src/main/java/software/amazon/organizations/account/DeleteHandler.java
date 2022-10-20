@@ -29,13 +29,8 @@ public class DeleteHandler extends BaseHandlerStd {
                              awsClientProxy.initiate("AWS-Organizations-Account::Delete::CloseAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                                  .translateToServiceRequest(Translator::translateToCloseAccountRequest)
                                  .makeServiceCall(this::closeAccount)
-                                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> {
-                                     if (isRetriableException(e)) {
-                                         return handleRetriableException(organizationsRequest, proxyClient1, context, logger, e, model1, AccountConstants.Action.CLOSE_ACCOUNT);
-                                     } else {
-                                         return handleError(organizationsRequest, e, proxyClient1, model1, context, logger);
-                                     }
-                                 })
+                                 .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
+                                                  handleErrorInGeneral(organizationsRequest, request, e, proxyClient1, model1, context, logger, AccountConstants.Action.CLOSE_ACCOUNT, AccountConstants.Handler.DELETE))
                                  .progress()
                    )
                    .then(progress -> ProgressEvent.defaultSuccessHandler(null));

@@ -53,16 +53,25 @@ public class UpdateHandler extends BaseHandlerStd {
                 String.format("Cannot update policy type after creation for [%s]!", model.getName()));
         }
 
-        // call UpdatePolicy API
-        logger.log(String.format("Requesting UpdatePolicy w/ id: %s", policyId));
+
         return ProgressEvent.progress(model, callbackContext)
-            .then(progress ->
-                awsClientProxy.initiate("AWS-Organizations-Policy::UpdatePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                    .translateToServiceRequest(Translator::translateToUpdateRequest)
-                    .makeServiceCall(this::updatePolicy)
-                    .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                        organizationsRequest, e, orgsClient1, model1, context, logger))
-                    .progress()
+            .then(progress ->{
+                    if (progress.getCallbackContext().isPolicyUpdated()) {
+                        log.log(String.format("UpdatePolicy has been entered in previous handler invoke for policy [%s]. Skip to next step.", model.getId()));
+                        return ProgressEvent.progress(model, callbackContext);
+                    }
+                    // call UpdatePolicy API
+                    logger.log(String.format("Requesting UpdatePolicy w/ id: %s", policyId));
+                    return awsClientProxy.initiate("AWS-Organizations-Policy::UpdatePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
+                               .translateToServiceRequest(Translator::translateToUpdateRequest)
+                               .makeServiceCall(this::updatePolicy)
+                               .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, PolicyConstants.Action.UPDATE_POLICY, PolicyConstants.Handler.UPDATE))
+                               .done(UpdatePolicyResponse -> {
+                                   progress.getCallbackContext().setPolicyUpdated(true);
+                                   return ProgressEvent.progress(model, callbackContext);
+                               });
+                }
+
             )
             .then(progress -> handleTargets(request, awsClientProxy, model, callbackContext, request.getDesiredResourceState().getTargetIds(), request.getPreviousResourceState().getTargetIds(), policyId, orgsClient, logger))
             .then(progress -> handleTagging(awsClientProxy, model, callbackContext, request.getDesiredResourceState().getTags(), request.getPreviousResourceState().getTags(), policyId, orgsClient, logger))
@@ -119,7 +128,7 @@ public class UpdateHandler extends BaseHandlerStd {
                             + "policyId [%s], targetId [%s]. Continuing with update...",
                             e.getClass().getName(), policyId, attachTargetId));
                     } else {
-                        return handleError(attachPolicyRequest, e, orgsClient, model, callbackContext, logger);
+                        return handleErrorInGeneral(attachPolicyRequest, e, orgsClient, model, callbackContext, logger, PolicyConstants.Action.ATTACH_POLICY, PolicyConstants.Handler.UPDATE);
                     }
                 }
             }
@@ -138,7 +147,7 @@ public class UpdateHandler extends BaseHandlerStd {
                             + "policyId [%s], targetId [%s]. Continuing with update...",
                             e.getClass().getName(), policyId, removeTargetId));
                     } else {
-                        return handleError(detachPolicyRequest, e, orgsClient, model, callbackContext, logger);
+                        return handleErrorInGeneral(detachPolicyRequest, e, orgsClient, model, callbackContext, logger, PolicyConstants.Action.DETACH_POLICY, PolicyConstants.Handler.UPDATE);
                     }
                 }
             }
@@ -177,7 +186,7 @@ public class UpdateHandler extends BaseHandlerStd {
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(untagResourceRequest, orgsClient.client()::untagResource);
             } catch (Exception e) {
-                return handleError(untagResourceRequest, e, orgsClient, model, callbackContext, logger);
+                return handleErrorInGeneral(untagResourceRequest, e, orgsClient, model, callbackContext, logger, PolicyConstants.Action.UNTAG_RESOURCE, PolicyConstants.Handler.UPDATE);
             }
         }
 
@@ -188,7 +197,7 @@ public class UpdateHandler extends BaseHandlerStd {
             try {
                 awsClientProxy.injectCredentialsAndInvokeV2(tagResourceRequest, orgsClient.client()::tagResource);
             } catch (Exception e) {
-                return handleError(tagResourceRequest, e, orgsClient, model, callbackContext, logger);
+                return handleErrorInGeneral(tagResourceRequest, e, orgsClient, model, callbackContext, logger, PolicyConstants.Action.TAG_RESOURCE, PolicyConstants.Handler.UPDATE);
             }
         }
 

@@ -39,8 +39,8 @@ public class ListHandler extends BaseHandlerStd {
         return awsClientProxy.initiate("AWS-Organizations-Account::ListAccounts", orgsClient, model, callbackContext)
                 .translateToServiceRequest(t -> Translator.translateToListAccounts(request.getNextToken()))
                 .makeServiceCall(this::listAccounts)
-                .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
-                        organizationsRequest, e, proxyClient1, model1, context, logger))
+                .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
+                                 handleErrorInGeneral(organizationsRequest, request, e, proxyClient1, model1, context, logger, AccountConstants.Action.LIST_ACCOUNTS, AccountConstants.Handler.LIST))
                 .done(ListAccountsResponse -> {
                     models.addAll(Translator.translateListAccountsResponseToResourceModel(ListAccountsResponse));
                     return ProgressEvent.<ResourceModel, CallbackContext>builder()

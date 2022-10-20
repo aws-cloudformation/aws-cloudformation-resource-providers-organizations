@@ -31,9 +31,8 @@ public class DeleteHandler extends BaseHandlerStd {
                 awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::DeleteOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                 .translateToServiceRequest(Translator::translateToDeleteOrganizationalUnitRequest)
                 .makeServiceCall(this::deleteOrganizationalUnit)
-                .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                    organizationsRequest, e, orgsClient1, model1, context, logger))
-                .done((deleteRequest) ->  ProgressEvent.defaultSuccessHandler(null))
+                .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, Constants.Action.DELETE_OU, Constants.Handler.DELETE))
+                .done((deleteRequest) -> ProgressEvent.defaultSuccessHandler(null))
             );
     }
 

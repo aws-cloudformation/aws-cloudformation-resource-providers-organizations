@@ -39,14 +39,14 @@ public class CreateHandler extends BaseHandlerStd {
             .then(progress -> {
                 if (progress.getCallbackContext().isPolicyCreated()) {
                     // skip to attach policy
-                    log.log(String.format("Policy has already been created in previous handler invoke, policy name: [%s]. Skip to attach policy.", model.getName()));
+                    log.log(String.format("Policy has already been created in previous handler invoke, policy id: [%s]. Skip to attach policy.", model.getId()));
                     return ProgressEvent.progress(model, callbackContext);
                 }
                 return awsClientProxy.initiate("AWS-Organizations-Policy::CreatePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                     .translateToServiceRequest(Translator::translateToCreateRequest)
                     .makeServiceCall(this::createPolicy)
-                    .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(
-                        organizationsRequest, e, proxyClient1, model1, context, logger))
+                    .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
+                                     handleError(organizationsRequest, e, proxyClient1, model1, context, logger))
                     .done(CreatePolicyResponse -> {
                         logger.log(String.format("Created policy with Id: [%s] for policy name [%s].", CreatePolicyResponse.policy().policySummary().id(), model.getName()));
                         model.setId(CreatePolicyResponse.policy().policySummary().id());
@@ -87,17 +87,13 @@ public class CreateHandler extends BaseHandlerStd {
                 .translateToServiceRequest((resourceModel) -> Translator.translateToAttachRequest(model.getId(), targetId))
                 .makeServiceCall(this::attachPolicy)
                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> {
-                    if (isRetriableException(e)) {
-                        // retry on exceptions that map to CloudFormation retriable exceptions
-                        // reference: https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-test-contract-errors.html
-                        return handleRetriableException(organizationsRequest, proxyClient1, context, logger, e, model1, PolicyConstants.Action.ATTACH_POLICY);
-                    } else if (e instanceof DuplicatePolicyAttachmentException) {
+                    if (e instanceof DuplicatePolicyAttachmentException) {
                         log.log(String.format("Got DuplicatePolicyAttachmentException when calling attachPolicy for "
                                                      + "policy name [%s], targetId [%s]. Continuing with attach...",
                             e.getClass().getName(), policyName, targetId));
                         return ProgressEvent.progress(model1,context);
                     } else {
-                        return handleError(organizationsRequest, e, proxyClient1, model1, context, logger);
+                        return handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, PolicyConstants.Action.ATTACH_POLICY, PolicyConstants.Handler.CREATE);
                     }
                 })
                 .success();

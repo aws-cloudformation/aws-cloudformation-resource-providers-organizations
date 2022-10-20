@@ -36,8 +36,8 @@ public class ReadHandler extends BaseHandlerStd {
                 awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::DescribeOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                 .translateToServiceRequest(Translator::translateToDescribeOrganizationalUnitRequest)
                 .makeServiceCall(this::describeOrganizationalUnit)
-                .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                    organizationsRequest, e, orgsClient1, model1, context, logger))
+                .handleError((organizationsRequest, e, orgsClient1, model1, context) ->
+                                 handleErrorInGeneral(organizationsRequest, e, orgsClient1, model1, context, logger, Constants.Action.DESCRIBE_OU, Constants.Handler.READ))
                 .done(describeOrganizationalUnitResponse -> {
                     model.setArn(describeOrganizationalUnitResponse.organizationalUnit().arn());
                     model.setId(describeOrganizationalUnitResponse.organizationalUnit().id());
@@ -63,8 +63,8 @@ public class ReadHandler extends BaseHandlerStd {
             return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::ListTagsForResource", orgsClient, model, callbackContext)
                 .translateToServiceRequest(resourceModel -> Translator.translateToListTagsForResourceRequest(ouId))
                 .makeServiceCall(this::listTagsForResource)
-                .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                    organizationsRequest, e, orgsClient1, model1, context, logger))
+                .handleError((organizationsRequest, e, orgsClient1, model1, context) ->
+                                 handleErrorInGeneral(organizationsRequest, e, orgsClient1, model1, context, logger, Constants.Action.LIST_TAGS_FOR_OU, Constants.Handler.READ))
                 .done(listTagsForResourceResponse -> ProgressEvent.defaultSuccessHandler(Translator.translateFromDescribeResponse(model, listTagsForResourceResponse)));
     }
 
@@ -82,8 +82,8 @@ public class ReadHandler extends BaseHandlerStd {
             return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::ListParents", orgsClient, model, callbackContext)
                 .translateToServiceRequest(Translator::translateToListParentsRequest)
                 .makeServiceCall(this::listParents)
-                .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                    organizationsRequest, e, orgsClient1, model1, context, logger))
+                .handleError((organizationsRequest, e, orgsClient1, model1, context) ->
+                                 handleErrorInGeneral(organizationsRequest, e, orgsClient1, model1, context, logger, Constants.Action.LIST_PARENTS, Constants.Handler.READ))
                 .done(listParentsResponse -> {
                     Parent parent = listParentsResponse.parents().get(0);
                     model.setParentId(parent.id());

@@ -40,8 +40,8 @@ public class ReadHandler extends BaseHandlerStd {
                              awsClientProxy.initiate("AWS-Organizations-Account::Read::DescribeAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                                  .translateToServiceRequest(Translator::translateToDescribeAccountRequest)
                                  .makeServiceCall(this::describeAccount)
-                                 .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                                     organizationsRequest, e, orgsClient1, model1, context, logger))
+                                 .handleError((organizationsRequest, e, orgsClient1, model1, context) ->
+                                                  handleErrorInGeneral(organizationsRequest, request, e, orgsClient1, model1, context, logger, AccountConstants.Action.DESCRIBE_ACCOUNT, AccountConstants.Handler.READ))
                                  .done(describeAccountResponse -> {
                                      if (describeAccountResponse.account().status() != AccountStatus.ACTIVE) {
                                          String errMsg = String.format("Account [%s] in state [%s], suspended account will not be managed by CloudFormation, return NotFound.", model.getAccountId(), describeAccountResponse.account().status());
@@ -76,8 +76,8 @@ public class ReadHandler extends BaseHandlerStd {
         return awsClientProxy.initiate("AWS-Organizations-Account::ListParents", orgsClient, model, callbackContext)
                    .translateToServiceRequest(Translator::translateToListParentsRequest)
                    .makeServiceCall(this::listParents)
-                   .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                       organizationsRequest, e, orgsClient1, model1, context, logger))
+                   .handleError((organizationsRequest, e, orgsClient1, model1, context) ->
+                                    handleErrorInGeneral(organizationsRequest, request, e, orgsClient1, model1, context, logger, AccountConstants.Action.LIST_PARENTS, AccountConstants.Handler.READ))
                    .done(listParentsResponse -> {
                        Parent parent = listParentsResponse.parents().get(0);
                        Set<String> parentIds = new HashSet<>();
@@ -100,8 +100,8 @@ public class ReadHandler extends BaseHandlerStd {
         return awsClientProxy.initiate("AWS-Organizations-Account::ListTagsForResource", orgsClient, model, callbackContext)
                    .translateToServiceRequest(resourceModel -> Translator.translateToListTagsForResourceRequest(model))
                    .makeServiceCall(this::listTagsForResource)
-                   .handleError((organizationsRequest, e, orgsClient1, model1, context) -> handleError(
-                       organizationsRequest, e, orgsClient1, model1, context, logger))
+                   .handleError((organizationsRequest, e, orgsClient1, model1, context) ->
+                                    handleErrorInGeneral(organizationsRequest, request, e, orgsClient1, model1, context, logger, AccountConstants.Action.LIST_TAGS_FOR_RESOURCE, AccountConstants.Handler.READ))
                    .done(listTagsForResourceResponse -> ProgressEvent.defaultSuccessHandler(Translator.translateFromAllDescribeResponse(model, listTagsForResourceResponse)));
     }
 
