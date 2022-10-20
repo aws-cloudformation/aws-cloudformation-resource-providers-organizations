@@ -38,9 +38,9 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected final String ACCOUNT_CREATION_STATUS_SUCCEEDED = "SUCCEEDED";
     protected final String ACCOUNT_CREATION_STATUS_FAILED = "FAILED";
     // ExponentialBackoffJitter Constants
-    private final double RANDOMIZATION_FACTOR = 0.5;
-    private final int BASE_DELAY = 15; // in second
-    private final int BASE_DELAY_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 3000; // in millisecond (thread
+    protected final double RANDOMIZATION_FACTOR = 0.5;
+    protected final int BASE_DELAY = 15; // in second
+    protected final int BASE_DELAY_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 3000; // in millisecond
 
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -146,8 +146,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         return ProgressEvent.failed(resourceModel, callbackContext, errorCode, e.getMessage());
     }
 
-    public final int computeDelayBeforeNextRetry(int retryAttempt, boolean isDescribeCreateAccountStatus) {
-        int baseDelay = isDescribeCreateAccountStatus ? BASE_DELAY_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS : BASE_DELAY;
+    public final int computeDelayBeforeNextRetry(int retryAttempt, int baseDelay) {
         Random random = new Random();
         int exponentialBackoff = (int) Math.pow(2, retryAttempt) * baseDelay;
         int jitter = random.nextInt((int) Math.ceil(exponentialBackoff * RANDOMIZATION_FACTOR));
@@ -177,7 +176,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             if (actionName != AccountConstants.Action.CREATE_ACCOUNT) {
                 int currentAttempt = context.getCurrentRetryAttempt(actionName,handlerName);
                 if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
-                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt, false); // in seconds
+                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt, BASE_DELAY); // in seconds
                     context.setCurrentRetryAttempt(actionName,handlerName);
                     logger.log(String.format("Got %s when calling %s for "
                                                  + "account [%s]. Retrying %s of %s with callback delay %s seconds.",
