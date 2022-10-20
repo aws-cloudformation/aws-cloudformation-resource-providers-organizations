@@ -28,8 +28,7 @@ import java.util.Random;
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected static final String GOV_CLOUD_PARTITION = "aws-us-gov";
     protected final int MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 4;
-    private final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 3;
-    protected final int MAX_RETRY_ATTEMPT_FOR_CREATE_ACCOUNT = 2;
+    private final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
     // CreateAccount Constants
     protected final String CREATE_ACCOUNT_FAILURE_REASON_EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS";
     protected final String CREATE_ACCOUNT_FAILURE_REASON_GOVCLOUD_ACCOUNT_ALREADY_EXISTS = "GOVCLOUD_ACCOUNT_ALREADY_EXISTS";

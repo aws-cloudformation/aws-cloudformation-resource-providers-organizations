@@ -196,11 +196,6 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TARGETS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(2);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
-        // retry attempt 3
-        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TARGETS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(3);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
 
         // CloudFormation retry
         response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
@@ -265,11 +260,6 @@ public class ReadHandlerTest extends AbstractTestBase {
         // retry attempt 2
         response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
         assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TAGS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(2);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
-        // retry attempt 3
-        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TAGS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(3);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
 

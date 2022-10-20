@@ -423,11 +423,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(context.getCurrentRetryAttempt(AccountConstants.Action.MOVE_ACCOUNT, AccountConstants.Handler.UPDATE)).isEqualTo(2);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
-        // retry attempt 3
-        response = updateHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        assertThat(context.getCurrentRetryAttempt(AccountConstants.Action.MOVE_ACCOUNT, AccountConstants.Handler.UPDATE)).isEqualTo(3);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
 
         response = updateHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
         assertThat(response).isNotNull();

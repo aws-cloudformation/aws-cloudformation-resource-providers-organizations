@@ -220,11 +220,6 @@ public class DeleteHandlerTest extends AbstractTestBase {
         assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.DELETE_POLICY, PolicyConstants.Handler.DELETE)).isEqualTo(2);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
-        // retry attempt 3
-        response = deleteHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.DELETE_POLICY, PolicyConstants.Handler.DELETE)).isEqualTo(3);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
 
         response = deleteHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
         assertThat(response).isNotNull();

@@ -258,12 +258,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.ATTACH_POLICY, PolicyConstants.Handler.CREATE)).isEqualTo(2);
         assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
         assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
-        // retry attempt 3
-        response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        assertThat(context.isPolicyCreated()).isEqualTo(true);
-        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.ATTACH_POLICY, PolicyConstants.Handler.CREATE)).isEqualTo(3);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
 
         // CloudFormation retry
         response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
