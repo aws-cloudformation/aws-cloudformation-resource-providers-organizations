@@ -30,8 +30,8 @@ public class ClientBuilder {
                                                                 .build();
 
     private static final BackoffStrategy THROTTLE_BACKOFF_STRATEGY = EqualJitterBackoffStrategy.builder()
-                                                                         .baseDelay(Duration.ofMillis(2000))
-                                                                         .maxBackoffTime(Duration.ofMillis(60000))
+                                                                         .baseDelay(Duration.ofMillis(1500))
+                                                                         .maxBackoffTime(Duration.ofMillis(46000))
                                                                          .build();
 
     // Retry customized conditions

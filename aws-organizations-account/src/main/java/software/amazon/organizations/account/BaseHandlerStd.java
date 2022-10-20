@@ -39,7 +39,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected final String ACCOUNT_CREATION_STATUS_FAILED = "FAILED";
     // ExponentialBackoffJitter Constants
     private final double RANDOMIZATION_FACTOR = 0.5;
-    private final int BASE_DELAY = 3000; // in millisecond
+    private final int BASE_DELAY = 15000; // in millisecond
 
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
