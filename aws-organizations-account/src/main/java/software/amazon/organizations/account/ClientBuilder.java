@@ -22,14 +22,14 @@ import java.util.regex.Pattern;
 
 public class ClientBuilder {
     // Retry Strategy
-    private static final int MAX_ERROR_RETRY = 5;
+    private static final int MAX_ERROR_RETRY = 3;
     private static final BackoffStrategy BACKOFF_STRATEGY = EqualJitterBackoffStrategy.builder()
                                                                 .baseDelay(Duration.ofMillis(5000))
-                                                                .maxBackoffTime(Duration.ofMillis(160000))
+                                                                .maxBackoffTime(Duration.ofMillis(45000))
                                                                 .build();
     private static final BackoffStrategy THROTTLE_BACKOFF_STRATEGY = EqualJitterBackoffStrategy.builder()
                                                                          .baseDelay(Duration.ofMillis(10000))
-                                                                         .maxBackoffTime(Duration.ofMillis(300000))
+                                                                         .maxBackoffTime(Duration.ofMillis(60000))
                                                                          .build();
 
     // Retry customized conditions

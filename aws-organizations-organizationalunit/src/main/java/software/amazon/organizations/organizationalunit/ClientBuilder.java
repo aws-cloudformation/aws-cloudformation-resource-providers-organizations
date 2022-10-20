@@ -25,12 +25,13 @@ public class ClientBuilder {
     // Retry Strategy
     private static final int MAX_ERROR_RETRY = 5;
     private static final BackoffStrategy BACKOFF_STRATEGY = EqualJitterBackoffStrategy.builder()
-                                                                .baseDelay(Duration.ofMillis(2000))
-                                                                .maxBackoffTime(Duration.ofMillis(70000))
+                                                                .baseDelay(Duration.ofMillis(1000))
+                                                                .maxBackoffTime(Duration.ofMillis(45000))
                                                                 .build();
+
     private static final BackoffStrategy THROTTLE_BACKOFF_STRATEGY = EqualJitterBackoffStrategy.builder()
-                                                                         .baseDelay(Duration.ofMillis(3000))
-                                                                         .maxBackoffTime(Duration.ofMillis(100000))
+                                                                         .baseDelay(Duration.ofMillis(2000))
+                                                                         .maxBackoffTime(Duration.ofMillis(60000))
                                                                          .build();
 
     // Retry customized conditions
