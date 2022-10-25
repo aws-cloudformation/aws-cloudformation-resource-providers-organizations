@@ -39,15 +39,12 @@ public class UpdateHandler extends BaseHandlerStd {
 
         if (!StringUtils.equalsIgnoreCase(model.getRoleName(), previousModel.getRoleName())) {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
-                    String.format("Cannot update IAM Role Name after creation for [%s]!", model.getAccountId()));
+                "You cannot update IAM role name.");
         }
-        else if (!StringUtils.equalsIgnoreCase(model.getAccountName(), previousModel.getAccountName())) {
+        else if (!StringUtils.equalsIgnoreCase(model.getAccountName(), previousModel.getAccountName())
+                || !StringUtils.equalsIgnoreCase(model.getEmail(), previousModel.getEmail())) {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
-                    String.format("Cannot update Account Name after creation for [%s]!", model.getAccountId()));
-        }
-        else if (!StringUtils.equalsIgnoreCase(model.getEmail(), previousModel.getEmail())) {
-            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
-                    String.format("Cannot update Email after creation for [%s]!", model.getAccountId()));
+                "To modify the account name or account email attributes, you must sign in as the root user and modify the values on the account settings page in the AWS Management Console.");
         }
 
         logger.log(String.format("Requesting Account Update w/ id: %s", model.getAccountId()));
