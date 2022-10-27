@@ -100,7 +100,7 @@ public class UpdateHandler extends BaseHandlerStd {
         final List<String> targetsToAttach = new ArrayList<>();
         if (!CollectionUtils.isNullOrEmpty(desiredTargets)) {
             for (String desired : desiredTargets) {
-                if (!previousTargets.contains(desired)) {
+                if (previousTargets == null || !previousTargets.contains(desired)) {
                     targetsToAttach.add(desired);
                 }
             }
@@ -109,7 +109,7 @@ public class UpdateHandler extends BaseHandlerStd {
         final List<String> targetsToRemove = new ArrayList<>();
         if (!CollectionUtils.isNullOrEmpty(previousTargets)) {
             for (String previous : previousTargets) {
-                if (!desiredTargets.contains(previous)) {
+                if (desiredTargets == null || !desiredTargets.contains(previous)) {
                     targetsToRemove.add(previous);
                 }
             }
