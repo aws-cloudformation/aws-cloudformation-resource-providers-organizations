@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.TargetNotFoundException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
 
+import software.amazon.awssdk.services.organizations.model.UnsupportedApiEndpointException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -71,10 +72,10 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final Logger logger
     ) {
         HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
-        if (e instanceof DuplicatePolicyException || e instanceof DuplicatePolicyAttachmentException) {
+        if (e instanceof DuplicatePolicyException) {
             errorCode = HandlerErrorCode.AlreadyExists;
         } else if (e instanceof AwsOrganizationsNotInUseException || e instanceof PolicyNotFoundException
-            || e instanceof TargetNotFoundException || e instanceof PolicyNotAttachedException) {
+            || e instanceof TargetNotFoundException) {
             errorCode = HandlerErrorCode.NotFound;
         } else if (e instanceof AccessDeniedException) {
             errorCode = HandlerErrorCode.AccessDenied;
@@ -84,12 +85,14 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             errorCode = HandlerErrorCode.ServiceLimitExceeded;
         } else if (e instanceof InvalidInputException || e instanceof MalformedPolicyDocumentException
             || e instanceof PolicyTypeNotAvailableForOrganizationException || e instanceof PolicyTypeNotEnabledException
-            || e instanceof PolicyInUseException) {
+            || e instanceof PolicyInUseException || e instanceof UnsupportedApiEndpointException) {
             errorCode = HandlerErrorCode.InvalidRequest;
         } else if (e instanceof ServiceException) {
             errorCode = HandlerErrorCode.ServiceInternalError;
         } else if (e instanceof TooManyRequestsException) {
             errorCode = HandlerErrorCode.Throttling;
+        } else if (e instanceof DuplicatePolicyAttachmentException || e instanceof PolicyNotAttachedException) {
+            errorCode = HandlerErrorCode.InternalFailure;
         }
         String policyInfo = resourceModel.getId() == null ? resourceModel.getName() : resourceModel.getId();
         logger.log(String.format("[Exception] Failed with exception: [%s]. Message: [%s], ErrorCode: [%s] for policy [%s].",

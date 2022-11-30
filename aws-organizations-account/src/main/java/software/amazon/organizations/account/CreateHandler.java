@@ -135,7 +135,10 @@ public class CreateHandler extends BaseHandlerStd {
         String errMsg = String.format("DescribeCreateAccountStatus returns IN_PROGRESS state before time out." +
                                           "Please check account creation status with CreateAccountRequestID [%s] and import account to CloudFormation if it is created successfully.",
             callbackContext.getCreateAccountRequestId());
-        return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.GeneralServiceException, errMsg);
+        HandlerErrorCode errorCode = HandlerErrorCode.NotStabilized;
+        logger.log(String.format("[Exception] Failed in describeCreateAccountStatus. Message: [%s], ErrorCode: [%s] for Account [%s].",
+            errMsg, errorCode, request.getAwsAccountId()));
+        return ProgressEvent.failed(model, callbackContext, errorCode, errMsg);
     }
 
     private ProgressEvent<ResourceModel, CallbackContext> handleAccountCreationError(ResourceModel model, CallbackContext callbackContext, Logger logger) {
