@@ -8,14 +8,19 @@ import software.amazon.awssdk.services.organizations.model.AccountNotFoundExcept
 import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
 import software.amazon.awssdk.services.organizations.model.ChildNotFoundException;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
+import software.amazon.awssdk.services.organizations.model.ConflictException;
 import software.amazon.awssdk.services.organizations.model.ConstraintViolationException;
 import software.amazon.awssdk.services.organizations.model.CreateAccountStatusNotFoundException;
 import software.amazon.awssdk.services.organizations.model.DestinationParentNotFoundException;
+import software.amazon.awssdk.services.organizations.model.DuplicateAccountException;
+import software.amazon.awssdk.services.organizations.model.FinalizingOrganizationException;
 import software.amazon.awssdk.services.organizations.model.InvalidInputException;
 import software.amazon.awssdk.services.organizations.model.OrganizationsRequest;
 import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.SourceParentNotFoundException;
+import software.amazon.awssdk.services.organizations.model.TargetNotFoundException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
+import software.amazon.awssdk.services.organizations.model.UnsupportedApiEndpointException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
@@ -28,7 +33,6 @@ import java.util.Random;
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected static final String GOV_CLOUD_PARTITION = "aws-us-gov";
     protected final int MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 4;
-    private final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
     // CreateAccount Constants
     protected final String CREATE_ACCOUNT_FAILURE_REASON_EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS";
     protected final String CREATE_ACCOUNT_FAILURE_REASON_GOVCLOUD_ACCOUNT_ALREADY_EXISTS = "GOVCLOUD_ACCOUNT_ALREADY_EXISTS";
@@ -41,6 +45,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected final double RANDOMIZATION_FACTOR = 0.5;
     protected final int BASE_DELAY = 15; // in second
     protected final int BASE_DELAY_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 3000; // in millisecond
+    private final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
 
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -123,6 +128,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
                 || e instanceof AccountNotFoundException
                 || e instanceof ChildNotFoundException
                 || e instanceof AccountAlreadyClosedException
+                || e instanceof TargetNotFoundException
         ) {
             errorCode = HandlerErrorCode.NotFound;
         } else if (e instanceof AccessDeniedException || e instanceof AccessDeniedForDependencyException) {
@@ -131,13 +137,18 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             errorCode = HandlerErrorCode.ResourceConflict;
         } else if (e instanceof ConstraintViolationException) {
             errorCode = HandlerErrorCode.ServiceLimitExceeded;
-        } else if (e instanceof InvalidInputException || e instanceof DestinationParentNotFoundException) {
+        } else if (e instanceof InvalidInputException
+                       || e instanceof DestinationParentNotFoundException
+                       || e instanceof FinalizingOrganizationException
+                       || e instanceof UnsupportedApiEndpointException
+                       || e instanceof ConflictException
+        ) {
             errorCode = HandlerErrorCode.InvalidRequest;
         } else if (e instanceof ServiceException) {
             errorCode = HandlerErrorCode.ServiceInternalError;
         } else if (e instanceof TooManyRequestsException) {
             errorCode = HandlerErrorCode.Throttling;
-        } else if (e instanceof SourceParentNotFoundException || e instanceof CreateAccountStatusNotFoundException) {
+        } else if (e instanceof SourceParentNotFoundException || e instanceof CreateAccountStatusNotFoundException || e instanceof DuplicateAccountException) {
             errorCode = HandlerErrorCode.InternalFailure;
         }
         String accountInfo = resourceModel.getAccountId() == null ? handlerRequest.getLogicalResourceIdentifier() : resourceModel.getAccountId();
@@ -174,10 +185,10 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         try {
             String accountInfo = model.getAccountId() == null ? handlerRequest.getLogicalResourceIdentifier() : model.getAccountId();
             if (actionName != AccountConstants.Action.CREATE_ACCOUNT) {
-                int currentAttempt = context.getCurrentRetryAttempt(actionName,handlerName);
+                int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
                 if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
                     int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt, BASE_DELAY); // in seconds
-                    context.setCurrentRetryAttempt(actionName,handlerName);
+                    context.setCurrentRetryAttempt(actionName, handlerName);
                     logger.log(String.format("Got %s when calling %s for "
                                                  + "account [%s]. Retrying %s of %s with callback delay %s seconds.",
                         e.getClass().getName(), organizationsRequest.getClass().getName(), accountInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));

@@ -3,13 +3,16 @@ package software.amazon.organizations.organizationalunit;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedForDependencyException;
 import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
+import software.amazon.awssdk.services.organizations.model.ChildNotFoundException;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
 import software.amazon.awssdk.services.organizations.model.ConstraintViolationException;
 import software.amazon.awssdk.services.organizations.model.DuplicateOrganizationalUnitException;
 import software.amazon.awssdk.services.organizations.model.InvalidInputException;
+import software.amazon.awssdk.services.organizations.model.OrganizationalUnitNotEmptyException;
 import software.amazon.awssdk.services.organizations.model.OrganizationalUnitNotFoundException;
 import software.amazon.awssdk.services.organizations.model.ParentNotFoundException;
 import software.amazon.awssdk.services.organizations.model.ServiceException;
+import software.amazon.awssdk.services.organizations.model.TargetNotFoundException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
 
 import software.amazon.awssdk.services.organizations.model.OrganizationsRequest;
@@ -77,7 +80,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
 
         if (e instanceof DuplicateOrganizationalUnitException) {
           errorCode = HandlerErrorCode.AlreadyExists;
-        } else if (e instanceof AwsOrganizationsNotInUseException || e instanceof OrganizationalUnitNotFoundException || e instanceof ParentNotFoundException) {
+        } else if (e instanceof AwsOrganizationsNotInUseException || e instanceof OrganizationalUnitNotFoundException
+          || e instanceof ParentNotFoundException || e instanceof TargetNotFoundException || e instanceof ChildNotFoundException) {
           errorCode = HandlerErrorCode.NotFound;
         } else if (e instanceof AccessDeniedException || e instanceof AccessDeniedForDependencyException) {
           errorCode = HandlerErrorCode.AccessDenied;
@@ -85,7 +89,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
           errorCode = HandlerErrorCode.ResourceConflict;
         } else if (e instanceof ConstraintViolationException) {
           errorCode = HandlerErrorCode.ServiceLimitExceeded;
-        } else if (e instanceof InvalidInputException) {
+        } else if (e instanceof InvalidInputException || e instanceof OrganizationalUnitNotEmptyException) {
           errorCode = HandlerErrorCode.InvalidRequest;
         } else if (e instanceof ServiceException) {
           errorCode = HandlerErrorCode.ServiceInternalError;
