@@ -32,7 +32,6 @@ import java.util.Random;
 
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected static final String GOV_CLOUD_PARTITION = "aws-us-gov";
-    protected final int MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 4;
     // CreateAccount Constants
     protected final String CREATE_ACCOUNT_FAILURE_REASON_EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS";
     protected final String CREATE_ACCOUNT_FAILURE_REASON_GOVCLOUD_ACCOUNT_ALREADY_EXISTS = "GOVCLOUD_ACCOUNT_ALREADY_EXISTS";
@@ -43,9 +42,11 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected final String ACCOUNT_CREATION_STATUS_FAILED = "FAILED";
     // ExponentialBackoffJitter Constants
     protected final double RANDOMIZATION_FACTOR = 0.5;
+    protected final double RANDOMIZATION_FACTOR_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 0.2;
     protected final int BASE_DELAY = 15; // in second
-    protected final int BASE_DELAY_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 3000; // in millisecond
+    protected final int BASE_DELAY_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 2500; // in millisecond
     private final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
+    protected final int MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 5;
 
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -157,10 +158,10 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         return ProgressEvent.failed(resourceModel, callbackContext, errorCode, e.getMessage());
     }
 
-    public final int computeDelayBeforeNextRetry(int retryAttempt, int baseDelay) {
+    public final int computeDelayBeforeNextRetry(int retryAttempt, int baseDelay, double randomizationFactor) {
         Random random = new Random();
         int exponentialBackoff = (int) Math.pow(2, retryAttempt) * baseDelay;
-        int jitter = random.nextInt((int) Math.ceil(exponentialBackoff * RANDOMIZATION_FACTOR));
+        int jitter = random.nextInt((int) Math.ceil(exponentialBackoff * randomizationFactor));
         return exponentialBackoff + jitter;
     }
 
@@ -187,7 +188,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             if (actionName != AccountConstants.Action.CREATE_ACCOUNT) {
                 int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
                 if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
-                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt, BASE_DELAY); // in seconds
+                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt, BASE_DELAY, RANDOMIZATION_FACTOR); // in seconds
                     context.setCurrentRetryAttempt(actionName, handlerName);
                     logger.log(String.format("Got %s when calling %s for "
                                                  + "account [%s]. Retrying %s of %s with callback delay %s seconds.",
