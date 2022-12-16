@@ -85,7 +85,7 @@ public class CreateHandler extends BaseHandlerStd {
         // all attempts add up should be less than 60s because single progress needs to return within 60s
         for (int attempt = 0; attempt < MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS; attempt++) {
             try {
-                int wait = computeDelayBeforeNextRetry(attempt, BASE_DELAY_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS);
+                int wait = computeDelayBeforeNextRetry(attempt, BASE_DELAY_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS, RANDOMIZATION_FACTOR_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS);
                 logger.log(String.format("Enter describeCreateAccountStatus with CreateAccountRequestId [%s] and attempt %s. Wait %s millisecond for propagation.", callbackContext.getCreateAccountRequestId(), attempt + 1, wait));
                 Thread.sleep(wait); // ms
             } catch (InterruptedException e) {
