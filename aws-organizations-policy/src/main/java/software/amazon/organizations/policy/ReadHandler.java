@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.organizations.model.ListTargetsForPolicyR
 import software.amazon.awssdk.services.organizations.model.PolicyTargetSummary;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
+import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
@@ -73,25 +74,34 @@ public class ReadHandler extends BaseHandlerStd {
         String nextToken = null;
         do {
             // since need to handle policyTarget list pagination manually, use try/catch for error handling
-            ListTargetsForPolicyResponse pageResult = null;
-            ListTargetsForPolicyRequest listTargetsRequest = null;
-            try {
-                listTargetsRequest = Translator.translateToListTargetsForPolicyRequest(policyId, nextToken);
-                pageResult = awsClientProxy.injectCredentialsAndInvokeV2(
-                    listTargetsRequest,
-                    orgsClient.client()::listTargetsForPolicy);
-            } catch (Exception e) {
-                return handleErrorInGeneral(listTargetsRequest, e, orgsClient, model, callbackContext, logger, PolicyConstants.Action.LIST_TARGETS_FOR_POLICY, PolicyConstants.Handler.READ);
+            String finalNextToken = nextToken;
+            ProgressEvent<ResourceModel, CallbackContext> listPolicyProgressEvent = awsClientProxy.initiate("AWS-Organizations-Policy::listTargetsForPolicy", orgsClient, model, callbackContext)
+                    .translateToServiceRequest(t -> Translator.translateToListTargetsForPolicyRequest(policyId, finalNextToken))
+                    .makeServiceCall(this::listTargets)
+                    .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
+                            handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, PolicyConstants.Action.LIST_TARGETS_FOR_POLICY, PolicyConstants.Handler.READ))
+                    .done(listTargetsForPolicyResponse -> {
+                        for (PolicyTargetSummary targetSummary : listTargetsForPolicyResponse.targets()) {
+                            policyTargetIds.add(targetSummary.targetId());
+                        }
+                        return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                                .nextToken(listTargetsForPolicyResponse.nextToken())
+                                .status(OperationStatus.SUCCESS)
+                                .build();
+                    });
+            if( listPolicyProgressEvent.getStatus() != OperationStatus.SUCCESS){
+                return listPolicyProgressEvent;
             }
+            nextToken = listPolicyProgressEvent.getNextToken();
 
-            for (PolicyTargetSummary targetSummary : pageResult.targets()) {
-                policyTargetIds.add(targetSummary.targetId());
-            }
-            nextToken = pageResult.nextToken();
         } while (nextToken != null);
 
         model.setTargetIds(policyTargetIds);
         return ProgressEvent.progress(model, callbackContext);
+    }
+
+    private  ListTargetsForPolicyResponse listTargets(ListTargetsForPolicyRequest listTargetsForPolicyRequest, ProxyClient<OrganizationsClient> orgsClient) {
+        return orgsClient.injectCredentialsAndInvokeV2(listTargetsForPolicyRequest, orgsClient.client()::listTargetsForPolicy);
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> listTagsForPolicy(
