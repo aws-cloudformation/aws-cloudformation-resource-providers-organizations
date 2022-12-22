@@ -1,7 +1,6 @@
 package software.amazon.organizations.account;
 
 import software.amazon.awssdk.core.exception.RetryableException;
-import software.amazon.awssdk.core.exception.RetryableException;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedForDependencyException;
@@ -192,10 +191,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
             if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
                 context.setCurrentRetryAttempt(actionName, handlerName);
-                if (actionName == AccountConstants.Action.LIST_PARENTS
-                        || actionName == AccountConstants.Action.LIST_TAGS_FOR_RESOURCE
-                        || actionName == AccountConstants.Action.DESCRIBE_ACCOUNT
-                        || actionName == AccountConstants.Action.LIST_ACCOUNTS) {
+                if (handlerName == AccountConstants.Handler.READ
+                        || handlerName == AccountConstants.Handler.LIST) {
                     logger.log(String.format("Got %s when calling %s for "
                                     + "account [%s]. Retrying %s of %s ",
                             e.getClass().getName(), organizationsRequest.getClass().getName(), accountInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION));

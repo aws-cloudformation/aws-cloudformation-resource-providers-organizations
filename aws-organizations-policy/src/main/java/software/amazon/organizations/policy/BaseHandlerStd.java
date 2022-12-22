@@ -2,7 +2,6 @@ package software.amazon.organizations.policy;
 
 import software.amazon.awssdk.core.exception.RetryableException;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
@@ -21,14 +20,13 @@ import software.amazon.awssdk.services.organizations.model.PolicyTypeNotEnabledE
 import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.TargetNotFoundException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
-
 import software.amazon.awssdk.services.organizations.model.UnsupportedApiEndpointException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-import software.amazon.cloudformation.proxy.HandlerErrorCode;
 
 import java.util.Random;
 
@@ -146,11 +144,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
             if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
                 context.setCurrentRetryAttempt(actionName, handlerName);
-                if (actionName == PolicyConstants.Action.DESCRIBE_POLICY
-                        || actionName == PolicyConstants.Action.LIST_POLICIES
-                        || actionName == PolicyConstants.Action.LIST_TAGS_FOR_POLICY
-                        || actionName == PolicyConstants.Action.LIST_TARGETS_FOR_POLICY) {
-
+                if (handlerName == PolicyConstants.Handler.READ
+                        || handlerName == PolicyConstants.Handler.LIST) {
                     logger.log(String.format("Got %s when calling %s for "
                                     + "policy [%s]. Retrying %s of %s ",
                             e.getClass().getName(), organizationsRequest.getClass().getName(), model.getName(), currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION));

@@ -147,9 +147,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
             if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
                 context.setCurrentRetryAttempt(actionName, handlerName);
-                if (actionName == Constants.Action.DESCRIBE_OU
-                        || actionName == Constants.Action.LIST_PARENTS
-                        || actionName == Constants.Action.LIST_OU_FOR_PARENT) {
+                if (handlerName == Constants.Handler.READ
+                        || handlerName == Constants.Handler.LIST) {
                     logger.log(String.format("Got %s when calling %s for "
                                     + "organizational unit [%s]. Retrying %s of %s",
                             e.getClass().getName(), organizationsRequest.getClass().getName(), ouInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION));
