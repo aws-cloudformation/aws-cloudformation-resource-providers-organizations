@@ -1,7 +1,7 @@
 package software.amazon.organizations.policy;
 
+import software.amazon.awssdk.core.exception.RetryableException;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
@@ -20,14 +20,13 @@ import software.amazon.awssdk.services.organizations.model.PolicyTypeNotEnabledE
 import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.TargetNotFoundException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
-
 import software.amazon.awssdk.services.organizations.model.UnsupportedApiEndpointException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-import software.amazon.cloudformation.proxy.HandlerErrorCode;
 
 import java.util.Random;
 
@@ -132,33 +131,35 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     }
 
     public final ProgressEvent<ResourceModel, CallbackContext> handleRetriableException(
-        final OrganizationsRequest organizationsRequest,
-        final ProxyClient<OrganizationsClient> proxyClient,
-        final CallbackContext context,
-        final Logger logger,
-        final Exception e,
-        final ResourceModel model,
-        final PolicyConstants.Action actionName,
-        final PolicyConstants.Handler handlerName
+            final OrganizationsRequest organizationsRequest,
+            final ProxyClient<OrganizationsClient> proxyClient,
+            final CallbackContext context,
+            final Logger logger,
+            final Exception e,
+            final ResourceModel model,
+            final PolicyConstants.Action actionName,
+            final PolicyConstants.Handler handlerName
     ) {
-        try {
-            if (actionName != PolicyConstants.Action.CREATE_POLICY) {
-                int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
-                if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
-                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
-                    context.setCurrentRetryAttempt(actionName, handlerName);
+        if (actionName != PolicyConstants.Action.CREATE_POLICY) {
+            int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
+            if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
+                context.setCurrentRetryAttempt(actionName, handlerName);
+                if (handlerName == PolicyConstants.Handler.READ
+                        || handlerName == PolicyConstants.Handler.LIST) {
                     logger.log(String.format("Got %s when calling %s for "
-                                                 + "policy [%s]. Retrying %s of %s with callback delay %s seconds.",
-                        e.getClass().getName(), organizationsRequest.getClass().getName(), model.getName(), currentAttempt+1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
-                    return ProgressEvent.defaultInProgressHandler(context,callbackDelaySeconds, model);
+                                    + "policy [%s]. Retrying %s of %s ",
+                            e.getClass().getName(), organizationsRequest.getClass().getName(), model.getName(), currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION));
+                    throw RetryableException.builder().cause(e).build();
                 } else {
-                    logger.log(String.format("All retry attempts exhausted for policy [%s], return CloudFormation exception.", model.getName()));
-                    return handleError(organizationsRequest, e, proxyClient, model, context, logger);
+                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
+                    logger.log(String.format("Got %s when calling %s for "
+                                    + "policy [%s]. Retrying %s of %s with callback delay %s seconds.",
+                            e.getClass().getName(), organizationsRequest.getClass().getName(), model.getName(), currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
+                    return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
                 }
             }
-            return handleError(organizationsRequest, e, proxyClient, model, context, logger);
-        } catch (Exception exception){
-            return ProgressEvent.failed(model, context, HandlerErrorCode.GeneralServiceException, exception.getMessage());
         }
+        logger.log(String.format("All retry attempts exhausted for policy [%s], return CloudFormation exception.", model.getName()));
+        return handleError(organizationsRequest, e, proxyClient, model, context, logger);
     }
 }

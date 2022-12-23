@@ -1,5 +1,6 @@
 package software.amazon.organizations.account;
 
+import software.amazon.awssdk.core.exception.RetryableException;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedForDependencyException;
@@ -183,25 +184,31 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final AccountConstants.Action actionName,
         final AccountConstants.Handler handlerName
     ) {
-        try {
-            String accountInfo = model.getAccountId() == null ? handlerRequest.getLogicalResourceIdentifier() : model.getAccountId();
-            if (actionName != AccountConstants.Action.CREATE_ACCOUNT) {
-                int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
-                if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
-                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt, BASE_DELAY, RANDOMIZATION_FACTOR); // in seconds
-                    context.setCurrentRetryAttempt(actionName, handlerName);
+        String accountInfo = model.getAccountId() == null ? handlerRequest.getLogicalResourceIdentifier() : model.getAccountId();
+
+
+        if (actionName != AccountConstants.Action.CREATE_ACCOUNT) {
+            int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
+            if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
+                context.setCurrentRetryAttempt(actionName, handlerName);
+                if (handlerName == AccountConstants.Handler.READ
+                        || handlerName == AccountConstants.Handler.LIST) {
                     logger.log(String.format("Got %s when calling %s for "
-                                                 + "account [%s]. Retrying %s of %s with callback delay %s seconds.",
-                        e.getClass().getName(), organizationsRequest.getClass().getName(), accountInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
-                    return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
+                                    + "account [%s]. Retrying %s of %s ",
+                            e.getClass().getName(), organizationsRequest.getClass().getName(), accountInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION));
+                    throw RetryableException.builder().cause(e).build();
                 } else {
-                    logger.log(String.format("All retry attempts exhausted for account [%s], return exception to CloudFormation for further handling.", accountInfo));
-                    return handleError(organizationsRequest, handlerRequest, e, proxyClient, model, context, logger);
+                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt, BASE_DELAY, RANDOMIZATION_FACTOR); // in seconds
+                    logger.log(String.format("Got %s when calling %s for "
+                                    + "account [%s]. Retrying %s of %s with callback delay %s seconds.",
+                            e.getClass().getName(), organizationsRequest.getClass().getName(), accountInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
+                    return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
                 }
             }
-            return handleError(organizationsRequest, handlerRequest, e, proxyClient, model, context, logger);
-        } catch (Exception exception) {
-            return ProgressEvent.failed(model, context, HandlerErrorCode.GeneralServiceException, exception.getMessage());
         }
+        logger.log(String.format("All retry attempts exhausted for account [%s], return exception to CloudFormation for further handling.", accountInfo));
+        return handleError(organizationsRequest, handlerRequest, e, proxyClient, model, context, logger);
     }
+
+
 }

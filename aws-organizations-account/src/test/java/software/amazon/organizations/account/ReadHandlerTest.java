@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.organizations.model.ListParentsResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.Parent;
+import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -28,9 +29,7 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ReadHandlerTest extends AbstractTestBase {
@@ -74,6 +73,14 @@ public class ReadHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        verifySuccessResponse(response);
+
+        verify(mockProxyClient.client()).describeAccount(any(DescribeAccountRequest.class));
+        verify(mockProxyClient.client()).listParents(any(ListParentsRequest.class));
+        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+    }
+
+    private static void verifySuccessResponse(ProgressEvent<ResourceModel, CallbackContext> response) {
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
@@ -90,10 +97,6 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
-
-        verify(mockProxyClient.client()).describeAccount(any(DescribeAccountRequest.class));
-        verify(mockProxyClient.client()).listParents(any(ListParentsRequest.class));
-        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 
     @Test
@@ -147,4 +150,57 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         verify(mockProxyClient.client()).describeAccount(any(DescribeAccountRequest.class));
     }
+
+    @Test
+    public void handleRequest_shouldReturnFailed_AfterThirdRetry_onDescribeAccountCalls() {
+        final ResourceModel model = ResourceModel.builder()
+                .accountId(TEST_ACCOUNT_ID)
+                .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        when(mockProxyClient.client().describeAccount(any(DescribeAccountRequest.class))).thenThrow(ServiceException.class);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
+        verify(mockProxyClient.client(), times(3)).describeAccount(any(DescribeAccountRequest.class));
+    }
+
+    @Test
+    public void handleRequest_shouldReturnSuccess_onSecondRetry_onDescribeAccountCalls() {
+        final ResourceModel model = ResourceModel.builder()
+                .accountId(TEST_ACCOUNT_ID)
+                .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        final ListParentsResponse listParentsResponse = ListParentsResponse.builder()
+                .parents(Parent.builder()
+                        .id(TEST_DESTINATION_PARENT_ID)
+                        .build()
+                ).build();
+
+        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildDefaultTagsResponse();
+        when(mockProxyClient.client().describeAccount(any(DescribeAccountRequest.class))).thenThrow(ServiceException.class).thenReturn(describeAccountResponse);
+
+        when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponse);
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        verifySuccessResponse(response);
+
+        verify(mockProxyClient.client(), times(2)).describeAccount(any(DescribeAccountRequest.class));
+        verify(mockProxyClient.client()).listParents(any(ListParentsRequest.class));
+        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+    }
+
 }

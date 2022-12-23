@@ -4,6 +4,7 @@ import software.amazon.awssdk.services.organizations.model.CreateOrganizationalU
 import software.amazon.awssdk.services.organizations.model.DeleteOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentRequest;
+import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentResponse;
 import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
@@ -17,7 +18,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Translator {
 
@@ -133,5 +137,16 @@ public class Translator {
         }
 
         return tagsToReturn;
+    }
+
+    public static List<ResourceModel> translateListAccountsResponseToResourceModel(final ListOrganizationalUnitsForParentResponse listOrganizationalUnitsForParentResponse) {
+        return streamOfOrEmpty(listOrganizationalUnitsForParentResponse.organizationalUnits())
+                .map(organizationalUnit -> Translator.getResourceModelFromOrganizationalUnit(organizationalUnit)).collect(Collectors.toList());
+    }
+
+    private static <T> Stream<T> streamOfOrEmpty(final Collection<T> collection) {
+        return Optional.ofNullable(collection)
+                .map(Collection::stream)
+                .orElseGet(Stream::empty);
     }
 }

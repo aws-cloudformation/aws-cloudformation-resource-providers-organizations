@@ -84,14 +84,14 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Collection<Tag> tagsToAddOrUpdate = updateHandler.getTagsToAddOrUpdate(
-            TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(previousResourceModel.getTags()),
-            TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(model.getTags())
+        final Collection<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
+                TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(previousResourceModel.getTags()),
+                TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(model.getTags())
         );
 
-        final List<String> tagsToRemove = updateHandler.getTagsToRemove(
-            TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(previousResourceModel.getTags()),
-            TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(model.getTags())
+        final List<String> tagsToRemove = UpdateHandler.getTagsToRemove(
+                TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(previousResourceModel.getTags()),
+                TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(model.getTags())
         );
 
         assertThat(response).isNotNull();

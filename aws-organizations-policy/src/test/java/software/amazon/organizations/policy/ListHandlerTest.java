@@ -4,6 +4,7 @@ import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.ListPoliciesRequest;
 import software.amazon.awssdk.services.organizations.model.ListPoliciesResponse;
 import software.amazon.awssdk.services.organizations.model.PolicySummary;
+import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -21,11 +22,7 @@ import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ListHandlerTest extends AbstractTestBase {
@@ -68,6 +65,14 @@ public class ListHandlerTest extends AbstractTestBase {
         final ProgressEvent<ResourceModel, CallbackContext> response =
             listHandlerToTest.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
+        verifySuccessResponse(response);
+
+        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
+        verify(mockOrgsClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(mockOrgsClient);
+    }
+
+    private static void verifySuccessResponse(ProgressEvent<ResourceModel, CallbackContext> response) {
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackContext()).isNull();
@@ -79,10 +84,6 @@ public class ListHandlerTest extends AbstractTestBase {
         assertThat(response.getNextToken()).isEqualTo(TEST_NEXT_TOKEN);
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
-
-        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
-        verify(mockOrgsClient, atLeastOnce()).serviceName();
-        verifyNoMoreInteractions(mockOrgsClient);
     }
 
     @Test
@@ -230,5 +231,54 @@ public class ListHandlerTest extends AbstractTestBase {
             .type(policyType)
             .awsManaged(TEST_AWSMANAGED)
             .build();
+    }
+
+    @Test
+    public void handleRequest_shouldReturnSuccess_onSecondRetry_forListPoliciesCalls() {
+        final ResourceModel serviceControlPolicyTypeModel = ResourceModel.builder()
+                .type(PolicyConstants.PolicyType.SERVICE_CONTROL_POLICY.toString())
+                .build();
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(serviceControlPolicyTypeModel)
+                .build();
+
+
+        ListPoliciesResponse listPoliciesResponse = ListPoliciesResponse.builder()
+                .policies(Arrays.asList(getMockPolicySummaryWithType(PolicyConstants.PolicyType.SERVICE_CONTROL_POLICY.toString())))
+                .nextToken(TEST_NEXT_TOKEN)
+                .build();
+        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class))).thenThrow(ServiceException.class).thenReturn(listPoliciesResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response =
+                listHandlerToTest.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        verifySuccessResponse(response);
+
+        verify(mockProxyClient.client(), times(2)).listPolicies(any(ListPoliciesRequest.class));
+        verify(mockOrgsClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(mockOrgsClient);
+    }
+
+    @Test
+    public void handleRequest_shouldReturnFailed_AfterThirdRetry_forListPoliciesCalls() {
+        final ResourceModel serviceControlPolicyTypeModel = ResourceModel.builder()
+                .type(PolicyConstants.PolicyType.SERVICE_CONTROL_POLICY.toString())
+                .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(serviceControlPolicyTypeModel)
+                .build();
+        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class))).thenThrow(ServiceException.class);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response =
+                listHandlerToTest.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
+        verify(mockProxyClient.client(), times(3)).listPolicies(any(ListPoliciesRequest.class));
+        verify(mockOrgsClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(mockOrgsClient);
     }
 }

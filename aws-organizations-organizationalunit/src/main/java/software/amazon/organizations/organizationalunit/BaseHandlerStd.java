@@ -1,5 +1,6 @@
 package software.amazon.organizations.organizationalunit;
 
+import software.amazon.awssdk.core.exception.RetryableException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedForDependencyException;
 import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
@@ -132,34 +133,38 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     }
 
     public final ProgressEvent<ResourceModel, CallbackContext> handleRetriableException(
-        final OrganizationsRequest organizationsRequest,
-        final ProxyClient<OrganizationsClient> proxyClient,
-        final CallbackContext context,
-        final Logger logger,
-        final Exception e,
-        final ResourceModel model,
-        final Constants.Action actionName,
-        final Constants.Handler handlerName
+            final OrganizationsRequest organizationsRequest,
+            final ProxyClient<OrganizationsClient> proxyClient,
+            final CallbackContext context,
+            final Logger logger,
+            final Exception e,
+            final ResourceModel model,
+            final Constants.Action actionName,
+            final Constants.Handler handlerName
     ) {
-        try {
-            String ouInfo = model.getId() == null ? model.getName() : model.getId();
-            if (actionName != Constants.Action.CREATE_OU) {
-                int currentAttempt = context.getCurrentRetryAttempt(actionName,handlerName);
-                if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
-                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
-                    context.setCurrentRetryAttempt(actionName,handlerName);
+        String ouInfo = model.getId() == null ? model.getName() : model.getId();
+        if (actionName != Constants.Action.CREATE_OU) {
+            int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
+            if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
+                context.setCurrentRetryAttempt(actionName, handlerName);
+                if (handlerName == Constants.Handler.READ
+                        || handlerName == Constants.Handler.LIST) {
                     logger.log(String.format("Got %s when calling %s for "
-                                                 + "organizational unit [%s]. Retrying %s of %s with callback delay %s seconds.",
-                        e.getClass().getName(), organizationsRequest.getClass().getName(), ouInfo, currentAttempt+1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
-                    return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
+                                    + "organizational unit [%s]. Retrying %s of %s",
+                            e.getClass().getName(), organizationsRequest.getClass().getName(), ouInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION));
+                    throw RetryableException.builder().cause(e).build();
                 } else {
-                    logger.log(String.format("All retry exhausted. Return exception to CloudFormation for ou [%s].", ouInfo));
-                    return handleError(organizationsRequest, e, proxyClient, model, context, logger);
+
+                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
+                    logger.log(String.format("Got %s when calling %s for "
+                                    + "organizational unit [%s]. Retrying %s of %s with callback delay %s seconds.",
+                            e.getClass().getName(), organizationsRequest.getClass().getName(), ouInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
+                    return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
                 }
             }
-            return handleError(organizationsRequest, e, proxyClient, model, context, logger);
-        } catch (Exception exception){
-            return ProgressEvent.failed(model, context, HandlerErrorCode.GeneralServiceException, exception.getMessage());
         }
+        logger.log(String.format("All retry exhausted. Return exception to CloudFormation for ou [%s].", ouInfo));
+        return handleError(organizationsRequest, e, proxyClient, model, context, logger);
     }
+
 }

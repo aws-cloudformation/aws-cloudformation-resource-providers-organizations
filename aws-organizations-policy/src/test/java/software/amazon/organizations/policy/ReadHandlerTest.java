@@ -1,10 +1,12 @@
 package software.amazon.organizations.policy;
 
-import java.time.Duration;
-import java.util.Arrays;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
-import software.amazon.awssdk.services.organizations.model.AttachPolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
@@ -15,7 +17,6 @@ import software.amazon.awssdk.services.organizations.model.Policy;
 import software.amazon.awssdk.services.organizations.model.PolicyNotFoundException;
 import software.amazon.awssdk.services.organizations.model.PolicySummary;
 import software.amazon.awssdk.services.organizations.model.PolicyTargetSummary;
-
 import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
@@ -24,21 +25,12 @@ import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import java.time.Duration;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -67,32 +59,13 @@ public class ReadHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_SimpleSuccess() {
-        final ResourceModel model = ResourceModel.builder()
-            .content(TEST_POLICY_CONTENT)
-            .description(TEST_POLICY_DESCRIPTION)
-            .name(TEST_POLICY_NAME)
-            .type(TEST_TYPE)
-            .id(TEST_POLICY_ID)
-            .targetIds(TEST_TARGET_IDS)
-            .build();
+        final ResourceModel model = buildResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
             .build();
 
-        final DescribePolicyResponse describePolicyResponse = DescribePolicyResponse.builder().policy(
-            Policy.builder()
-                .content(TEST_POLICY_CONTENT)
-                .policySummary(PolicySummary.builder()
-                    .arn(TEST_POLICY_ARN)
-                    .awsManaged(TEST_AWSMANAGED)
-                    .description(TEST_POLICY_DESCRIPTION)
-                    .id(TEST_POLICY_ID)
-                    .name(TEST_POLICY_NAME)
-                    .type(TEST_TYPE)
-                    .build())
-                .build())
-            .build();
+        final DescribePolicyResponse describePolicyResponse = buildDescribePolicyResponse();
 
         when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class))).thenReturn(describePolicyResponse);
 
@@ -113,6 +86,14 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         final ResourceModel finalModel = generateFinalResourceModel(true, true);
 
+        verifySuccessResponse(response, finalModel);
+
+        verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
+        verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
+        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+    }
+
+    private static void verifySuccessResponse(ProgressEvent<ResourceModel, CallbackContext> response, ResourceModel finalModel) {
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
@@ -121,22 +102,11 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
-
-        verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
-        verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
-        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 
     @Test
     protected void handleRequest_Fails_With_CfnNotFoundException() {
-        final ResourceModel model = ResourceModel.builder()
-            .content(TEST_POLICY_CONTENT)
-            .description(TEST_POLICY_DESCRIPTION)
-            .name(TEST_POLICY_NAME)
-            .type(TEST_TYPE)
-            .id(TEST_POLICY_ID)
-            .targetIds(TEST_TARGET_IDS)
-            .build();
+        final ResourceModel model = buildResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
@@ -153,33 +123,14 @@ public class ReadHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_ListTargetsException_FailsWith_ServiceInternalErrorException() {
-        final ResourceModel model = ResourceModel.builder()
-            .content(TEST_POLICY_CONTENT)
-            .description(TEST_POLICY_DESCRIPTION)
-            .name(TEST_POLICY_NAME)
-            .type(TEST_TYPE)
-            .id(TEST_POLICY_ID)
-            .targetIds(TEST_TARGET_IDS)
-            .build();
+        final ResourceModel model = buildResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
             .build();
 
 
-        final DescribePolicyResponse describePolicyResponse = DescribePolicyResponse.builder().policy(
-                Policy.builder()
-                    .content(TEST_POLICY_CONTENT)
-                    .policySummary(PolicySummary.builder()
-                        .arn(TEST_POLICY_ARN)
-                        .awsManaged(TEST_AWSMANAGED)
-                        .description(TEST_POLICY_DESCRIPTION)
-                        .id(TEST_POLICY_ID)
-                        .name(TEST_POLICY_NAME)
-                        .type(TEST_TYPE)
-                        .build())
-                    .build())
-            .build();
+        final DescribePolicyResponse describePolicyResponse = buildDescribePolicyResponse();
 
         when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class))).thenReturn(describePolicyResponse);
 
@@ -187,18 +138,6 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         CallbackContext context = new CallbackContext();
         ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        // retry attempt 1
-        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TARGETS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(1);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
-        // retry attempt 2
-        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TARGETS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(2);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
-
-        // CloudFormation retry
-        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -206,37 +145,18 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
 
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
-        verify(mockProxyClient.client(), atLeast(3)).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
+        verify(mockProxyClient.client(), times(3)).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
     }
 
     @Test
     public void handleRequest_ListTagsException_FailsWith_ServiceInternalErrorException() {
-        final ResourceModel model = ResourceModel.builder()
-            .content(TEST_POLICY_CONTENT)
-            .description(TEST_POLICY_DESCRIPTION)
-            .name(TEST_POLICY_NAME)
-            .type(TEST_TYPE)
-            .id(TEST_POLICY_ID)
-            .targetIds(TEST_TARGET_IDS)
-            .build();
+        final ResourceModel model = buildResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
             .build();
 
-        final DescribePolicyResponse describePolicyResponse = DescribePolicyResponse.builder().policy(
-                Policy.builder()
-                    .content(TEST_POLICY_CONTENT)
-                    .policySummary(PolicySummary.builder()
-                        .arn(TEST_POLICY_ARN)
-                        .awsManaged(TEST_AWSMANAGED)
-                        .description(TEST_POLICY_DESCRIPTION)
-                        .id(TEST_POLICY_ID)
-                        .name(TEST_POLICY_NAME)
-                        .type(TEST_TYPE)
-                        .build())
-                    .build())
-            .build();
+        final DescribePolicyResponse describePolicyResponse = buildDescribePolicyResponse();
 
         when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class))).thenReturn(describePolicyResponse);
 
@@ -253,18 +173,6 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         CallbackContext context = new CallbackContext();
         ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        // retry attempt 1
-        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TAGS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(1);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
-        // retry attempt 2
-        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.LIST_TAGS_FOR_POLICY, PolicyConstants.Handler.READ)).isEqualTo(2);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
-
-        // CloudFormation retry
-        response = readHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -272,7 +180,130 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
 
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
-        verify(mockProxyClient.client(), atLeast(3)).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
-        verify(mockProxyClient.client(), atLeast(3)).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
+        verify(mockProxyClient.client(), times(3)).listTagsForResource(any(ListTagsForResourceRequest.class));
+    }
+
+
+    @Test
+    public void handleRequest_shouldReturnSuccess_onSecondRetry_forReadPoliciesCalls() {
+        final ResourceModel model = buildResourceModel();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        final DescribePolicyResponse describePolicyResponse = buildDescribePolicyResponse();
+
+        when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class))).thenThrow(ServiceException.class).thenReturn(describePolicyResponse);
+
+        final PolicyTargetSummary rootTargetSummary = getPolicyTargetSummaryWithTargetId(TEST_TARGET_ROOT_ID);
+        final PolicyTargetSummary ouTargetSummary = getPolicyTargetSummaryWithTargetId(TEST_TARGET_OU_ID);
+        final ListTargetsForPolicyResponse listTargetsResponse = ListTargetsForPolicyResponse.builder()
+                .targets(Arrays.asList(rootTargetSummary, ouTargetSummary))
+                .nextToken(null)
+                .build();
+
+        when(mockProxyClient.client().listTargetsForPolicy(any(ListTargetsForPolicyRequest.class))).thenThrow(ServiceException.class).thenThrow(ServiceException.class).thenReturn(listTargetsResponse);
+
+        final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildDefaultTagsResponse();
+
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        final ResourceModel finalModel = generateFinalResourceModel(true, true);
+
+        verifySuccessResponse(response, finalModel);
+
+        verify(mockProxyClient.client(), times(2)).describePolicy(any(DescribePolicyRequest.class));
+        verify(mockProxyClient.client(), times(3)).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
+        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+    }
+
+    @Test
+    protected void handleRequest_shouldReturnFailed_AfterThirdRetry_forDescribePoliciesCalls() {
+        final ResourceModel model = buildResourceModel();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class))).thenThrow(ServiceException.class);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
+        verify(mockProxyClient.client(), times(3)).describePolicy(any(DescribePolicyRequest.class));
+    }
+
+    @Test
+    public void handleRequest_ShoulReturnSuccess_WhenPaginatedResultForListTargetsForPolicy() {
+        final ResourceModel model = buildResourceModel();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        final DescribePolicyResponse describePolicyResponse = buildDescribePolicyResponse();
+
+        when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class))).thenReturn(describePolicyResponse);
+
+        final PolicyTargetSummary rootTargetSummary = getPolicyTargetSummaryWithTargetId(TEST_TARGET_ROOT_ID);
+        final PolicyTargetSummary ouTargetSummary = getPolicyTargetSummaryWithTargetId(TEST_TARGET_OU_ID);
+        final ListTargetsForPolicyResponse listTargetsResponse1 = ListTargetsForPolicyResponse.builder()
+                .targets(Arrays.asList(rootTargetSummary))
+                .nextToken("NotEmptyNextToken")
+                .build();
+
+        final ListTargetsForPolicyResponse listTargetsResponse2 = ListTargetsForPolicyResponse.builder()
+                .targets(Arrays.asList( ouTargetSummary))
+                .nextToken(null)
+                .build();
+
+        when(mockProxyClient.client().listTargetsForPolicy(any(ListTargetsForPolicyRequest.class))).thenReturn(listTargetsResponse1).thenReturn(listTargetsResponse2);
+
+        final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildDefaultTagsResponse();
+
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        final ResourceModel finalModel = generateFinalResourceModel(true, true);
+
+        verifySuccessResponse(response, finalModel);
+
+        verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
+        verify(mockProxyClient.client(), times(2)).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
+        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+    }
+
+    private static DescribePolicyResponse buildDescribePolicyResponse() {
+        return DescribePolicyResponse.builder().policy(
+                        Policy.builder()
+                                .content(TEST_POLICY_CONTENT)
+                                .policySummary(PolicySummary.builder()
+                                        .arn(TEST_POLICY_ARN)
+                                        .awsManaged(TEST_AWSMANAGED)
+                                        .description(TEST_POLICY_DESCRIPTION)
+                                        .id(TEST_POLICY_ID)
+                                        .name(TEST_POLICY_NAME)
+                                        .type(TEST_TYPE)
+                                        .build())
+                                .build())
+                .build();
+    }
+
+    private static ResourceModel buildResourceModel() {
+        return ResourceModel.builder()
+                .content(TEST_POLICY_CONTENT)
+                .description(TEST_POLICY_DESCRIPTION)
+                .name(TEST_POLICY_NAME)
+                .type(TEST_TYPE)
+                .id(TEST_POLICY_ID)
+                .targetIds(TEST_TARGET_IDS)
+                .build();
     }
 }
