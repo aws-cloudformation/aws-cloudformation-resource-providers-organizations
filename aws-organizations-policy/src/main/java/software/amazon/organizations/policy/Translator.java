@@ -13,6 +13,8 @@ import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UpdatePolicyRequest;
+import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,10 +32,13 @@ import java.util.stream.Stream;
  * - resource model construction for read/list handlers
  */
 public class Translator {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     static CreatePolicyRequest translateToCreateRequest(final ResourceModel model) {
+        String content = convertObjectToString(model.getContent());
         if (model.getTags() == null) {
             return CreatePolicyRequest.builder()
-                .content(model.getContent())
+                .content(content)
                 .description(getOptionalDescription(model))
                 .name(model.getName())
                 .type(model.getType())
@@ -45,7 +50,7 @@ public class Translator {
             tags.add(Tag.builder().key(tag.getKey()).value(tag.getValue()).build());
         });
         return CreatePolicyRequest.builder()
-            .content(model.getContent())
+            .content(content)
             .description(getOptionalDescription(model))
             .name(model.getName())
             .type(model.getType())
@@ -75,7 +80,7 @@ public class Translator {
             .policyId(model.getId())
             .name(model.getName())
             .description(getOptionalDescription(model))
-            .content(model.getContent())
+            .content(convertObjectToString(model.getContent()))
             .build();
     }
 
@@ -134,6 +139,22 @@ public class Translator {
                 .description(policy.description())
                 .build())
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Converts user inputted JSON to a String
+     * @param content
+     * @return
+     **/
+    static String convertObjectToString(Object content) {
+        try {
+            if (content instanceof String) {
+                return (String)content;
+            }
+            return MAPPER.writeValueAsString(content);
+        } catch (Exception e) {
+            throw new CfnInvalidRequestException(e);
+        }
     }
 
     private static <T> Stream<T> streamOfOrEmpty(final Collection<T> collection) {

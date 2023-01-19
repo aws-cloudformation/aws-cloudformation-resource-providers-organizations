@@ -120,6 +120,60 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
+    public void handleRequest_NoTargetsNoTags_WithJSONContent_SimpleSuccess() {
+        final ResourceModel model = generateInitialResourceModelWithJsonContent(false, false);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                                                                  .desiredResourceState(model)
+                                                                  .build();
+
+        final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
+        when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class))).thenReturn(createPolicyResponse);
+
+        final DescribePolicyResponse describePolicyResponse = getDescribePolicyResponse();
+        when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class))).thenReturn(describePolicyResponse);
+
+        final ListTargetsForPolicyResponse listTargetsResponse = ListTargetsForPolicyResponse.builder()
+                                                                     .nextToken(null)
+                                                                     .build();
+        when(mockProxyClient.client().listTargetsForPolicy(any(ListTargetsForPolicyRequest.class))).thenReturn(listTargetsResponse);
+
+        final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildEmptyTagsResponse();
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        final ResourceModel finalModel = ResourceModel.builder()
+                                             .targetIds(new HashSet<>())
+                                             .arn(TEST_POLICY_ARN)
+                                             .description(TEST_POLICY_DESCRIPTION)
+                                             .content(TEST_POLICY_CONTENT)
+                                             .id(TEST_POLICY_ID)
+                                             .name(TEST_POLICY_NAME)
+                                             .type(TEST_TYPE)
+                                             .awsManaged(TEST_AWSMANAGED)
+                                             .tags(TagTestResourceHelper.translateOrganizationTagsToPolicyTags(null))
+                                             .build();
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNotNull();
+        assertThat(response.getResourceModel()).isEqualTo(finalModel);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(mockProxyClient.client()).createPolicy(any(CreatePolicyRequest.class));
+        verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
+        verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
+        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+
+        verify(mockOrgsClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(mockOrgsClient);
+    }
+
+    @Test
     public void handleRequest_NoDescriptionNoTargetsNoTags_SimpleRequest() {
         final ResourceModel model = ResourceModel.builder()
             .targetIds(new HashSet<>())

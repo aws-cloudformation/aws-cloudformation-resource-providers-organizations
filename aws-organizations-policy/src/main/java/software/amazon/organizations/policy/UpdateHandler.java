@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UpdatePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.UpdatePolicyResponse;
 import software.amazon.awssdk.utils.CollectionUtils;
+import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
@@ -53,6 +54,14 @@ public class UpdateHandler extends BaseHandlerStd {
                 String.format("Cannot update policy type after creation for [%s]!", model.getName()));
         }
 
+        String content;
+        try {
+            content = Translator.convertObjectToString(model.getContent());
+        } catch (CfnInvalidRequestException e){
+            logger.log(String.format("The policy content did not include a valid JSON. This is an InvalidRequest for management account Id [%s]", request.getAwsAccountId()));
+            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
+                "Policy content had invalid JSON!");
+        }
 
         return ProgressEvent.progress(model, callbackContext)
             .then(progress ->{
