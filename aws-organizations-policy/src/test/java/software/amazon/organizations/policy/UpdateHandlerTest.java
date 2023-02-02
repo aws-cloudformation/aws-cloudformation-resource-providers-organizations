@@ -118,52 +118,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_WithJsonContent_SimpleSuccess() {
-        final ResourceModel initialResourceModel = generateFinalResourceModel(false, false);
-        final ResourceModel updatedResourceModel = generateUpdatedResourceModelWithJsonContent(false, false);
-
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                                                                  .previousResourceState(initialResourceModel)
-                                                                  .desiredResourceState(updatedResourceModel)
-                                                                  .build();
-
-        final UpdatePolicyResponse updatePolicyResponse = getUpdatePolicyResponse();
-        when(mockProxyClient.client().updatePolicy(any(UpdatePolicyRequest.class))).thenReturn(updatePolicyResponse);
-
-        final DescribePolicyResponse describePolicyResponse = getDescribePolicyResponse();
-        when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class))).thenReturn(describePolicyResponse);
-
-        final ListTargetsForPolicyResponse listTargetsResponse = ListTargetsForPolicyResponse.builder()
-                                                                     .targets(new ArrayList<>())
-                                                                     .nextToken(null)
-                                                                     .build();
-
-        when(mockProxyClient.client().listTargetsForPolicy(any(ListTargetsForPolicyRequest.class))).thenReturn(listTargetsResponse);
-
-        final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildEmptyTagsResponse();
-        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
-
-        final ProgressEvent<ResourceModel, CallbackContext> response = updateHandlerToTest.handleRequest(mockAwsClientproxy, request, new CallbackContext(), mockProxyClient, logger);
-
-        assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
-        assertThat(response.getCallbackContext()).isNull();
-        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
-        assertThat(response.getResourceModel()).isEqualTo(request.getDesiredResourceState());
-        assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getMessage()).isNull();
-        assertThat(response.getErrorCode()).isNull();
-
-        verify(mockProxyClient.client()).updatePolicy(any(UpdatePolicyRequest.class));
-        verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
-        verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
-        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
-
-        verify(mockOrgsClient, atLeastOnce()).serviceName();
-        verifyNoMoreInteractions(mockOrgsClient);
-    }
-
-    @Test
     public void handleRequest_WithTargets_SimpleSuccess() {
         final ResourceModel initialResourceModel = generateFinalResourceModel(true, false);
         final ResourceModel updatedResourceModel = generateUpdatedResourceModel(true, false);

@@ -7,7 +7,6 @@ import software.amazon.awssdk.services.organizations.model.AttachPolicyResponse;
 import software.amazon.awssdk.services.organizations.model.CreatePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.CreatePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.DuplicatePolicyAttachmentException;
-import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
@@ -32,15 +31,6 @@ public class CreateHandler extends BaseHandlerStd {
         if (model.getName() == null || model.getType() == null || model.getContent() == null) {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
                 "Policy cannot be created without name, type, and content!");
-        }
-
-        String content;
-        try {
-            content = Translator.convertObjectToString(model.getContent());
-        } catch (CfnInvalidRequestException e){
-            logger.log(String.format("The policy content did not include a valid JSON. This is an InvalidRequest for management account Id [%s]", request.getAwsAccountId()));
-            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
-                "Policy content had invalid JSON!");
         }
 
         logger.log(String.format("Entered %s create handler with account Id [%s], with Content [%s], Description [%s], Name [%s], Type [%s]",
