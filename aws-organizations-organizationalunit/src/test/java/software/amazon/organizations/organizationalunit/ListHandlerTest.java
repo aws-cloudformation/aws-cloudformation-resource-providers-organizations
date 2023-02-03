@@ -119,28 +119,7 @@ public class ListHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_shouldReturnSuccess_onSecondRetry_forlistOrganizationalUnitsCalls() {
-        final ResourceModel model = ResourceModel.builder().id(TEST_OU_ID).parentId(TEST_PARENT_ID).build();
-
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder().desiredResourceState(model).build();
-
-        List<OrganizationalUnit> organizationalUnits = new ArrayList<>();
-        OrganizationalUnit organizationalUnit = OrganizationalUnit.builder().name(TEST_OU_NAME).arn(TEST_OU_ARN).id(TEST_OU_ID).build();
-        organizationalUnits.add(organizationalUnit);
-
-        final ListOrganizationalUnitsForParentResponse listOrganizationalUnitsForParentResponse = ListOrganizationalUnitsForParentResponse.builder().organizationalUnits(organizationalUnits).build();
-
-        when(mockProxyClient.client().listOrganizationalUnitsForParent(any(ListOrganizationalUnitsForParentRequest.class))).thenThrow(ServiceException.class).thenReturn(listOrganizationalUnitsForParentResponse);
-
-        final ProgressEvent<ResourceModel, CallbackContext> response = listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
-
-        verifySuccessResponse(response);
-
-        verify(mockProxyClient.client(), times(2)).listOrganizationalUnitsForParent(any(ListOrganizationalUnitsForParentRequest.class));
-    }
-
-    @Test
-    public void handleRequest_shouldReturnFailed_AfterThirdRetry_forlistOrganizationalUnitsCalls() {
+    public void handleRequest_shouldReturnFailed_withServiceException_forlistOrganizationalUnitsCalls() {
         final ResourceModel model = ResourceModel.builder().id(TEST_OU_ID).parentId(TEST_PARENT_ID).build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder().desiredResourceState(model).build();
@@ -153,6 +132,6 @@ public class ListHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
-        verify(mockProxyClient.client(), times(3)).listOrganizationalUnitsForParent(any(ListOrganizationalUnitsForParentRequest.class));
+        verify(mockProxyClient.client()).listOrganizationalUnitsForParent(any(ListOrganizationalUnitsForParentRequest.class));
     }
 }

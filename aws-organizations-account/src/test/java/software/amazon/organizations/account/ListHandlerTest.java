@@ -105,7 +105,7 @@ public class ListHandlerTest extends AbstractTestBase{
 
 
     @Test
-    public void handleRequest_shouldReturnFailed_AfterThirdRetry_forListAccountCalls(){
+    public void handleRequest_shouldReturnFailed_withServiceException_forListAccountCalls(){
         final ResourceModel model = ResourceModel.builder()
                 .build();
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -121,31 +121,7 @@ public class ListHandlerTest extends AbstractTestBase{
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
-        verify(mockProxyClient.client(), times(3)).listAccounts(any(ListAccountsRequest.class));
-
-    }
-
-    @Test
-    public void handleRequest_shouldReturnSuccess_onSecondRetry_forListAccountCalls(){
-        final ResourceModel model = ResourceModel.builder()
-                .build();
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
-
-        ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
-                .accounts(Arrays.asList(accountGetMockAccountSummary()))
-                .nextToken(TEST_NEXT_TOKEN)
-                .build();
-
-        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenThrow(ServiceException.class).thenReturn(listAccountsResponse);
-
-        final ProgressEvent<ResourceModel, CallbackContext> response =
-                listHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
-
-        verifySuccessResponse(response);
-
-        verify(mockProxyClient.client(), times(2)).listAccounts(any(ListAccountsRequest.class));
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
 
     }
 

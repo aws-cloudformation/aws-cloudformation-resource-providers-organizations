@@ -234,33 +234,7 @@ public class ListHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_shouldReturnSuccess_onSecondRetry_forListPoliciesCalls() {
-        final ResourceModel serviceControlPolicyTypeModel = ResourceModel.builder()
-                .type(PolicyConstants.PolicyType.SERVICE_CONTROL_POLICY.toString())
-                .build();
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(serviceControlPolicyTypeModel)
-                .build();
-
-
-        ListPoliciesResponse listPoliciesResponse = ListPoliciesResponse.builder()
-                .policies(Arrays.asList(getMockPolicySummaryWithType(PolicyConstants.PolicyType.SERVICE_CONTROL_POLICY.toString())))
-                .nextToken(TEST_NEXT_TOKEN)
-                .build();
-        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class))).thenThrow(ServiceException.class).thenReturn(listPoliciesResponse);
-
-        final ProgressEvent<ResourceModel, CallbackContext> response =
-                listHandlerToTest.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
-
-        verifySuccessResponse(response);
-
-        verify(mockProxyClient.client(), times(2)).listPolicies(any(ListPoliciesRequest.class));
-        verify(mockOrgsClient, atLeastOnce()).serviceName();
-        verifyNoMoreInteractions(mockOrgsClient);
-    }
-
-    @Test
-    public void handleRequest_shouldReturnFailed_AfterThirdRetry_forListPoliciesCalls() {
+    public void handleRequest_shouldReturnFailed_withServiceException_forListPoliciesCalls() {
         final ResourceModel serviceControlPolicyTypeModel = ResourceModel.builder()
                 .type(PolicyConstants.PolicyType.SERVICE_CONTROL_POLICY.toString())
                 .build();
@@ -277,7 +251,7 @@ public class ListHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
-        verify(mockProxyClient.client(), times(3)).listPolicies(any(ListPoliciesRequest.class));
+        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
         verify(mockOrgsClient, atLeastOnce()).serviceName();
         verifyNoMoreInteractions(mockOrgsClient);
     }

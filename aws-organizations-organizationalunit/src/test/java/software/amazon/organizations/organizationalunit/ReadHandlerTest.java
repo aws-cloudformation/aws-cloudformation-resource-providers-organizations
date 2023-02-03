@@ -125,47 +125,9 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
     }
 
-    @Test
-    public void handleRequest_shouldReturnSuccess_onSecondRetry_forDescribeOrganizationalUnitCalls() {
-        final ResourceModel model = ResourceModel.builder()
-                .id(TEST_OU_ID)
-                .build();
-
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
-
-        final DescribeOrganizationalUnitResponse describeOrganizationalUnitResponse = DescribeOrganizationalUnitResponse.builder()
-                .organizationalUnit(OrganizationalUnit.builder()
-                        .name(TEST_OU_NAME)
-                        .arn(TEST_OU_ARN)
-                        .id(TEST_OU_ID)
-                        .build()
-                ).build();
-
-        final ListParentsResponse listParentsResponse = ListParentsResponse.builder()
-                .parents(Parent.builder()
-                        .id(TEST_PARENT_ID)
-                        .build()
-                ).build();
-
-        final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildDefaultTagsResponse();
-
-        when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenThrow(ServiceException.class).thenReturn(describeOrganizationalUnitResponse);
-        when(mockProxyClient.client().listParents(any(ListParentsRequest.class))).thenReturn(listParentsResponse);
-        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsForResourceResponse);
-
-        final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
-
-        verifySuccessResponse(response);
-
-        verify(mockProxyClient.client(), times(2)).describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class));
-        verify(mockProxyClient.client()).listParents(any(ListParentsRequest.class));
-        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
-    }
 
     @Test
-    public void handleRequest_shouldReturnFailed_AfterThirdRetry_forDescribeOrganizationalUnitsCalls() {
+    public void handleRequest_shouldReturnFailed_withServiceException_forDescribeOrganizationalUnitsCalls() {
         final ResourceModel model = ResourceModel.builder()
                 .id(TEST_OU_ID)
                 .build();
@@ -182,7 +144,7 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
-        verify(mockProxyClient.client(), times(3)).describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class));
+        verify(mockProxyClient.client()).describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class));
     }
 
 }

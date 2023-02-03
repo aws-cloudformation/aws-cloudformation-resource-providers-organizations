@@ -1,6 +1,5 @@
 package software.amazon.organizations.organizationalunit;
 
-import software.amazon.awssdk.core.exception.RetryableException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedForDependencyException;
 import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
@@ -113,7 +112,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final Constants.Action actionName,
         final Constants.Handler handlerName
     ) {
-        if (isRetriableException(e)) {
+        if ((handlerName != Constants.Handler.READ && handlerName != Constants.Handler.LIST)
+            && isRetriableException(e)) {
             return handleRetriableException(request, proxyClient, callbackContext, logger, e, resourceModel, actionName, handlerName);
         }
         return handleError(request, e, proxyClient, resourceModel, callbackContext, logger);
@@ -147,20 +147,11 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
             if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
                 context.setCurrentRetryAttempt(actionName, handlerName);
-                if (handlerName == Constants.Handler.READ
-                        || handlerName == Constants.Handler.LIST) {
-                    logger.log(String.format("Got %s when calling %s for "
-                                    + "organizational unit [%s]. Retrying %s of %s",
-                            e.getClass().getName(), organizationsRequest.getClass().getName(), ouInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION));
-                    throw RetryableException.builder().cause(e).build();
-                } else {
-
-                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
-                    logger.log(String.format("Got %s when calling %s for "
-                                    + "organizational unit [%s]. Retrying %s of %s with callback delay %s seconds.",
-                            e.getClass().getName(), organizationsRequest.getClass().getName(), ouInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
-                    return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
-                }
+                int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt);
+                logger.log(String.format("Got %s when calling %s for "
+                                + "organizational unit [%s]. Retrying %s of %s with callback delay %s seconds.",
+                        e.getClass().getName(), organizationsRequest.getClass().getName(), ouInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
+                return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
             }
         }
         logger.log(String.format("All retry exhausted. Return exception to CloudFormation for ou [%s].", ouInfo));

@@ -1,6 +1,5 @@
 package software.amazon.organizations.account;
 
-import software.amazon.awssdk.core.exception.RetryableException;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedForDependencyException;
@@ -112,7 +111,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final AccountConstants.Action actionName,
         final AccountConstants.Handler handlerName
     ) {
-        if (isRetriableException(e)) {
+        if ((handlerName != AccountConstants.Handler.READ && handlerName != AccountConstants.Handler.LIST)
+            && isRetriableException(e)) {
             return handleRetriableException(request, handlerRequest, proxyClient, callbackContext, logger, e, resourceModel, actionName, handlerName);
         }
         return handleError(request, handlerRequest, e, proxyClient, resourceModel, callbackContext, logger);
@@ -191,19 +191,11 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             int currentAttempt = context.getCurrentRetryAttempt(actionName, handlerName);
             if (currentAttempt < MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION) {
                 context.setCurrentRetryAttempt(actionName, handlerName);
-                if (handlerName == AccountConstants.Handler.READ
-                        || handlerName == AccountConstants.Handler.LIST) {
-                    logger.log(String.format("Got %s when calling %s for "
-                                    + "account [%s]. Retrying %s of %s ",
-                            e.getClass().getName(), organizationsRequest.getClass().getName(), accountInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION));
-                    throw RetryableException.builder().cause(e).build();
-                } else {
-                    int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt, BASE_DELAY, RANDOMIZATION_FACTOR); // in seconds
-                    logger.log(String.format("Got %s when calling %s for "
-                                    + "account [%s]. Retrying %s of %s with callback delay %s seconds.",
-                            e.getClass().getName(), organizationsRequest.getClass().getName(), accountInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
-                    return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
-                }
+                int callbackDelaySeconds = computeDelayBeforeNextRetry(currentAttempt, BASE_DELAY, RANDOMIZATION_FACTOR); // in seconds
+                logger.log(String.format("Got %s when calling %s for "
+                                + "account [%s]. Retrying %s of %s with callback delay %s seconds.",
+                        e.getClass().getName(), organizationsRequest.getClass().getName(), accountInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
+                return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
             }
         }
         logger.log(String.format("All retry attempts exhausted for account [%s], return exception to CloudFormation for further handling.", accountInfo));
