@@ -145,7 +145,7 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
 
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
-        verify(mockProxyClient.client(), times(3)).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
+        verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
     }
 
     @Test
@@ -181,48 +181,11 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
         verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
-        verify(mockProxyClient.client(), times(3)).listTagsForResource(any(ListTagsForResourceRequest.class));
-    }
-
-
-    @Test
-    public void handleRequest_shouldReturnSuccess_onSecondRetry_forReadPoliciesCalls() {
-        final ResourceModel model = buildResourceModel();
-
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
-
-        final DescribePolicyResponse describePolicyResponse = buildDescribePolicyResponse();
-
-        when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class))).thenThrow(ServiceException.class).thenReturn(describePolicyResponse);
-
-        final PolicyTargetSummary rootTargetSummary = getPolicyTargetSummaryWithTargetId(TEST_TARGET_ROOT_ID);
-        final PolicyTargetSummary ouTargetSummary = getPolicyTargetSummaryWithTargetId(TEST_TARGET_OU_ID);
-        final ListTargetsForPolicyResponse listTargetsResponse = ListTargetsForPolicyResponse.builder()
-                .targets(Arrays.asList(rootTargetSummary, ouTargetSummary))
-                .nextToken(null)
-                .build();
-
-        when(mockProxyClient.client().listTargetsForPolicy(any(ListTargetsForPolicyRequest.class))).thenThrow(ServiceException.class).thenThrow(ServiceException.class).thenReturn(listTargetsResponse);
-
-        final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildDefaultTagsResponse();
-
-        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
-
-        final ProgressEvent<ResourceModel, CallbackContext> response = readHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
-
-        final ResourceModel finalModel = generateFinalResourceModel(true, true);
-
-        verifySuccessResponse(response, finalModel);
-
-        verify(mockProxyClient.client(), times(2)).describePolicy(any(DescribePolicyRequest.class));
-        verify(mockProxyClient.client(), times(3)).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
         verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 
     @Test
-    protected void handleRequest_shouldReturnFailed_AfterThirdRetry_forDescribePoliciesCalls() {
+    protected void handleRequest_shouldReturnFailed_withServiceException_forDescribePoliciesCalls() {
         final ResourceModel model = buildResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -236,7 +199,7 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
-        verify(mockProxyClient.client(), times(3)).describePolicy(any(DescribePolicyRequest.class));
+        verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
     }
 
     @Test
