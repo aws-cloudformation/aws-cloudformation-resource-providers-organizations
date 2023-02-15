@@ -14,7 +14,7 @@ To declare this entity in your AWS CloudFormation template, use the following sy
     "Properties" : {
         "<a href="#name" title="Name">Name</a>" : <i>String</i>,
         "<a href="#type" title="Type">Type</a>" : <i>String</i>,
-        "<a href="#content" title="Content">Content</a>" : <i>String</i>,
+        "<a href="#content" title="Content">Content</a>" : <i>Map, String</i>,
         "<a href="#description" title="Description">Description</a>" : <i>String</i>,
         "<a href="#targetids" title="TargetIds">TargetIds</a>" : <i>[ String, ... ]</i>,
         "<a href="#tags" title="Tags">Tags</a>" : <i>[ <a href="tag.md">Tag</a>, ... ]</i>,
@@ -29,7 +29,7 @@ Type: AWS::Organizations::Policy
 Properties:
     <a href="#name" title="Name">Name</a>: <i>String</i>
     <a href="#type" title="Type">Type</a>: <i>String</i>
-    <a href="#content" title="Content">Content</a>: <i>String</i>
+    <a href="#content" title="Content">Content</a>: <i>Map, String</i>
     <a href="#description" title="Description">Description</a>: <i>String</i>
     <a href="#targetids" title="TargetIds">TargetIds</a>: <i>
       - String</i>
@@ -69,11 +69,11 @@ _Update requires_: [Replacement](https://docs.aws.amazon.com/AWSCloudFormation/l
 
 #### Content
 
-The Policy text content
+The Policy text content. For AWS CloudFormation templates formatted in YAML, you can provide the policy in JSON or YAML format. AWS CloudFormation always converts a YAML policy to JSON format before submitting it.
 
 _Required_: Yes
 
-_Type_: String
+_Type_: Map, String
 
 _Minimum_: <code>1</code>
 
