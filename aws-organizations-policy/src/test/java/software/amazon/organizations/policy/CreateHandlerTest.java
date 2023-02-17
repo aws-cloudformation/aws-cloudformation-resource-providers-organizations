@@ -38,7 +38,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
@@ -93,14 +92,13 @@ public class CreateHandlerTest extends AbstractTestBase {
             .targetIds(new HashSet<>())
             .arn(TEST_POLICY_ARN)
             .description(TEST_POLICY_DESCRIPTION)
-            .content(TEST_POLICY_CONTENT)
+            .content(TEST_POLICY_CONTENT_JSON)
             .id(TEST_POLICY_ID)
             .name(TEST_POLICY_NAME)
             .type(TEST_TYPE)
             .awsManaged(TEST_AWSMANAGED)
             .tags(TagTestResourceHelper.translateOrganizationTagsToPolicyTags(null))
             .build();
-
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
@@ -120,8 +118,8 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_NoTargetsNoTags_WithJSONContent_SimpleSuccess() {
-        final ResourceModel model = generateInitialResourceModelWithJsonContent(false, false);
+    public void handleRequest_NoTargetsNoTags_WithJSONStringContent_SimpleSuccess() {
+        final ResourceModel model = generateInitialResourceModelWithJsonStringContent(false, false);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                                                                   .desiredResourceState(model)
@@ -147,14 +145,13 @@ public class CreateHandlerTest extends AbstractTestBase {
                                              .targetIds(new HashSet<>())
                                              .arn(TEST_POLICY_ARN)
                                              .description(TEST_POLICY_DESCRIPTION)
-                                             .content(TEST_POLICY_CONTENT)
+                                             .content(TEST_POLICY_CONTENT_JSON)
                                              .id(TEST_POLICY_ID)
                                              .name(TEST_POLICY_NAME)
                                              .type(TEST_TYPE)
                                              .awsManaged(TEST_AWSMANAGED)
                                              .tags(TagTestResourceHelper.translateOrganizationTagsToPolicyTags(null))
                                              .build();
-
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
@@ -208,14 +205,13 @@ public class CreateHandlerTest extends AbstractTestBase {
             .targetIds(new HashSet<>())
             .arn(TEST_POLICY_ARN)
             .description(TEST_POLICY_DESCRIPTION)
-            .content(TEST_POLICY_CONTENT)
+            .content(TEST_POLICY_CONTENT_JSON)
             .id(TEST_POLICY_ID)
             .name(TEST_POLICY_NAME)
             .type(TEST_TYPE)
             .awsManaged(TEST_AWSMANAGED)
             .tags(TagTestResourceHelper.translateOrganizationTagsToPolicyTags(null))
             .build();
-
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);

@@ -8,7 +8,9 @@ import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRe
 import software.amazon.awssdk.services.organizations.model.ListTargetsForPolicyRequest;
 import software.amazon.awssdk.services.organizations.model.ListTargetsForPolicyResponse;
 import software.amazon.awssdk.services.organizations.model.PolicyTargetSummary;
+import software.amazon.cloudformation.exceptions.CfnHandlerInternalFailureException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -39,9 +41,17 @@ public class ReadHandler extends BaseHandlerStd {
                 .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
                                  handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, PolicyConstants.Action.DESCRIBE_POLICY, PolicyConstants.Handler.READ))
                 .done(describePolicyResponse -> {
+                    try {
+                        model.setContent(Translator.convertStringToObject(describePolicyResponse.policy().content()));
+                    } catch (CfnHandlerInternalFailureException e) {
+                        String policyId = describePolicyResponse.policy().policySummary().id();
+                        String errorMessage = String.format("[Exception] Failed with exception: [%s]. Message: [%s], ErrorCode: [%s] for policy [%s].",
+                            e.getClass().getSimpleName(), e.getMessage(), HandlerErrorCode.InternalFailure, policyId);
+                        logger.log(errorMessage);
+                        return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InternalFailure, errorMessage);
+                    }
                     model.setArn(describePolicyResponse.policy().policySummary().arn().toString());
                     model.setDescription(describePolicyResponse.policy().policySummary().description());
-                    model.setContent(describePolicyResponse.policy().content());
                     model.setId(describePolicyResponse.policy().policySummary().id());
                     model.setName(describePolicyResponse.policy().policySummary().name());
                     model.setType(describePolicyResponse.policy().policySummary().type().toString());

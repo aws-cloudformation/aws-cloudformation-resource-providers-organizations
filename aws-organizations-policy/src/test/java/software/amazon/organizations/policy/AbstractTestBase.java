@@ -31,12 +31,12 @@ public class AbstractTestBase {
     protected static final String TEST_POLICY_ID = "p-1231231231";
     protected static final String TEST_POLICY_ID_CHANGED = "p-3213213213";
     protected static final String TEST_POLICY_ARN = "arn:aws:organizations:555555555555:policy/p-1231231231";
-    protected static final String TEST_POLICY_CONTENT = "{\\\"Version\\\":\\\"2012-10-17\\\",\\\"Statement\\\":[{\\\"Effect\\\":\\\"Allow\\\",\\\"Action\\\":[\\\"s3:*\\\"],\\\"Resource\\\":[\\\"*\\\"]}]}";
+    protected static final String TEST_POLICY_CONTENT = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:*\"],\"Resource\":[\"*\"]}]}";
+    protected static final Map<String, Object> TEST_POLICY_CONTENT_JSON = convertStringToJsonObject(TEST_POLICY_CONTENT);
+    protected static final String TEST_POLICY_UPDATED_CONTENT = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Deny\",\"Action\":[\"s3:*\"],\"Resource\":[\"*\"]}]}";
+    protected static final Map<String, Object> TEST_POLICY_UPDATED_CONTENT_JSON = convertStringToJsonObject(TEST_POLICY_UPDATED_CONTENT);
     protected static final String TEST_POLICY_NAME = "AllowAllS3Actions";
     protected static final String TEST_POLICY_DESCRIPTION = "Allow All S3 Actions";
-    protected static final String TEST_POLICY_UPDATED_CONTENT = "{\\\"Version\\\":\\\"2012-10-17\\\",\\\"Statement\\\":[{\\\"Effect\\\":\\\"Deny\\\",\\\"Action\\\":[\\\"s3:*\\\"],\\\"Resource\\\":[\\\"*\\\"]}]}";
-    protected static final String TEST_POLICY_CONTENT_FOR_JSON = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:*\"],\"Resource\":[\"*\"]}]}";
-    protected static final String TEST_POLICY_UPDATED_CONTENT_FOR_JSON = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Deny\",\"Action\":[\"s3:*\"],\"Resource\":[\"*\"]}]}";
     protected static final String TEST_POLICY_UPDATED_NAME = "DenyAllS3Actions";
     protected static final String TEST_POLICY_UPDATED_DESCRIPTION = "Deny All S3 Actions";
     protected static final String TEST_TYPE = PolicyConstants.PolicyType.SERVICE_CONTROL_POLICY.toString();
@@ -102,6 +102,7 @@ public class AbstractTestBase {
         };
     }
 
+    // recommended content type is JSON
     static ResourceModel generateInitialResourceModel(boolean hasTargets, boolean hasTags) {
         return ResourceModel.builder()
             .targetIds(hasTargets ? TEST_TARGET_IDS : new HashSet<>())
@@ -115,14 +116,14 @@ public class AbstractTestBase {
             .build();
     }
 
-    static ResourceModel generateInitialResourceModelWithJsonContent(boolean hasTargets, boolean hasTags) {
+    static ResourceModel generateInitialResourceModelWithJsonStringContent(boolean hasTargets, boolean hasTags) {
         return ResourceModel.builder()
                    .targetIds(hasTargets ? TEST_TARGET_IDS : new HashSet<>())
                    .tags(hasTags
                              ? TagTestResourceHelper.translateOrganizationTagsToPolicyTags(TagTestResourceHelper.defaultTags)
                              : null)
                    .description(TEST_POLICY_DESCRIPTION)
-                   .content(convertStringToJsonObject(TEST_POLICY_CONTENT_FOR_JSON))
+                   .content(TEST_POLICY_CONTENT)
                    .name(TEST_POLICY_NAME)
                    .type(TEST_TYPE)
                    .build();
@@ -133,7 +134,7 @@ public class AbstractTestBase {
             .targetIds(hasTargets ? TEST_TARGET_IDS : new HashSet<>())
             .arn(TEST_POLICY_ARN)
             .description(TEST_POLICY_DESCRIPTION)
-            .content(TEST_POLICY_CONTENT)
+            .content(TEST_POLICY_CONTENT_JSON)
             .id(TEST_POLICY_ID)
             .name(TEST_POLICY_NAME)
             .type(TEST_TYPE)
@@ -151,7 +152,7 @@ public class AbstractTestBase {
             .awsManaged(TEST_AWSMANAGED)
             .name(TEST_POLICY_UPDATED_NAME)
             .type(TEST_TYPE)
-            .content(TEST_POLICY_UPDATED_CONTENT)
+            .content(TEST_POLICY_UPDATED_CONTENT_JSON)
             .description(TEST_POLICY_UPDATED_DESCRIPTION)
             .targetIds(hasTargets ? TEST_UPDATED_TARGET_IDS : new HashSet<>())
             .tags(hasTags
@@ -167,7 +168,7 @@ public class AbstractTestBase {
                    .awsManaged(TEST_AWSMANAGED)
                    .name(TEST_POLICY_UPDATED_NAME)
                    .type(TEST_TYPE)
-                   .content(convertStringToJsonObject(TEST_POLICY_UPDATED_CONTENT_FOR_JSON))
+                   .content(TEST_POLICY_UPDATED_CONTENT_JSON)
                    .description(TEST_POLICY_UPDATED_DESCRIPTION)
                    .targetIds(hasTargets ? TEST_UPDATED_TARGET_IDS : new HashSet<>())
                    .tags(hasTags

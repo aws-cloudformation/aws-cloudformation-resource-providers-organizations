@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UpdatePolicyRequest;
+import software.amazon.cloudformation.exceptions.CfnHandlerInternalFailureException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -154,6 +156,19 @@ public class Translator {
             return MAPPER.writeValueAsString(content);
         } catch (Exception e) {
             throw new CfnInvalidRequestException(e);
+        }
+    }
+
+    /**
+     * Converts String to JSON object
+     * @param content
+     * @return
+     **/
+    static Object convertStringToObject(String content) {
+        try {
+            return MAPPER.readValue(content, Map.class);
+        } catch (Exception e) {
+            throw new CfnHandlerInternalFailureException(e);
         }
     }
 
