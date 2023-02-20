@@ -10,6 +10,7 @@ phases:
       -  pip install --upgrade 'urllib3==1.26.9'
       -  pip install --upgrade 'botocore==1.27.4'
       -  pip install --upgrade 'pyyaml==5.4.1'
+      -  pip install --upgrade 'aws-sam-cli==1.73.0'
       -  pip install --upgrade 'requests==2.27.1'
       -  pip install pre-commit cloudformation-cli-java-plugin
   build:
