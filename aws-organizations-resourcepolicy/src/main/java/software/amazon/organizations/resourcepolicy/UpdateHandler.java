@@ -44,7 +44,7 @@ public class UpdateHandler extends BaseHandlerStd {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
                 "ResourcePolicy cannot be updated without Content!");
         }
-        
+
         String content;
         try {
             content = Translator.convertObjectToString(model.getContent());

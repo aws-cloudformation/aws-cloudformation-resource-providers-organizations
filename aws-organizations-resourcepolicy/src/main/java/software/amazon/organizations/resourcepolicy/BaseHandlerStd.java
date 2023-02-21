@@ -144,7 +144,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
                                 + "ResourcePolicy [%s]. Retrying %s of %s with callback delay %s seconds.",
                         e.getClass().getName(), organizationsRequest.getClass().getName(), resourcePolicyInfo, currentAttempt + 1, MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION, callbackDelaySeconds));
                 return ProgressEvent.defaultInProgressHandler(context, callbackDelaySeconds, model);
-                
+
             }
         }
         logger.log(String.format("All retry exhausted. Return exception to CloudFormation for ResourcePolicy [%s].", resourcePolicyInfo));

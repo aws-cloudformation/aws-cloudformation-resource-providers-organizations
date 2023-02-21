@@ -82,4 +82,3 @@ public class ClientBuilder {
         return Region.AWS_GLOBAL;
     }
 }
-
