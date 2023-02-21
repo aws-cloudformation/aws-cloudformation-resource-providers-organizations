@@ -1,12 +1,10 @@
-package software.amazon.organizations.policy;
+package software.amazon.organizations.resourcepolicy;
 
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.Tag;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class TagTestResourceHelper {
@@ -46,12 +44,12 @@ public class TagTestResourceHelper {
             .build();
     }
 
-    static Set<software.amazon.organizations.policy.Tag> translateOrganizationTagsToPolicyTags(Set<Tag> tags) {
+    static Set<software.amazon.organizations.resourcepolicy.Tag> translateOrganizationTagsToResourcePolicyTags(Set<Tag> tags) {
         if (tags == null) return new HashSet<>();
 
-        final Set<software.amazon.organizations.policy.Tag> tagsToReturn = new HashSet<>();
+        final Set<software.amazon.organizations.resourcepolicy.Tag> tagsToReturn = new HashSet<>();
         for (Tag inputTags : tags) {
-            software.amazon.organizations.policy.Tag tag = software.amazon.organizations.policy.Tag.builder()
+            software.amazon.organizations.resourcepolicy.Tag tag = software.amazon.organizations.resourcepolicy.Tag.builder()
                 .key(inputTags.key())
                 .value(inputTags.value())
                 .build();
@@ -61,11 +59,11 @@ public class TagTestResourceHelper {
         return tagsToReturn;
     }
 
-    static Set<Tag> translatePolicyTagsToOrganizationTags(Set<software.amazon.organizations.policy.Tag> tags) {
+    static Set<Tag> translateResourcePolicyTagsToOrganizationTags(Set<software.amazon.organizations.resourcepolicy.Tag> tags) {
         if (tags == null) return new HashSet<>();
 
         final Set<Tag> tagsToReturn = new HashSet<>();
-        for (software.amazon.organizations.policy.Tag inputTags : tags) {
+        for (software.amazon.organizations.resourcepolicy.Tag inputTags : tags) {
             Tag tag = Tag.builder()
                 .key(inputTags.getKey())
                 .value(inputTags.getValue())
@@ -84,7 +82,7 @@ public class TagTestResourceHelper {
         return set1.equals(set2);
     }
 
-    static boolean correctTagsInTagAndUntagRequests(Collection<Tag> tagsToAddOrUpdate, List<String> tagsToRemove) {
+    static boolean correctTagsInTagAndUntagRequests(Set<Tag> tagsToAddOrUpdate, Set<String> tagsToRemove) {
         boolean correctTagsInRequests = true;
 
         Set<String> tagsToAddOrUpdateKeys = new HashSet<>();

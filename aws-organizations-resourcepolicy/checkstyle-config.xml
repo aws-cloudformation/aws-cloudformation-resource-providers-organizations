@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
+        "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
+
+<!--
+  This is a small checkstyle ruleset to get you started.
+  All available rules are documented at http://checkstyle.sourceforge.net/checks.html
+-->
+<module name="Checker">
+    <!-- Spaces instead of tabs -->
+    <module name="FileTabCharacter"/>
+    <module name="TreeWalker">
+        <!-- Use String[] foo, not String foo[]. -->
+        <module name="ArrayTypeStyle"/>
+        <!-- Switch statements should have default be the last case -->
+        <module name="DefaultComesLast"/>
+        <!-- Local variables and parameters shouldn't shadow fields -->
+        <module name="HiddenField">
+            <property name="ignoreAbstractMethods" value="true"/>
+            <property name="ignoreConstructorParameter" value="true"/>
+            <property name="ignoreSetter" value="true"/>
+        </module>
+        <!-- Be specific about imports -->
+        <module name="AvoidStarImport"/>
+        <module name="UnusedImports"/>
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="checkstyle.thirdparty.com.google"/>
+            <property name="illegalPkgs" value="edu.emory.mathcs.backport"/>
+            <property name="illegalPkgs" value="jersey.repackaged.com.google"/>
+            <property name="illegalPkgs" value="zaaa.com.google"/>
+        </module>
+        <!-- Checks for assignments in subexpressions, such as in String s = Integer.toString(i = 2);.-->
+        <module name="InnerAssignment"/>
+        <!-- Caps line length -->
+        <module name="LineLength">
+            <property name="max" value="270"/>
+            <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+        </module>
+        <!-- Name local variables according to standard Java conventions -->
+        <module name="LocalVariableName">
+            <property name="allowOneCharVarInForLoop" value="true"/>
+        </module>
+        <!-- Don't reassign parameters -->
+        <module name="ParameterAssignment"/>
+        <!-- Force 100L instead of 100l -->
+        <module name="UpperEll"/>
+    </module>
+</module>
