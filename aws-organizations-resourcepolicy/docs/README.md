@@ -75,4 +75,3 @@ The unique identifier (ID) associated with this resource policy.
 #### Arn
 
 The Amazon Resource Name (ARN) of the resource policy.
-
