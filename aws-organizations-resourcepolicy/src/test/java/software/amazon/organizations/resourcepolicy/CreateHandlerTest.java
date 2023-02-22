@@ -1,7 +1,6 @@
 package software.amazon.organizations.resourcepolicy;
 
 import java.time.Duration;
-import java.util.Map;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DescribeResourcePolicyRequest;
@@ -10,13 +9,10 @@ import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRe
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.PutResourcePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.PutResourcePolicyResponse;
-import software.amazon.awssdk.services.organizations.model.ResourcePolicy;
-import software.amazon.awssdk.services.organizations.model.ResourcePolicyNotFoundException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
 import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.UnsupportedApiEndpointException;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
-import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
@@ -25,22 +21,14 @@ import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import com.amazonaws.event.request.Progress;
-
-import javafx.util.Callback;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;

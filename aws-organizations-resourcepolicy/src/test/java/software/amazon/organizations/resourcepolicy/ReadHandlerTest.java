@@ -7,10 +7,7 @@ import software.amazon.awssdk.services.organizations.model.DescribeResourcePolic
 import software.amazon.awssdk.services.organizations.model.DescribeResourcePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
-import software.amazon.awssdk.services.organizations.model.Policy;
-import software.amazon.awssdk.services.organizations.model.ResourcePolicy;
 import software.amazon.awssdk.services.organizations.model.ResourcePolicyNotFoundException;
-import software.amazon.awssdk.services.organizations.model.ResourcePolicySummary;
 import software.amazon.awssdk.services.organizations.model.ServiceException;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
@@ -21,7 +18,6 @@ import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-import software.amazon.cloudformation.proxy.ResourceHandlerRequest.ResourceHandlerRequestBuilder;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,14 +26,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.amazonaws.event.request.Progress;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;

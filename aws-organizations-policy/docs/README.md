@@ -47,9 +47,9 @@ _Required_: Yes
 
 _Type_: String
 
-_Minimum_: <code>1</code>
+_Minimum Length_: <code>1</code>
 
-_Maximum_: <code>128</code>
+_Maximum Length_: <code>128</code>
 
 _Pattern_: <code>[\s\S]*</code>
 
@@ -75,9 +75,9 @@ _Required_: Yes
 
 _Type_: Map, String
 
-_Minimum_: <code>1</code>
+_Minimum Length_: <code>1</code>
 
-_Maximum_: <code>1000000</code>
+_Maximum Length_: <code>1000000</code>
 
 _Pattern_: <code>[\s\S]*</code>
 
@@ -91,7 +91,7 @@ _Required_: No
 
 _Type_: String
 
-_Maximum_: <code>512</code>
+_Maximum Length_: <code>512</code>
 
 _Pattern_: <code>[\s\S]*</code>
 
