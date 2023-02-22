@@ -1,4 +1,4 @@
-# AWS::Organizations::Policy Tag
+# AWS::Organizations::ResourcePolicy Tag
 
 A custom key-value pair associated with a resource within your organization.
 
@@ -36,8 +36,6 @@ _Minimum Length_: <code>1</code>
 
 _Maximum Length_: <code>128</code>
 
-_Pattern_: <code>[\s\S]*</code>
-
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 
 #### Value
@@ -49,7 +47,5 @@ _Required_: Yes
 _Type_: String
 
 _Maximum Length_: <code>256</code>
-
-_Pattern_: <code>[\s\S]*</code>
 
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)

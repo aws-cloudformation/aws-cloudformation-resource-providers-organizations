@@ -75,11 +75,7 @@ public class TagTestResourcesHelper {
             return false;
         }
 
-        if (set1.size() != set2.size()) {
-            return false;
-        }
-
-        return set1.containsAll(set2);
+        return set1.equals(set2);
     }
 
     static boolean correctTagsInTagAndUntagRequests(Collection<Tag> tagsToAddOrUpdate, List<String> tagsToRemove) {
