@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.organizations.model.MoveAccountRequest;
 import software.amazon.awssdk.services.organizations.model.MoveAccountResponse;
 import software.amazon.awssdk.services.organizations.model.Parent;
 import software.amazon.awssdk.services.organizations.model.Root;
+import software.amazon.awssdk.services.organizations.model.SourceParentNotFoundException;
 import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
@@ -377,19 +378,19 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         @Test
     public void handleRequest_MoveAccountWithMultipleParentIds_Fails() {
-            final ResourceModel previousResourceModel = generatePreviousResourceModel(null);
+        final ResourceModel previousResourceModel = generatePreviousResourceModel(null);
 
-            final ResourceModel model = generateUpdatedResourceModel(null).toBuilder()
-                    .parentIds(TEST_MULTIPLE_PARENT_IDS)
-                    .build();
+        final ResourceModel model = generateUpdatedResourceModel(null).toBuilder()
+                .parentIds(TEST_MULTIPLE_PARENT_IDS)
+                .build();
 
-            final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                    .previousResourceState(previousResourceModel)
-                    .desiredResourceState(model)
-                    .build();
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .previousResourceState(previousResourceModel)
+                .desiredResourceState(model)
+                .build();
 
-            final ProgressEvent<ResourceModel, CallbackContext> response =
-                    updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        final ProgressEvent<ResourceModel, CallbackContext> response =
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -434,6 +435,30 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         verify(mockProxyClient.client(), atLeast(3)).moveAccount(any(MoveAccountRequest.class));
 
+        tearDown();
+    }
+
+    @Test
+    public void handleRequest_MoveAccountThrowsSourceParentNotFoundException_Fails() {
+        final ResourceModel previousResourceModel = generatePreviousResourceModel(null);
+        final ResourceModel model = generateUpdatedResourceModel(null);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .previousResourceState(previousResourceModel)
+                .desiredResourceState(model)
+                .build();
+
+        // Update Handler Mocks
+        when(mockProxyClient.client().moveAccount(any(MoveAccountRequest.class))).thenThrow(SourceParentNotFoundException.class);
+        CallbackContext context = new CallbackContext();
+        ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNotNull();
+        assertThat(response.getResourceModel()).isEqualTo(request.getDesiredResourceState());
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.InvalidRequest);
         tearDown();
     }
 

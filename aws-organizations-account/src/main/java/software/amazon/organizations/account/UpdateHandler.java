@@ -4,10 +4,12 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DuplicateAccountException;
+import software.amazon.awssdk.services.organizations.model.InvalidInputException;
 import software.amazon.awssdk.services.organizations.model.ListRootsRequest;
 import software.amazon.awssdk.services.organizations.model.ListRootsResponse;
 import software.amazon.awssdk.services.organizations.model.MoveAccountRequest;
 import software.amazon.awssdk.services.organizations.model.MoveAccountResponse;
+import software.amazon.awssdk.services.organizations.model.SourceParentNotFoundException;
 import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
@@ -98,12 +100,21 @@ public class UpdateHandler extends BaseHandlerStd {
                                 .makeServiceCall(this::moveAccount)
                                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> {
                                     if (e instanceof DuplicateAccountException) {
-                                        log.log(String.format("Got %s when calling %s for "
+                                        logger.log(String.format("Got %s when calling %s for "
                                                         + "account id [%s], source id [%s], destination id [%s]. Continue with next step.",
                                                 e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), sourceId, destinationId));
                                         return ProgressEvent.progress(model1, context);
+                                    } else if (e instanceof SourceParentNotFoundException) {
+                                        logger.log(String.format("Got %s when calling %s for "
+                                                        + "account id [%s], source id [%s], destination id [%s]. Translating to InvalidInputException.",
+                                                e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), sourceId, destinationId));
+                                        InvalidInputException translatedException = InvalidInputException.builder()
+                                            .message(e.getMessage())
+                                            .build();
+                                        return handleErrorInGeneral(organizationsRequest, request, translatedException, proxyClient1, model1, context, logger, AccountConstants.Action.MOVE_ACCOUNT, AccountConstants.Handler.UPDATE);
+                                    } else {
+                                        return handleErrorInGeneral(organizationsRequest, request, e, proxyClient1, model1, context, logger, AccountConstants.Action.MOVE_ACCOUNT, AccountConstants.Handler.UPDATE);
                                     }
-                                    return handleErrorInGeneral(organizationsRequest, request, e, proxyClient1, model1, context, logger, AccountConstants.Action.MOVE_ACCOUNT, AccountConstants.Handler.UPDATE);
                                 })
                                 .progress()
                 );
