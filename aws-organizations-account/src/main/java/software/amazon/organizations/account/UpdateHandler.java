@@ -105,7 +105,9 @@ public class UpdateHandler extends BaseHandlerStd {
                                                 e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), sourceId, destinationId));
                                         return ProgressEvent.progress(model1, context);
                                     } else if (e instanceof SourceParentNotFoundException) {
-                                        logger.log("Thrown SourceParentNotFoundException when calling MoveAccount - translating to InvalidInputException.");
+                                        logger.log(String.format("Got %s when calling %s for "
+                                                        + "account id [%s], source id [%s], destination id [%s]. Translating to InvalidInputException.",
+                                                e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), sourceId, destinationId));
                                         InvalidInputException translatedException = InvalidInputException.builder()
                                             .message(e.getMessage())
                                             .build();
