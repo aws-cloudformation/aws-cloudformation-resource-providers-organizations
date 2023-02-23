@@ -100,11 +100,12 @@ public class UpdateHandler extends BaseHandlerStd {
                                 .makeServiceCall(this::moveAccount)
                                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> {
                                     if (e instanceof DuplicateAccountException) {
-                                        log.log(String.format("Got %s when calling %s for "
+                                        logger.log(String.format("Got %s when calling %s for "
                                                         + "account id [%s], source id [%s], destination id [%s]. Continue with next step.",
                                                 e.getClass().getName(), organizationsRequest.getClass().getName(), model.getAccountId(), sourceId, destinationId));
                                         return ProgressEvent.progress(model1, context);
                                     } else if (e instanceof SourceParentNotFoundException) {
+                                        logger.log("Thrown SourceParentNotFoundException when calling MoveAccount - translating to InvalidInputException.");
                                         InvalidInputException translatedException = InvalidInputException.builder()
                                             .message(e.getMessage())
                                             .build();
