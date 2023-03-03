@@ -5,20 +5,21 @@ import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
-import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 public class CreateHandler extends BaseHandlerStd {
-    private Logger log;
+    private OrgsLoggerWrapper log;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger
+        ) {
 
         this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();

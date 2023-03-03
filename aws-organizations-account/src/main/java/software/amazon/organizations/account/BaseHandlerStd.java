@@ -27,6 +27,7 @@ import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.Random;
 
@@ -66,7 +67,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             request,
             callbackContext != null ? callbackContext : new CallbackContext(),
             awsClientProxy.newProxy(ClientBuilder::getClient),
-            logger
+            new OrgsLoggerWrapper(logger)
         );
     }
 
@@ -75,7 +76,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> proxyClient,
-        final Logger logger
+        final OrgsLoggerWrapper logger
     );
 
     public ProgressEvent<ResourceModel, CallbackContext> handleError(
@@ -85,7 +86,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ProxyClient<OrganizationsClient> awsClientProxy,
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
-        final Logger logger
+        final OrgsLoggerWrapper logger
     ) {
         return handleErrorTranslation(handlerRequest, resourceModel, callbackContext, e, logger);
     }
@@ -95,7 +96,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
         final Exception e,
-        final Logger logger
+        final OrgsLoggerWrapper logger
     ) {
         return handleErrorTranslation(handlerRequest, resourceModel, callbackContext, e, logger);
     }
@@ -107,7 +108,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ProxyClient<OrganizationsClient> proxyClient,
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
-        final Logger logger,
+        final OrgsLoggerWrapper logger,
         final AccountConstants.Action actionName,
         final AccountConstants.Handler handlerName
     ) {
@@ -123,7 +124,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
         final Exception e,
-        final Logger logger
+        final OrgsLoggerWrapper logger
     ) {
         HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
         if (e instanceof AwsOrganizationsNotInUseException
@@ -178,7 +179,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ResourceHandlerRequest<ResourceModel> handlerRequest,
         final ProxyClient<OrganizationsClient> proxyClient,
         final CallbackContext context,
-        final Logger logger,
+        final OrgsLoggerWrapper logger,
         final Exception e,
         final ResourceModel model,
         final AccountConstants.Action actionName,

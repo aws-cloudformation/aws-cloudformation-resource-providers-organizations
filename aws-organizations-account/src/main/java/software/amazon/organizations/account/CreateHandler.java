@@ -12,22 +12,22 @@ import software.amazon.awssdk.services.organizations.model.MoveAccountRequest;
 import software.amazon.awssdk.services.organizations.model.MoveAccountResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
-import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.Set;
 
 public class CreateHandler extends BaseHandlerStd {
-    private Logger log;
+    private OrgsLoggerWrapper log;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
 
         this.log = logger;
         logger.log(String.format("Entered %s create handler with management account Id [%s] and account logical resource identifier [%s].",
@@ -75,7 +75,7 @@ public class CreateHandler extends BaseHandlerStd {
         final ResourceModel model,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
         // skip if account is created
         if (callbackContext.isAccountCreated()) {
             log.log(String.format("Account has already been created in previous handler invoke with account id: [%s]. Skip describeCreateAccountStatus.", model.getAccountId()));
@@ -141,7 +141,7 @@ public class CreateHandler extends BaseHandlerStd {
         return ProgressEvent.failed(model, callbackContext, errorCode, errMsg);
     }
 
-    private ProgressEvent<ResourceModel, CallbackContext> handleAccountCreationError(ResourceModel model, CallbackContext callbackContext, Logger logger) {
+    private ProgressEvent<ResourceModel, CallbackContext> handleAccountCreationError(ResourceModel model, CallbackContext callbackContext, OrgsLoggerWrapper logger) {
         String failureReason = callbackContext.getFailureReason();
         String errMsg = String.format("Account creation failed with reason [%s] for request id: %s", failureReason, callbackContext.getCreateAccountRequestId());
         logger.log(errMsg);
@@ -165,7 +165,7 @@ public class CreateHandler extends BaseHandlerStd {
         final ResourceModel model,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
 
         Set<String> parentIds = model.getParentIds();
         String accountId = model.getAccountId();

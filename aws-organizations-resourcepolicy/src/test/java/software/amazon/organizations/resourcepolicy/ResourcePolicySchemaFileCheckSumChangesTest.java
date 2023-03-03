@@ -12,6 +12,7 @@ import java.nio.file.NoSuchFileException;
 import java.security.NoSuchAlgorithmException;
 
 import org.junit.jupiter.api.BeforeAll;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import javax.xml.bind.DatatypeConverter;
 

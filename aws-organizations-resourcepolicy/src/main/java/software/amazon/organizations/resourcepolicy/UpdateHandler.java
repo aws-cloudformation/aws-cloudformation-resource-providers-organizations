@@ -10,10 +10,10 @@ import software.amazon.awssdk.services.organizations.model.PutResourcePolicyResp
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
-import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -21,14 +21,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UpdateHandler extends BaseHandlerStd {
-    private Logger log;
+    private OrgsLoggerWrapper log;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
 
         this.log = logger;
         final ResourceModel previousModel = request.getPreviousResourceState();
@@ -79,7 +79,7 @@ public class UpdateHandler extends BaseHandlerStd {
             final Set<software.amazon.organizations.resourcepolicy.Tag> previousTags,
             final String resourcePolicyId,
             final ProxyClient<OrganizationsClient> orgsClient,
-            final Logger logger
+            final OrgsLoggerWrapper logger
     ) {
         final Set<Tag> newTags = desiredTags == null ? Collections.emptySet() :
             convertResourcePolicyTagToOrganizationTag(desiredTags);

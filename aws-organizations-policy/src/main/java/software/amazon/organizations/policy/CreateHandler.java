@@ -10,24 +10,25 @@ import software.amazon.awssdk.services.organizations.model.DuplicatePolicyAttach
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
-import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.Set;
 
 public class CreateHandler extends BaseHandlerStd {
-    private Logger log;
+    private OrgsLoggerWrapper log;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
 
         this.log = logger;
+
         final ResourceModel model = request.getDesiredResourceState();
         if (model.getName() == null || model.getType() == null || model.getContent() == null) {
             return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
@@ -81,7 +82,7 @@ public class CreateHandler extends BaseHandlerStd {
         final ResourceModel model,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
 
         Set<String> targets = model.getTargetIds();
         String policyName = model.getName();

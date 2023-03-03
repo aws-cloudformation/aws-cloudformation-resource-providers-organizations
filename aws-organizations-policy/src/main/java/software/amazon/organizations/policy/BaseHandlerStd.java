@@ -26,6 +26,7 @@ import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.Random;
 
@@ -49,7 +50,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             request,
             callbackContext != null ? callbackContext : new CallbackContext(),
             proxy.newProxy(ClientBuilder::getClient),
-            logger
+            new OrgsLoggerWrapper(logger)
         );
     }
 
@@ -58,7 +59,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> proxyClient,
-        final Logger logger
+        final OrgsLoggerWrapper logger
     );
 
     public ProgressEvent<ResourceModel, CallbackContext> handleError(
@@ -67,7 +68,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ProxyClient<OrganizationsClient> proxyClient,
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
-        final Logger logger
+        final OrgsLoggerWrapper logger
     ) {
         HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
         if (e instanceof DuplicatePolicyException) {
@@ -105,7 +106,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final ProxyClient<OrganizationsClient> proxyClient,
         final ResourceModel resourceModel,
         final CallbackContext callbackContext,
-        final Logger logger,
+        final OrgsLoggerWrapper logger,
         final PolicyConstants.Action actionName,
         final PolicyConstants.Handler handlerName
     ) {
@@ -134,7 +135,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             final OrganizationsRequest organizationsRequest,
             final ProxyClient<OrganizationsClient> proxyClient,
             final CallbackContext context,
-            final Logger logger,
+            final OrgsLoggerWrapper logger,
             final Exception e,
             final ResourceModel model,
             final PolicyConstants.Action actionName,

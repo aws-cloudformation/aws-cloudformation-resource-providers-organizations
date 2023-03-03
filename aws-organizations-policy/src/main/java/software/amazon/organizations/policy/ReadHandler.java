@@ -11,24 +11,24 @@ import software.amazon.awssdk.services.organizations.model.PolicyTargetSummary;
 import software.amazon.cloudformation.exceptions.CfnHandlerInternalFailureException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
-import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class ReadHandler extends BaseHandlerStd {
-    private Logger log;
+    private OrgsLoggerWrapper log;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
 
         this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();
@@ -75,7 +75,7 @@ public class ReadHandler extends BaseHandlerStd {
         final ResourceModel model,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger
+        final OrgsLoggerWrapper logger
     ) {
         String policyId = model.getId();
         Set<String> policyTargetIds = new HashSet<>();
@@ -120,7 +120,7 @@ public class ReadHandler extends BaseHandlerStd {
         final ResourceModel model,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger
+        final OrgsLoggerWrapper logger
         ) {
 
         String policyId = model.getId();

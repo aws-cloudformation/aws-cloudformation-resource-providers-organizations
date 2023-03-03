@@ -15,6 +15,7 @@ import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Credentials;
 import software.amazon.cloudformation.proxy.LoggerProxy;
 import software.amazon.cloudformation.proxy.ProxyClient;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.time.Instant;
 import java.util.Set;
@@ -100,11 +101,13 @@ public class AbstractTestBase {
                                                                                   .requestedTimestamp(REQUESTED_TIMESTAMP)
                                                                                   .build();
     protected static final Credentials MOCK_CREDENTIALS;
-    protected static final LoggerProxy logger;
+    protected static final LoggerProxy loggerProxy;
+    protected static final OrgsLoggerWrapper logger;
 
     static {
         MOCK_CREDENTIALS = new Credentials("accessKey", "secretKey", "token");
-        logger = new LoggerProxy();
+        loggerProxy = new LoggerProxy();
+        logger = new OrgsLoggerWrapper(loggerProxy);
     }
 
     static ProxyClient<OrganizationsClient> MOCK_PROXY(
