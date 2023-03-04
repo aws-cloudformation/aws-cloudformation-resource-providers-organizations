@@ -59,7 +59,7 @@ public class CreateHandlerTest extends AbstractTestBase {
     @BeforeEach
     public void setup() {
         createHandler = new CreateHandler();
-        mockAwsClientProxy = new AmazonWebServicesClientProxy(logger, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
+        mockAwsClientProxy = new AmazonWebServicesClientProxy(loggerProxy, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
         mockOrgsClient = mock(OrganizationsClient.class);
         mockProxyClient = MOCK_PROXY(mockAwsClientProxy, mockOrgsClient);
     }

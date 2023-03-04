@@ -66,7 +66,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
     @BeforeEach
     public void setup() {
         updateHandlerToTest = new UpdateHandler();
-        mockAwsClientproxy = new AmazonWebServicesClientProxy(logger, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
+        mockAwsClientproxy = new AmazonWebServicesClientProxy(loggerProxy, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
         mockOrgsClient = mock(OrganizationsClient.class);
         mockProxyClient = MOCK_PROXY(mockAwsClientproxy, mockOrgsClient);
     }

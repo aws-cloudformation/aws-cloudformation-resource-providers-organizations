@@ -45,9 +45,9 @@ _Required_: Yes
 
 _Type_: String
 
-_Minimum_: <code>1</code>
+_Minimum Length_: <code>1</code>
 
-_Maximum_: <code>50</code>
+_Maximum Length_: <code>50</code>
 
 _Pattern_: <code>[\u0020-\u007E]+</code>
 
@@ -61,9 +61,9 @@ _Required_: Yes
 
 _Type_: String
 
-_Minimum_: <code>6</code>
+_Minimum Length_: <code>6</code>
 
-_Maximum_: <code>64</code>
+_Maximum Length_: <code>64</code>
 
 _Pattern_: <code>[^\s@]+@[^\s@]+\.[^\s@]+</code>
 
@@ -77,9 +77,9 @@ _Required_: No
 
 _Type_: String
 
-_Minimum_: <code>1</code>
+_Minimum Length_: <code>1</code>
 
-_Maximum_: <code>64</code>
+_Maximum Length_: <code>64</code>
 
 _Pattern_: <code>[\w+=,.@-]{1,64}</code>
 

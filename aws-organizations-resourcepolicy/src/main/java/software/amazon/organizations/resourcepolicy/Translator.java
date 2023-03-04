@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 import software.amazon.cloudformation.exceptions.CfnHandlerInternalFailureException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
-import software.amazon.cloudformation.proxy.Logger;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,7 +113,7 @@ public class Translator {
         }
     }
 
-    static Object convertStringToObject(String content, Logger logger) {
+    static Object convertStringToObject(String content, OrgsLoggerWrapper logger) {
         try {
             return MAPPER.readValue(content, Map.class);
         } catch (Exception e) {

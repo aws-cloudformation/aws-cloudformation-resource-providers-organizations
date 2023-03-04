@@ -14,10 +14,10 @@ import software.amazon.awssdk.utils.CollectionUtils;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
-import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 public class UpdateHandler extends BaseHandlerStd {
-    private Logger log;
+    private OrgsLoggerWrapper log;
 
     @Override
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -36,7 +36,7 @@ public class UpdateHandler extends BaseHandlerStd {
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
 
         this.log = logger;
         final ResourceModel previousModel = request.getPreviousResourceState();
@@ -103,7 +103,7 @@ public class UpdateHandler extends BaseHandlerStd {
         final Set<String> previousTargets,
         final String policyId,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger
+        final OrgsLoggerWrapper logger
     ) {
         // filter previous and desired lists to determine which to attach and remove
         final List<String> targetsToAttach = new ArrayList<>();
@@ -174,7 +174,7 @@ public class UpdateHandler extends BaseHandlerStd {
             final Set<software.amazon.organizations.policy.Tag> previousTags,
             final String policyId,
             final ProxyClient<OrganizationsClient> orgsClient,
-            final Logger logger
+            final OrgsLoggerWrapper logger
     ) {
         final Set<Tag> newTags = desiredTags == null ? Collections.emptySet() :
             convertPolicyTagToOrganizationTag(desiredTags);

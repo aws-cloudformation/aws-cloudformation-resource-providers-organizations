@@ -45,7 +45,7 @@ public class ReadHandlerTest extends AbstractTestBase {
     @BeforeEach
     public void setup() {
         readHandler = new ReadHandler();
-        mockAwsClientProxy = new AmazonWebServicesClientProxy(logger, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
+        mockAwsClientProxy = new AmazonWebServicesClientProxy(loggerProxy, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
         mockOrgsClient = mock(OrganizationsClient.class);
         mockProxyClient = MOCK_PROXY(mockAwsClientProxy, mockOrgsClient);
     }

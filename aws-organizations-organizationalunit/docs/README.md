@@ -40,9 +40,9 @@ _Required_: Yes
 
 _Type_: String
 
-_Minimum_: <code>1</code>
+_Minimum Length_: <code>1</code>
 
-_Maximum_: <code>128</code>
+_Maximum Length_: <code>128</code>
 
 _Pattern_: <code>[\s\S]*</code>
 
@@ -56,7 +56,7 @@ _Required_: Yes
 
 _Type_: String
 
-_Maximum_: <code>100</code>
+_Maximum Length_: <code>100</code>
 
 _Pattern_: <code>^(r-[0-9a-z]{4,32})|(ou-[0-9a-z]{4,32}-[a-z0-9]{8,32})$</code>
 

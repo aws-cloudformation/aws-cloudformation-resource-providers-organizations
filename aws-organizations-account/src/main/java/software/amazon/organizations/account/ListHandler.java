@@ -5,24 +5,24 @@ import software.amazon.awssdk.services.organizations.model.ListAccountsRequest;
 import software.amazon.awssdk.services.organizations.model.ListAccountsResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
-import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ListHandler extends BaseHandlerStd {
-    private Logger log;
+    private OrgsLoggerWrapper log;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
             final AmazonWebServicesClientProxy awsClientProxy,
             final ResourceHandlerRequest<ResourceModel> request,
             final CallbackContext callbackContext,
             final ProxyClient<OrganizationsClient> orgsClient,
-            final Logger logger) {
+            final OrgsLoggerWrapper logger) {
 
         this.log = logger;
         logger.log(String.format("Entered %s list handler with accountId [%s]", ResourceModel.TYPE_NAME, request.getAwsAccountId()));

@@ -9,20 +9,21 @@ import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRe
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.Parent;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
-import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 public class ReadHandler extends BaseHandlerStd {
-    private Logger log;
+    private OrgsLoggerWrapper log;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger
+    ) {
 
         this.log = logger;
         final ResourceModel model = request.getDesiredResourceState();
@@ -55,7 +56,7 @@ public class ReadHandler extends BaseHandlerStd {
         final ResourceModel model,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
 
             String ouId = model.getId();
 
@@ -74,7 +75,7 @@ public class ReadHandler extends BaseHandlerStd {
         final ResourceModel model,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
 
             String ouId = model.getId();
 

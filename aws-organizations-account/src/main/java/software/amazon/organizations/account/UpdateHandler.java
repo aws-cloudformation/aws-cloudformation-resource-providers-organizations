@@ -15,24 +15,24 @@ import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
-import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UpdateHandler extends BaseHandlerStd {
-    private Logger log;
+    private OrgsLoggerWrapper log;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceHandlerRequest<ResourceModel> request,
         final CallbackContext callbackContext,
         final ProxyClient<OrganizationsClient> orgsClient,
-        final Logger logger) {
+        final OrgsLoggerWrapper logger) {
 
         this.log = logger;
 
@@ -66,7 +66,7 @@ public class UpdateHandler extends BaseHandlerStd {
             final ResourceModel model,
             final CallbackContext callbackContext,
             final ProxyClient<OrganizationsClient> orgsClient,
-            final Logger logger) {
+            final OrgsLoggerWrapper logger) {
 
         Set<String> previousParentIds = previousModel.getParentIds();
         Set<String> parentIds = model.getParentIds();
@@ -129,7 +129,7 @@ public class UpdateHandler extends BaseHandlerStd {
             final Set<Tag> previousTags,
             final String accountId,
             final ProxyClient<OrganizationsClient> orgsClient,
-            final Logger logger
+            final OrgsLoggerWrapper logger
     ) {
         // Includes all old tags that do not exist in new tag list
         final Set<String> tagsToRemove = getTagKeysToRemove(previousTags, desiredTags);
@@ -195,5 +195,4 @@ public class UpdateHandler extends BaseHandlerStd {
         log.log(String.format("Calling moveAccount API for Account [%s] with destinationId [%s],  sourceId [%s].", moveAccountRequest.accountId(), moveAccountRequest.destinationParentId(), moveAccountRequest.sourceParentId()));
         return orgsClient.injectCredentialsAndInvokeV2(moveAccountRequest, orgsClient.client()::moveAccount);
     }
-
 }

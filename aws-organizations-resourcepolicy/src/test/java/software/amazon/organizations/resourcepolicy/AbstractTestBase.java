@@ -33,6 +33,7 @@ import software.amazon.cloudformation.proxy.OperationStatus;
 
 
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
+import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,11 +53,13 @@ public class AbstractTestBase {
   protected static final String RESOURCE_POLICY_JSON_SCHEMA_FILE_NAME = "aws-organizations-resourcepolicy.json";
 
   protected static final Credentials MOCK_CREDENTIALS;
-  protected static final LoggerProxy logger;
+    protected static final LoggerProxy loggerProxy;
+    protected static final OrgsLoggerWrapper logger;
 
   static {
       MOCK_CREDENTIALS = new Credentials("accessKey", "secretKey", "token");
-      logger = new LoggerProxy();
+      loggerProxy = new LoggerProxy();
+      logger = new OrgsLoggerWrapper(loggerProxy);
   }
 
   static ProxyClient<OrganizationsClient> MOCK_PROXY(
