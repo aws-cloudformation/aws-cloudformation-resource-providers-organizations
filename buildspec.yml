@@ -5,13 +5,6 @@ phases:
         java: openjdk8
         python: 3.7
     commands:
-      -  pip install --upgrade 'six==1.15.0'
-      -  pip install --upgrade 'boto3==1.24.4'
-      -  pip install --upgrade 'urllib3==1.26.9'
-      -  pip install --upgrade 'botocore==1.27.4'
-      -  pip install --upgrade 'pyyaml==5.4.1'
-      -  pip install --upgrade 'aws-sam-cli==1.73.0'
-      -  pip install --upgrade 'requests==2.27.1'
       -  pip install pre-commit cloudformation-cli-java-plugin
   build:
     commands:
@@ -25,3 +18,5 @@ phases:
       - cat "$CODEBUILD_SRC_DIR/aws-organizations-organizationalunit/rpdk.log"
       - cat "$CODEBUILD_SRC_DIR/aws-organizations-account/rpdk.log"
       - cat "$CODEBUILD_SRC_DIR/aws-organizations-policy/rpdk.log"
+      - cat "$CODEBUILD_SRC_DIR/aws-organizations-organization/rpdk.log"
+      - cat "$CODEBUILD_SRC_DIR/aws-organizations-resourcepolicy/rpdk.log"

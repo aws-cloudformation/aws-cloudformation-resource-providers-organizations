@@ -6,7 +6,7 @@ This repository contains AWS-owned resource providers for the `AWS::Organization
 - [AWS::Organizations::OrganizationalUnit](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-organizations-organizationalunit.html)
 - [AWS::Organizations::Policy](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-organizations-policy.html)
 - [AWS::Organizations::ResourcePolicy](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-organizations-resourcepolicy.html)
-
+- [AWS::Organizations::Organization](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-organizations-organization.html)
 ## Usage
 
 Instructions on repository setup and local development can be found in the [Contributing Guidelines](https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-organizations/blob/main/CONTRIBUTING.md).
