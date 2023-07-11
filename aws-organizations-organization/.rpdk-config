@@ -1,0 +1,28 @@
+{
+    "artifact_type": "RESOURCE",
+    "typeName": "AWS::Organizations::Organization",
+    "language": "java",
+    "runtime": "java8",
+    "entrypoint": "software.amazon.organizations.organization.HandlerWrapper::handleRequest",
+    "testEntrypoint": "software.amazon.organizations.organization.HandlerWrapper::testEntrypoint",
+    "settings": {
+        "version": false,
+        "subparser_name": null,
+        "verbose": 0,
+        "force": false,
+        "type_name": null,
+        "artifact_type": null,
+        "endpoint_url": null,
+        "region": null,
+        "target_schemas": [],
+        "namespace": [
+            "software",
+            "amazon",
+            "organizations",
+            "organization"
+        ],
+        "codegen_template_path": "guided_aws",
+        "protocolVersion": "2.0.0"
+    },
+    "executableEntrypoint": "software.amazon.organizations.organization.HandlerWrapperExecutable"
+}
