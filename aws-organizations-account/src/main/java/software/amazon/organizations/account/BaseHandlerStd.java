@@ -1,5 +1,6 @@
 package software.amazon.organizations.account;
 
+import com.amazonaws.SdkClientException;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedForDependencyException;
@@ -147,7 +148,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
                        || e instanceof ConflictException
         ) {
             errorCode = HandlerErrorCode.InvalidRequest;
-        } else if (e instanceof ServiceException) {
+        } else if (e instanceof ServiceException || e instanceof SdkClientException) {
             errorCode = HandlerErrorCode.ServiceInternalError;
         } else if (e instanceof TooManyRequestsException) {
             errorCode = HandlerErrorCode.Throttling;
