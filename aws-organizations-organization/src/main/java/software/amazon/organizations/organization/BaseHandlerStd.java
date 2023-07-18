@@ -1,5 +1,6 @@
 package software.amazon.organizations.organization;
 
+import com.amazonaws.SdkClientException;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
@@ -87,7 +88,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
             errorCode = HandlerErrorCode.ServiceLimitExceeded;
         } else if (e instanceof InvalidInputException || e instanceof OrganizationNotEmptyException) {
             errorCode = HandlerErrorCode.InvalidRequest;
-        } else if (e instanceof ServiceException) {
+        } else if (e instanceof ServiceException || e instanceof SdkClientException) {
             errorCode = HandlerErrorCode.ServiceInternalError;
         } else if (e instanceof TooManyRequestsException) {
             errorCode = HandlerErrorCode.Throttling;
