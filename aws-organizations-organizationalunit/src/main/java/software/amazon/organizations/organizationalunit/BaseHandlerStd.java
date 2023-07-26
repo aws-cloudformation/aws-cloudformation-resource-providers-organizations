@@ -32,9 +32,9 @@ import java.util.Random;
 
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     // ExponentialBackoffJitter Constants
-    private final double RANDOMIZATION_FACTOR = 0.5;
-    private final int BASE_DELAY = 15; // in seconds
-    private final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
+    private static final double RANDOMIZATION_FACTOR = 0.5;
+    private static final int BASE_DELAY = 15; // in seconds
+    private static final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
 
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(

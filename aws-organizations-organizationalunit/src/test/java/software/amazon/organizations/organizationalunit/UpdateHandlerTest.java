@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.ConstraintViolationException;
@@ -84,12 +85,12 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Collection<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
+        final Set<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
                 TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(previousResourceModel.getTags()),
                 TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(model.getTags())
         );
 
-        final List<String> tagsToRemove = UpdateHandler.getTagsToRemove(
+        final Set<String> tagsToRemove = UpdateHandler.getTagKeysToRemove(
                 TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(previousResourceModel.getTags()),
                 TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(model.getTags())
         );

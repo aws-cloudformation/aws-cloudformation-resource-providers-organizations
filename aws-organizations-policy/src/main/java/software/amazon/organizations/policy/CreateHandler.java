@@ -45,7 +45,7 @@ public class CreateHandler extends BaseHandlerStd {
         }
 
         logger.log(String.format("Entered %s create handler with account Id [%s], with Content [%s], Description [%s], Name [%s], Type [%s]",
-            ResourceModel.TYPE_NAME, request.getAwsAccountId(), model.getContent(), model.getDescription(), model.getName(), model.getType()));
+            ResourceModel.TYPE_NAME, request.getAwsAccountId(), content, model.getDescription(), model.getName(), model.getType()));
         return ProgressEvent.progress(model, callbackContext)
             .then(progress -> {
                 if (progress.getCallbackContext().isPolicyCreated()) {
@@ -99,7 +99,7 @@ public class CreateHandler extends BaseHandlerStd {
                 .makeServiceCall(this::attachPolicy)
                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> {
                     if (e instanceof DuplicatePolicyAttachmentException) {
-                        log.log(String.format("Got DuplicatePolicyAttachmentException when calling attachPolicy for "
+                        log.log(String.format("Got %s when calling attachPolicy for "
                                                      + "policy name [%s], targetId [%s]. Continuing with attach...",
                             e.getClass().getName(), policyName, targetId));
                         return ProgressEvent.progress(model1,context);

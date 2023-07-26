@@ -31,7 +31,7 @@ public class ReadHandler extends BaseHandlerStd {
         String ouId = model.getId();
 
         // Call DescribeOrganizationalUnit API
-        logger.log(String.format("Requesting DescribeOrganizationalUnit w/ OU id: %s.\n", ouId));
+        logger.log(String.format("Requesting DescribeOrganizationalUnit w/ OU id: %s.%n", ouId));
         return ProgressEvent.progress(model, callbackContext)
             .then(progress ->
                 awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::DescribeOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
@@ -60,7 +60,7 @@ public class ReadHandler extends BaseHandlerStd {
 
             String ouId = model.getId();
 
-            logger.log(String.format("Listing tags for OU id: %s.\n", ouId));
+            logger.log(String.format("Listing tags for OU id: %s.%n", ouId));
             return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::ListTagsForResource", orgsClient, model, callbackContext)
                 .translateToServiceRequest(resourceModel -> Translator.translateToListTagsForResourceRequest(ouId))
                 .makeServiceCall(this::listTagsForResource)
@@ -79,7 +79,7 @@ public class ReadHandler extends BaseHandlerStd {
 
             String ouId = model.getId();
 
-            logger.log(String.format("Listing parents for OU id: %s.\n", ouId));
+            logger.log(String.format("Listing parents for OU id: %s.%n", ouId));
             return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::ListParents", orgsClient, model, callbackContext)
                 .translateToServiceRequest(Translator::translateToListParentsRequest)
                 .makeServiceCall(this::listParents)

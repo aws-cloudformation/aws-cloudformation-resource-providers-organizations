@@ -39,10 +39,9 @@ public class ListHandler extends BaseHandlerStd {
         ListOrganizationalUnitsForParentRequest listOrganizationalUnitsForParentRequest =
             Translator.translateToListOrganizationalUnitsForParentRequest(request.getNextToken(), model);
 
-
         List<ResourceModel> models = new ArrayList<>();
         return awsClientProxy.initiate("AWS-Organizations-OrganizationUnits::ListOrganizationUnits", orgsClient, model, callbackContext)
-                .translateToServiceRequest(t -> Translator.translateToListOrganizationalUnitsForParentRequest(request.getNextToken(), model))
+                .translateToServiceRequest(t -> listOrganizationalUnitsForParentRequest)
                 .makeServiceCall(this::listOrganizationalUnits)
                 .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
                         handleErrorInGeneral(organizationsRequest, e, orgsClient, model, callbackContext, logger, Constants.Action.LIST_OU_FOR_PARENT, Constants.Handler.LIST))

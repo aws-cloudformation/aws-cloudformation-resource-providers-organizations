@@ -34,7 +34,7 @@ public class ReadHandler extends BaseHandlerStd {
         final ResourceModel model = request.getDesiredResourceState();
         String accountId = model.getAccountId();
 
-        logger.log(String.format("Requesting DescribeAccount w/ Account id: %s.\n", accountId));
+        logger.log(String.format("Requesting DescribeAccount w/ Account id: %s.%n", accountId));
         return ProgressEvent.progress(model, callbackContext)
                    .then(progress ->
                              awsClientProxy.initiate("AWS-Organizations-Account::Read::DescribeAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
@@ -72,7 +72,7 @@ public class ReadHandler extends BaseHandlerStd {
         final OrgsLoggerWrapper logger) {
 
         String accountId = model.getAccountId();
-        logger.log(String.format("Listing parents for account id: %s.\n", accountId));
+        logger.log(String.format("Listing parents for account id: %s.%n", accountId));
         return awsClientProxy.initiate("AWS-Organizations-Account::ListParents", orgsClient, model, callbackContext)
                    .translateToServiceRequest(Translator::translateToListParentsRequest)
                    .makeServiceCall(this::listParents)
@@ -96,7 +96,7 @@ public class ReadHandler extends BaseHandlerStd {
         final OrgsLoggerWrapper logger) {
 
         String accountId = model.getAccountId();
-        logger.log(String.format("Listing tags for account id: %s.\n", accountId));
+        logger.log(String.format("Listing tags for account id: %s.%n", accountId));
         return awsClientProxy.initiate("AWS-Organizations-Account::ListTagsForResource", orgsClient, model, callbackContext)
                    .translateToServiceRequest(resourceModel -> Translator.translateToListTagsForResourceRequest(model))
                    .makeServiceCall(this::listTagsForResource)

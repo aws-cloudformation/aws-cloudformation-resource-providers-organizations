@@ -15,7 +15,6 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -67,7 +66,10 @@ public class UpdateHandler extends BaseHandlerStd {
                         return ProgressEvent.progress(model, callbackContext);
                     });
             })
-            .then(progress -> handleTagging(awsClientProxy, model, callbackContext, model.getTags(), previousModel.getTags(), resourcePolicyId, orgsClient, logger))
+            .then(progress -> handleTagging(awsClientProxy, model, callbackContext,
+                                    convertResourcePolicyTagToOrganizationTag(model.getTags()),
+                                    convertResourcePolicyTagToOrganizationTag(previousModel.getTags()),
+                                    resourcePolicyId, orgsClient, logger))
             .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
@@ -75,23 +77,17 @@ public class UpdateHandler extends BaseHandlerStd {
             final AmazonWebServicesClientProxy awsClientProxy,
             final ResourceModel model,
             final CallbackContext callbackContext,
-            final Set<software.amazon.organizations.resourcepolicy.Tag> desiredTags,
-            final Set<software.amazon.organizations.resourcepolicy.Tag> previousTags,
+            final Set<Tag> desiredTags,
+            final Set<Tag> previousTags,
             final String resourcePolicyId,
             final ProxyClient<OrganizationsClient> orgsClient,
             final OrgsLoggerWrapper logger
     ) {
-        final Set<Tag> newTags = desiredTags == null ? Collections.emptySet() :
-            convertResourcePolicyTagToOrganizationTag(desiredTags);
-
-        final Set<Tag> existingTags = previousTags == null ? Collections.emptySet() :
-            convertResourcePolicyTagToOrganizationTag(previousTags);
-
         // Includes all old tags that do not exist in new tag list
-        final Set<String> tagsToRemove = getTagKeysToRemove(existingTags, newTags);
+        final Set<String> tagsToRemove = getTagKeysToRemove(previousTags, desiredTags);
 
         // Excluded all old tags that do exist in new tag list
-        final Set<Tag> tagsToAddOrUpdate = getTagsToAddOrUpdate(existingTags, newTags);
+        final Set<Tag> tagsToAddOrUpdate = getTagsToAddOrUpdate(previousTags, desiredTags);
 
         // Delete tags only if tagsToRemove is not empty
         if (!tagsToRemove.isEmpty()) {
@@ -119,6 +115,7 @@ public class UpdateHandler extends BaseHandlerStd {
 
     static Set<Tag> convertResourcePolicyTagToOrganizationTag(final Set<software.amazon.organizations.resourcepolicy.Tag> tags) {
         final Set<Tag> tagsToReturn = new HashSet<>();
+        if (tags == null) return tagsToReturn;
         for (software.amazon.organizations.resourcepolicy.Tag inputTag : tags) {
             Tag tag = Tag.builder()
                 .key(inputTag.getKey())

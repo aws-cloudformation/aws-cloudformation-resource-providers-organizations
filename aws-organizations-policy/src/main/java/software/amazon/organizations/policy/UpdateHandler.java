@@ -1,5 +1,6 @@
 package software.amazon.organizations.policy;
 
+import com.google.common.collect.Sets;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.AttachPolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DetachPolicyRequest;
@@ -20,12 +21,10 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+ import java.util.stream.Collectors;
 
 public class UpdateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
@@ -63,6 +62,8 @@ public class UpdateHandler extends BaseHandlerStd {
                 "Policy content had invalid JSON!");
         }
 
+        logger.log(String.format("Entered %s update handler with account Id [%s], with Content [%s], Description [%s], Name [%s], Type [%s]",
+            ResourceModel.TYPE_NAME, request.getAwsAccountId(), content, model.getDescription(), model.getName(), model.getType()));
         return ProgressEvent.progress(model, callbackContext)
             .then(progress ->{
                     if (progress.getCallbackContext().isPolicyUpdated()) {
@@ -83,7 +84,10 @@ public class UpdateHandler extends BaseHandlerStd {
 
             )
             .then(progress -> handleTargets(request, awsClientProxy, model, callbackContext, request.getDesiredResourceState().getTargetIds(), request.getPreviousResourceState().getTargetIds(), policyId, orgsClient, logger))
-            .then(progress -> handleTagging(awsClientProxy, model, callbackContext, request.getDesiredResourceState().getTags(), request.getPreviousResourceState().getTags(), policyId, orgsClient, logger))
+            .then(progress -> handleTagging(awsClientProxy, model, callbackContext,
+                                    convertPolicyTagToOrganizationTag(model.getTags()),
+                                    convertPolicyTagToOrganizationTag(previousModel.getTags()),
+                                    policyId, orgsClient, logger))
             .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
@@ -170,26 +174,20 @@ public class UpdateHandler extends BaseHandlerStd {
             final AmazonWebServicesClientProxy awsClientProxy,
             final ResourceModel model,
             final CallbackContext callbackContext,
-            final Set<software.amazon.organizations.policy.Tag> desiredTags,
-            final Set<software.amazon.organizations.policy.Tag> previousTags,
+            final Set<Tag> desiredTags,
+            final Set<Tag> previousTags,
             final String policyId,
             final ProxyClient<OrganizationsClient> orgsClient,
             final OrgsLoggerWrapper logger
     ) {
-        final Set<Tag> newTags = desiredTags == null ? Collections.emptySet() :
-            convertPolicyTagToOrganizationTag(desiredTags);
-
-        final Set<Tag> existingTags = previousTags == null ? Collections.emptySet() :
-            convertPolicyTagToOrganizationTag(previousTags);
-
         // Includes all old tags that do not exist in new tag list
-        final List<String> tagsToRemove = getTagsToRemove(existingTags, newTags);
+        final Set<String> tagsToRemove = getTagKeysToRemove(previousTags, desiredTags);
 
         // Excluded all old tags that do exist in new tag list
-        final Collection<Tag> tagsToAddOrUpdate = getTagsToAddOrUpdate(existingTags, newTags);
+        final Set<Tag> tagsToAddOrUpdate = getTagsToAddOrUpdate(previousTags, desiredTags);
 
         // Delete tags only if tagsToRemove is not empty
-        if (!CollectionUtils.isNullOrEmpty(tagsToRemove)) {
+        if (!tagsToRemove.isEmpty()) {
             logger.log(String.format("Calling untagResource API for policy [%s].", model.getName()));
             UntagResourceRequest untagResourceRequest = Translator.translateToUntagResourceRequest(tagsToRemove, policyId);
             try {
@@ -200,7 +198,7 @@ public class UpdateHandler extends BaseHandlerStd {
         }
 
         // Add tags only if tagsToAddOrUpdate is not empty.
-        if (!CollectionUtils.isNullOrEmpty(tagsToAddOrUpdate)) {
+        if (!tagsToAddOrUpdate.isEmpty()) {
             logger.log(String.format("Calling tagResource API for policy [%s].", model.getName()));
             TagResourceRequest tagResourceRequest = Translator.translateToTagResourceRequest(tagsToAddOrUpdate, policyId);
             try {
@@ -215,6 +213,7 @@ public class UpdateHandler extends BaseHandlerStd {
 
     static Set<Tag> convertPolicyTagToOrganizationTag(final Set<software.amazon.organizations.policy.Tag> tags) {
         final Set<Tag> tagsToReturn = new HashSet<>();
+        if (tags == null) return tagsToReturn;
         for (software.amazon.organizations.policy.Tag inputTag : tags) {
             Tag tag = Tag.builder()
                 .key(inputTag.getKey())
@@ -225,53 +224,20 @@ public class UpdateHandler extends BaseHandlerStd {
         return tagsToReturn;
     }
 
-    static List<String> getTagsToRemove(Set<Tag> existingTags, Set<Tag> newTags) {
-        List<String> tagsToRemove = new ArrayList<>();
-
-        Set<String> newTagsKeys = new HashSet<>();
-        for (Tag tag : newTags) {
-            newTagsKeys.add(tag.key());
-        }
-
-        // Check if the existingTag key is not in newTags keys. If so add that key to the list of those to remove
-        for (Tag tag : existingTags) {
-            if (!newTagsKeys.contains(tag.key())) {
-                tagsToRemove.add(tag.key());
-            }
-        }
-
-        return tagsToRemove;
+    static Set<String> getTagKeysToRemove(
+           Set<Tag> oldTags, Set<Tag> newTags) {
+        final Set<String> oldTagKeys = getTagKeySet(oldTags);
+        final Set<String> newTagKeys = getTagKeySet(newTags);
+        return Sets.difference(oldTagKeys, newTagKeys);
     }
 
-    static Collection<Tag> getTagsToAddOrUpdate(Set<Tag> existingTags, Set<Tag> newTags) {
-        Collection<Tag> tagsToAddOrUpdate = new ArrayList<>();
-
-        HashMap<String, Tag> keyToExistingTag = new HashMap<>();
-        for (Tag tag : existingTags) {
-            keyToExistingTag.put(tag.key(), tag);
-        }
-
-        HashMap<String, Tag> keyToNewTag = new HashMap<>();
-        for (Tag tag : newTags) {
-            keyToNewTag.put(tag.key(), tag);
-        }
-
-        // Find the new keys and add corresponding tag
-        for (String key : keyToNewTag.keySet()) {
-            if (!keyToExistingTag.containsKey(key)) {
-                tagsToAddOrUpdate.add(keyToNewTag.get(key));
-            }
-        }
-
-        // Find the keys w/ different values and add corresponding tag
-        for (String key : keyToNewTag.keySet()) {
-            if (keyToExistingTag.containsKey(key)) {
-                if (!keyToNewTag.get(key).value().equals(keyToExistingTag.get(key).value())) {
-                    tagsToAddOrUpdate.add(keyToNewTag.get(key));
-                }
-            }
-        }
-
-        return tagsToAddOrUpdate;
+    static Set<String> getTagKeySet(Set<Tag> oldTags) {
+        return oldTags.stream().map(Tag::key).collect(Collectors.toSet());
     }
+
+    static Set<Tag> getTagsToAddOrUpdate(
+           Set<Tag> oldTags, Set<Tag> newTags) {
+        return Sets.difference(newTags, oldTags);
+    }
+
 }
