@@ -23,7 +23,7 @@ public class DeleteHandler extends BaseHandlerStd {
         final ResourceModel model = request.getDesiredResourceState();
         String accountId = model.getAccountId();
 
-        logger.log(String.format("Requesting CloseAccount w/ account id: %s.\n", accountId));
+        logger.log(String.format("Requesting CloseAccount w/ account id: %s.%n", accountId));
         return ProgressEvent.progress(model, callbackContext)
                    .then(progress ->
                              awsClientProxy.initiate("AWS-Organizations-Account::Delete::CloseAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())

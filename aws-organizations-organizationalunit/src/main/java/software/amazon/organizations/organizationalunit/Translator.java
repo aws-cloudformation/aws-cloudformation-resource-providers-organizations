@@ -67,14 +67,14 @@ public class Translator {
                 .build();
     }
 
-    static TagResourceRequest translateToTagResourceRequest(Collection<Tag> tags, String organizationalUnitId) {
+    static TagResourceRequest translateToTagResourceRequest(Set<Tag> tags, String organizationalUnitId) {
         return TagResourceRequest.builder()
                 .resourceId(organizationalUnitId)
                 .tags(tags)
                 .build();
     }
 
-    static UntagResourceRequest translateToUntagResourceRequest(List<String> tagKeys, String organizationalUnitId) {
+    static UntagResourceRequest translateToUntagResourceRequest(Set<String> tagKeys, String organizationalUnitId) {
         return UntagResourceRequest.builder()
                 .resourceId(organizationalUnitId)
                 .tagKeys(tagKeys)

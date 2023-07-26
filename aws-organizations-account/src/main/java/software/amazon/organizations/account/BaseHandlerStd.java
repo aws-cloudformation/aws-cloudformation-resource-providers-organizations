@@ -35,20 +35,20 @@ import java.util.Random;
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected static final String GOV_CLOUD_PARTITION = "aws-us-gov";
     // CreateAccount Constants
-    protected final String CREATE_ACCOUNT_FAILURE_REASON_EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS";
-    protected final String CREATE_ACCOUNT_FAILURE_REASON_GOVCLOUD_ACCOUNT_ALREADY_EXISTS = "GOVCLOUD_ACCOUNT_ALREADY_EXISTS";
-    protected final String CREATE_ACCOUNT_FAILURE_REASON_ACCOUNT_LIMIT_EXCEEDED = "ACCOUNT_LIMIT_EXCEEDED";
-    protected final String CREATE_ACCOUNT_FAILURE_REASON_INVALID_ADDRESS = "INVALID_ADDRESS";
-    protected final String CREATE_ACCOUNT_FAILURE_REASON_INVALID_EMAIL = "INVALID_EMAIL";
-    protected final String ACCOUNT_CREATION_STATUS_SUCCEEDED = "SUCCEEDED";
-    protected final String ACCOUNT_CREATION_STATUS_FAILED = "FAILED";
+    protected static final String CREATE_ACCOUNT_FAILURE_REASON_EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS";
+    protected static final String CREATE_ACCOUNT_FAILURE_REASON_GOVCLOUD_ACCOUNT_ALREADY_EXISTS = "GOVCLOUD_ACCOUNT_ALREADY_EXISTS";
+    protected static final String CREATE_ACCOUNT_FAILURE_REASON_ACCOUNT_LIMIT_EXCEEDED = "ACCOUNT_LIMIT_EXCEEDED";
+    protected static final String CREATE_ACCOUNT_FAILURE_REASON_INVALID_ADDRESS = "INVALID_ADDRESS";
+    protected static final String CREATE_ACCOUNT_FAILURE_REASON_INVALID_EMAIL = "INVALID_EMAIL";
+    protected static final String ACCOUNT_CREATION_STATUS_SUCCEEDED = "SUCCEEDED";
+    protected static final String ACCOUNT_CREATION_STATUS_FAILED = "FAILED";
     // ExponentialBackoffJitter Constants
-    protected final double RANDOMIZATION_FACTOR = 0.5;
-    protected final double RANDOMIZATION_FACTOR_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 0.2;
-    protected final int BASE_DELAY = 15; // in second
-    protected final int BASE_DELAY_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 2500; // in millisecond
-    private final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
-    protected final int MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 5;
+    protected static final double RANDOMIZATION_FACTOR = 0.5;
+    protected static final double RANDOMIZATION_FACTOR_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 0.2;
+    protected static final int BASE_DELAY = 15; // in second
+    protected static final int BASE_DELAY_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 2500; // in millisecond
+    private static final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
+    protected static final int MAX_NUMBER_OF_ATTEMPT_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 5;
 
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(

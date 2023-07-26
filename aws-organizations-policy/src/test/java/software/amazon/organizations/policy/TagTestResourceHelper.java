@@ -84,7 +84,7 @@ public class TagTestResourceHelper {
         return set1.equals(set2);
     }
 
-    static boolean correctTagsInTagAndUntagRequests(Collection<Tag> tagsToAddOrUpdate, List<String> tagsToRemove) {
+    static boolean correctTagsInTagAndUntagRequests(Set<Tag> tagsToAddOrUpdate, Set<String> tagsToRemove) {
         boolean correctTagsInRequests = true;
 
         Set<String> tagsToAddOrUpdateKeys = new HashSet<>();

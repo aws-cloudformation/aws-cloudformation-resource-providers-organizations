@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -295,11 +296,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandlerToTest.handleRequest(mockAwsClientproxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Collection<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
+        final Set<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
             TagTestResourceHelper.translatePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
             TagTestResourceHelper.translatePolicyTagsToOrganizationTags(updatedResourceModel.getTags()));
 
-        final List<String> tagKeysToRemove = UpdateHandler.getTagsToRemove(
+        final Set<String> tagKeysToRemove = UpdateHandler.getTagKeysToRemove(
             TagTestResourceHelper.translatePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
             TagTestResourceHelper.translatePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
         );

@@ -10,8 +10,7 @@ import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 
 public class UpdateHandler extends BaseHandlerStd {
-    private OrgsLoggerWrapper log;
-    private final String FEATURE_MODE_ALL = "ALL";
+    private static final String FEATURE_MODE_ALL = "ALL";
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
             final AmazonWebServicesClientProxy awsClientProxy,
@@ -20,7 +19,6 @@ public class UpdateHandler extends BaseHandlerStd {
             final ProxyClient<OrganizationsClient> orgsClient,
             final OrgsLoggerWrapper logger) {
 
-        this.log = logger;
         logger.log(String.format("Entered %s update handler for Organization resource type with account Id [%s].", ResourceModel.TYPE_NAME, request.getAwsAccountId()));
 
         final ResourceModel previousModel = request.getPreviousResourceState();

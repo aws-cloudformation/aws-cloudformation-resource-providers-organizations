@@ -1,12 +1,13 @@
 ## AWS Cloudformation Resource Providers for AWS Organizations
 
-This repository contains AWS-owned resource providers for the `AWS::Organizations::*` namespace. There are three resources supported:
+This repository contains AWS-owned resource providers for the `AWS::Organizations::*` namespace. The following are the resources supported:
 
 - [AWS::Organizations::Account](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-organizations-account.html)
 - [AWS::Organizations::OrganizationalUnit](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-organizations-organizationalunit.html)
 - [AWS::Organizations::Policy](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-organizations-policy.html)
 - [AWS::Organizations::ResourcePolicy](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-organizations-resourcepolicy.html)
 - [AWS::Organizations::Organization](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-organizations-organization.html)
+
 ## Usage
 
 Instructions on repository setup and local development can be found in the [Contributing Guidelines](https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-organizations/blob/main/CONTRIBUTING.md).

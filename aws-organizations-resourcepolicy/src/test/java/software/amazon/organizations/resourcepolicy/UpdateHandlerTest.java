@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRe
 import software.amazon.awssdk.services.organizations.model.PutResourcePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.PutResourcePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.ServiceException;
+import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.TooManyRequestsException;
 import software.amazon.awssdk.services.organizations.model.UnsupportedApiEndpointException;
@@ -133,7 +134,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Set<software.amazon.awssdk.services.organizations.model.Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
+        final Set<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
             TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
             TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
         );
@@ -172,7 +173,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Set<software.amazon.awssdk.services.organizations.model.Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
+        final Set<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
             TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
             TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
         );
@@ -211,7 +212,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Set<software.amazon.awssdk.services.organizations.model.Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
+        final Set<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
             TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
             TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
         );

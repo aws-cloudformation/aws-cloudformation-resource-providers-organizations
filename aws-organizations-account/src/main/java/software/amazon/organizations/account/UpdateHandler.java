@@ -73,13 +73,13 @@ public class UpdateHandler extends BaseHandlerStd {
         String accountId = model.getAccountId();
         String rootID = null;
 
-        if (previousParentIds != null ^ parentIds != null){
+        if (previousParentIds != null ^ parentIds != null) {
             logger.log(String.format("%s is missing a parentId for account [%s]. Retrieving root as parent", previousParentIds == null ? "Previous model" : "New model", accountId));
             ListRootsRequest listRootsRequest = Translator.translateToListRootsRequest();
             ListRootsResponse listRootsResponse = awsClientProxy.injectCredentialsAndInvokeV2(listRootsRequest, orgsClient.client()::listRoots);
             rootID = listRootsResponse.roots().iterator().next().id();
         }
-        else if ((previousParentIds == null && parentIds == null) || previousParentIds.equals(parentIds)){
+        else if ((previousParentIds == null && parentIds == null) || (previousParentIds != null && previousParentIds.equals(parentIds))) {
             logger.log(String.format("Updated parent id is the same for account [%s]. Skip move account.", accountId));
             return ProgressEvent.progress(model, callbackContext);
         }

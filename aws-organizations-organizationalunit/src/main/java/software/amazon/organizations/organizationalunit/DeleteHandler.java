@@ -26,7 +26,7 @@ public class DeleteHandler extends BaseHandlerStd {
         String ouId = model.getId();
 
         // Call DeleteOrganizationalUnit API
-        logger.log(String.format("Requesting DeleteOrganizationalUnit w/ id: %s.\n", ouId));
+        logger.log(String.format("Requesting DeleteOrganizationalUnit w/ id: %s.%n", ouId));
         return ProgressEvent.progress(model, callbackContext)
             .then(progress ->
                 awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::DeleteOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())

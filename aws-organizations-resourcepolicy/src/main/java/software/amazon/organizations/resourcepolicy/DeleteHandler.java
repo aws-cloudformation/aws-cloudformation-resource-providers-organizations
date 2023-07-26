@@ -23,7 +23,7 @@ public class DeleteHandler extends BaseHandlerStd {
         final ResourceModel model = request.getDesiredResourceState();
         String id = model.getId();
 
-        logger.log(String.format("Requesting DeleteResourcePolicy w/ resourcePolicy Id : %s.\n", id));
+        logger.log(String.format("Requesting DeleteResourcePolicy w/ resourcePolicy Id : %s.%n", id));
         return ProgressEvent.progress(model, callbackContext)
                    .then(progress ->
                              awsClientProxy.initiate("AWS-Organizations-ResourcePolicy::DeleteResourcePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())

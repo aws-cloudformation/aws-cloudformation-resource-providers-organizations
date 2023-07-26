@@ -112,14 +112,14 @@ public class Translator {
         return tagsToReturn;
     }
 
-    static TagResourceRequest translateToTagResourceRequest(Collection<Tag> tags, String policyId) {
+    static TagResourceRequest translateToTagResourceRequest(Set<Tag> tags, String policyId) {
         return TagResourceRequest.builder()
             .resourceId(policyId)
             .tags(tags)
             .build();
     }
 
-    static UntagResourceRequest translateToUntagResourceRequest(List<String> tagKeys, String policyId) {
+    static UntagResourceRequest translateToUntagResourceRequest(Set<String> tagKeys, String policyId) {
         return UntagResourceRequest.builder()
             .resourceId(policyId)
             .tagKeys(tagKeys)
