@@ -30,6 +30,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     private static final int BASE_DELAY = 15; //in seconds
     private static final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
 
+    protected static final int EVENTUAL_CONSISTENCY_DELAY_SECONDS = 1; //in seconds
+
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
             final AmazonWebServicesClientProxy proxy,
