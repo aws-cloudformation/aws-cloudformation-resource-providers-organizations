@@ -94,7 +94,10 @@ public class CreateHandlerTest extends AbstractTestBase {
                 .build();
         when(mockProxyClient.client().describeOrganization(any(DescribeOrganizationRequest.class))).thenReturn(describeOrganizationResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        CallbackContext context = new CallbackContext();
+        context.setPropagationDelay(true);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
 
         final ResourceModel resultModel = generateResourceModel();
 
