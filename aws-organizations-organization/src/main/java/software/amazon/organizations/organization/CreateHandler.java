@@ -29,15 +29,36 @@ public class CreateHandler extends BaseHandlerStd {
         logger.log(String.format("Entered %s create handler with account Id [%s] and feature set: [%s]", ResourceModel.TYPE_NAME, request.getAwsAccountId(), model.getFeatureSet()));
 
         return ProgressEvent.progress(model, callbackContext)
-                .then(progress ->
-                        awsClientProxy.initiate("AWS-Organizations-Organization::CreateOrganization", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                                .translateToServiceRequest(Translator::translateToCreateRequest)
-                                .makeServiceCall(this::createOrganization)
-                                .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleErrorInGeneral(
-                                        organizationsRequest, e, request, proxyClient1, model1, context, logger, OrganizationConstants.Action.CREATE_ORG, OrganizationConstants.Handler.CREATE))
+                .then(progress -> {
+                            if (progress.getCallbackContext().isOrgCreated()) {
+                                log.log(String.format("Organization has already been created in previous handler invoke with org ID: [%s] , skip create organization", model.getId()));
+                                return ProgressEvent.progress(model, callbackContext);
+                            }
+                            return awsClientProxy.initiate("AWS-Organizations-Organization::CreateOrganization", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
+                                    .translateToServiceRequest(Translator::translateToCreateRequest)
+                                    .makeServiceCall(this::createOrganization)
+                                    .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleErrorInGeneral(
+                                            organizationsRequest, e, request, proxyClient1, model1, context, logger, OrganizationConstants.Action.CREATE_ORG, OrganizationConstants.Handler.CREATE))
 
-                                .progress()
+                                    .done(createOrganizationResponse -> {
+                                        logger.log(String.format("Created Organization with Id: [%s].", createOrganizationResponse.organization().id()));
+                                        model.setId(createOrganizationResponse.organization().id());
+                                        progress.getCallbackContext().setOrgCreated(true);
+                                        return ProgressEvent.progress(model, callbackContext);
+                                    });
+                        }
                 )
+                // After the create succeeds, Read calls which immediately follow are failing intermittently due
+                // to Propagation Delays.
+                // Hence, introducing a wait of 1 second.
+                .then(progress -> {
+                    if (progress.getCallbackContext().isPropagationDelay()) {
+                        return ProgressEvent.progress(progress.getResourceModel(), progress.getCallbackContext());
+                    }
+                    progress.getCallbackContext().setPropagationDelay(true);
+                    return ProgressEvent.defaultInProgressHandler(progress.getCallbackContext(),
+                            EVENTUAL_CONSISTENCY_DELAY_SECONDS, progress.getResourceModel());
+                })
                 .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
