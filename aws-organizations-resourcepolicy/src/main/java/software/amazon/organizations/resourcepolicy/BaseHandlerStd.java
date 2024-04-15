@@ -1,6 +1,6 @@
 package software.amazon.organizations.resourcepolicy;
 
-import com.amazonaws.SdkClientException;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AwsOrganizationsNotInUseException;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
