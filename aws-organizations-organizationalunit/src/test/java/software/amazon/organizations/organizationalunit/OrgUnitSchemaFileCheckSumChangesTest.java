@@ -13,7 +13,7 @@ import java.security.NoSuchAlgorithmException;
 
 import org.junit.jupiter.api.BeforeAll;
 
-import javax.xml.bind.DatatypeConverter;
+import org.apache.commons.codec.binary.Hex;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,7 +49,7 @@ public class OrgUnitSchemaFileCheckSumChangesTest extends AbstractTestBase {
       logger.info("No such algorithm found. {}", e.toString());
     }
     // Convert the byte array to a Hex String for matching.
-    String actualHexString = DatatypeConverter.printHexBinary(hashedOuSchema);
+    String actualHexString = Hex.encodeHexString(hashedOuSchema, false); // false to return upper case
     assertThat(actualHexString).isEqualTo(OU_SCHEMA_SHA256_HEXSTRING);
   }
 }

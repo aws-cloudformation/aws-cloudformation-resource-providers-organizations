@@ -1,0 +1,56 @@
+# This workflow will build a Java project with Maven
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Java CI with Maven for AWS Organizations resources
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  merge_group:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+      - name: Setup Python
+        uses: actions/setup-python@v2.2.2
+        with:
+          python-version: 3.7
+      - name: Install Python packages
+        run: pip install pre-commit cloudformation-cli cloudformation-cli-java-plugin
+      - name: Run pre-commit
+        run: pre-commit run --all-files
+      - name: Verify AWS::Organizations::Account
+        run: |
+          cd "${GITHUB_WORKSPACE}/aws-organizations-account"
+          mvn clean verify --no-transfer-progress
+          cat rpdk.log
+      - name: Verify AWS::Organizations::Organization
+        run: |
+          cd "${GITHUB_WORKSPACE}/aws-organizations-organization"
+          mvn clean verify --no-transfer-progress
+          cat rpdk.log
+      - name: Verify AWS::Organizations::OrganizationalUnit
+        run: |
+          cd "${GITHUB_WORKSPACE}/aws-organizations-organizationalunit"
+          mvn clean verify --no-transfer-progress
+          cat rpdk.log
+      - name: Verify AWS::Organizations::Policy
+        run: |
+          cd "${GITHUB_WORKSPACE}/aws-organizations-policy"
+          mvn clean verify --no-transfer-progress
+          cat rpdk.log
+      - name: Verify AWS::Organizations::ResourcePolicy
+        run: |
+          cd "${GITHUB_WORKSPACE}/aws-organizations-resourcepolicy"
+          mvn clean verify --no-transfer-progress
+          cat rpdk.log

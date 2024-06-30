@@ -14,7 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import org.junit.jupiter.api.BeforeAll;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
-import javax.xml.bind.DatatypeConverter;
+import org.apache.commons.codec.binary.Hex;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,7 +50,7 @@ public class PolicySchemaFileCheckSumChangesTest extends AbstractTestBase {
       logger.info("No such algorithm found. {}", e.toString());
     }
     // Convert the byte array to a Hex String for matching.
-    String actualHexString = DatatypeConverter.printHexBinary(hashedPolicySchema);
+    String actualHexString = Hex.encodeHexString(hashedPolicySchema, false); // false to return upper case
     assertThat(actualHexString).isEqualTo(POLICY_SCHEMA_SHA256_HEXSTRING);
   }
 }

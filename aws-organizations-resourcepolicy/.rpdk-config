@@ -2,7 +2,7 @@
     "artifact_type": "RESOURCE",
     "typeName": "AWS::Organizations::ResourcePolicy",
     "language": "java",
-    "runtime": "java8",
+    "runtime": "java17",
     "entrypoint": "software.amazon.organizations.resourcepolicy.HandlerWrapper::handleRequest",
     "testEntrypoint": "software.amazon.organizations.resourcepolicy.HandlerWrapper::testEntrypoint",
     "settings": {

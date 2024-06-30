@@ -2,7 +2,7 @@
     "artifact_type": "RESOURCE",
     "typeName": "AWS::Organizations::Organization",
     "language": "java",
-    "runtime": "java8",
+    "runtime": "java17",
     "entrypoint": "software.amazon.organizations.organization.HandlerWrapper::handleRequest",
     "testEntrypoint": "software.amazon.organizations.organization.HandlerWrapper::testEntrypoint",
     "settings": {
