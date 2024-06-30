@@ -10,7 +10,7 @@ information to effectively respond to your bug report or contribution.
 
 1. Follow the CloudFormation CLI environment setup instructions [here](https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/what-is-cloudformation-cli.html#resource-type-setup).
 2. Install version `3.8.*` of Apache Maven [here](https://maven.apache.org/install.html).
-3. Install Java 8 [here](https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html).
+3. Install Java 17 [here](https://www.oracle.com/java/technologies/downloads/#java17).
 4. Install pre-commit [here](https://pre-commit.com/#install)
 5. Create a new fork of the main repository by following [these instructions](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo).
 6. From the root of the resource package (e.g aws-organizations-account) run `mvn clean package` to test and build the code

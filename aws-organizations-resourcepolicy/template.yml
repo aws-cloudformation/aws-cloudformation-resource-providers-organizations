@@ -12,12 +12,12 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: software.amazon.organizations.resourcepolicy.HandlerWrapper::handleRequest
-      Runtime: java8
+      Runtime: java17
       CodeUri: ./target/aws-organizations-resourcepolicy-handler-1.0-SNAPSHOT.jar
 
   TestEntrypoint:
     Type: AWS::Serverless::Function
     Properties:
       Handler: software.amazon.organizations.resourcepolicy.HandlerWrapper::testEntrypoint
-      Runtime: java8
+      Runtime: java17
       CodeUri: ./target/aws-organizations-resourcepolicy-handler-1.0-SNAPSHOT.jar

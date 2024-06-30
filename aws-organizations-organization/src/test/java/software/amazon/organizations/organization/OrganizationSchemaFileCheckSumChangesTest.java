@@ -14,7 +14,7 @@ import java.security.NoSuchAlgorithmException;
 
 import org.junit.jupiter.api.BeforeAll;
 
-import javax.xml.bind.DatatypeConverter;
+import org.apache.commons.codec.binary.Hex;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,7 +48,7 @@ public class OrganizationSchemaFileCheckSumChangesTest extends AbstractTestBase 
             logger.info("No such algorithm found. {}", e.toString());
         }
         // Convert the byte array to a Hex String for matching.
-        String actualHexString = DatatypeConverter.printHexBinary(hashedOrganizationSchema);
+        String actualHexString = Hex.encodeHexString(hashedOrganizationSchema, false); // false to return upper case
         assertThat(actualHexString).isEqualTo(ORGANIZATION_SCHEMA_SHA256_HEXSTRING);
     }
 }
