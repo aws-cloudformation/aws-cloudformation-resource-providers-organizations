@@ -43,6 +43,7 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     protected static final String ACCOUNT_CREATION_STATUS_SUCCEEDED = "SUCCEEDED";
     protected static final String ACCOUNT_CREATION_STATUS_FAILED = "FAILED";
     // ExponentialBackoffJitter Constants
+    private static final Random RANDOM = new Random();
     protected static final double RANDOMIZATION_FACTOR = 0.5;
     protected static final double RANDOMIZATION_FACTOR_FOR_DESCRIBE_CREATE_ACCOUNT_STATUS = 0.2;
     protected static final int BASE_DELAY = 15; // in second
@@ -162,9 +163,8 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     }
 
     public final int computeDelayBeforeNextRetry(int retryAttempt, int baseDelay, double randomizationFactor) {
-        Random random = new Random();
         int exponentialBackoff = (int) Math.pow(2, retryAttempt) * baseDelay;
-        int jitter = random.nextInt((int) Math.ceil(exponentialBackoff * randomizationFactor));
+        int jitter = RANDOM.nextInt((int) Math.ceil(exponentialBackoff * randomizationFactor));
         return exponentialBackoff + jitter;
     }
 
