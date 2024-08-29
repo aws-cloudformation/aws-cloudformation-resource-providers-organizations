@@ -26,7 +26,6 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import java.util.Random;
 
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
-    private static final Random RANDOM = new Random();
     private static final double RANDOMIZATION_FACTOR = 0.5;
     private static final int BASE_DELAY = 15; //in seconds
     private static final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
@@ -126,8 +125,9 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     }
 
     public final int computeDelayBeforeNextRetry(int retryAttempt) {
+        Random random = new Random();
         int exponentialBackoff = (int) Math.pow(2, retryAttempt) * BASE_DELAY;
-        int jitter = RANDOM.nextInt((int) Math.ceil(exponentialBackoff * RANDOMIZATION_FACTOR));
+        int jitter = random.nextInt((int) Math.ceil(exponentialBackoff * RANDOMIZATION_FACTOR));
         return exponentialBackoff + jitter;
     }
 
