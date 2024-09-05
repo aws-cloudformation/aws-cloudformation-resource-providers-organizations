@@ -323,13 +323,13 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceModel model = generateCreateResourceModel();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                                                                  .desiredResourceState(model)
-                                                                  .build();
+                .desiredResourceState(model)
+                .build();
 
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
         final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = DescribeCreateAccountStatusResponse.builder()
-                                                                                            .createAccountStatus(CreateAccountStatusFailedWithInternalFailure)
-                                                                                            .build();
+                .createAccountStatus(CreateAccountStatusFailedWithUnknownFailure)
+                .build();
 
         when(mockProxyClient.client().createAccount(any(CreateAccountRequest.class))).thenReturn(createAccountResponse);
         when(mockProxyClient.client().describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class))).thenReturn(describeCreateAccountStatusResponse);
@@ -340,6 +340,39 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.GeneralServiceException);
+        assertThat(response.getResourceModel().getAccountId()).isNull();
+        assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
+        assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
+        assertThat(response.getResourceModel().getParentIds()).isEqualTo(TEST_PARENT_IDS);
+        assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
+
+        verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
+        verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
+        verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
+    }
+
+    @Test
+    public void handleRequest_FailedWithCfnServiceInternalError() {
+        final ResourceModel model = generateCreateResourceModel();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
+        final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = DescribeCreateAccountStatusResponse.builder()
+                .createAccountStatus(CreateAccountStatusFailedWithInternalFailure)
+                .build();
+
+        when(mockProxyClient.client().createAccount(any(CreateAccountRequest.class))).thenReturn(createAccountResponse);
+        when(mockProxyClient.client().describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class))).thenReturn(describeCreateAccountStatusResponse);
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNotNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
         assertThat(response.getResourceModel().getAccountId()).isNull();
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
         assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
