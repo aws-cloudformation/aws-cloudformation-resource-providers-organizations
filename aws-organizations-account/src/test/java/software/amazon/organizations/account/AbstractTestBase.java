@@ -39,6 +39,7 @@ public class AbstractTestBase {
     protected static final String ACCOUNT_LIMIT_EXCEEDED = "ACCOUNT_LIMIT_EXCEEDED";
     protected static final String INVALID_EMAIL = "INVALID_EMAIL";
     protected static final String INTERNAL_FAILURE = "INTERNAL_FAILURE";
+    protected static final String UNKNOWN_FAILURE = "UNKNOWN_FAILURE";
     protected static final String CREATE_ACCOUNT_STATUS_ID = "car-123456789023";
     protected static final Instant REQUESTED_TIMESTAMP = Instant.parse("2017-02-03T10:37:30.00Z");
     protected static final Instant COMPLETED_TIMESTAMP = Instant.parse("2017-02-03T10:47:30.00Z");
@@ -86,11 +87,18 @@ public class AbstractTestBase {
                                                                                                      .build();
 
     protected static final CreateAccountStatus CreateAccountStatusFailedWithInternalFailure = CreateAccountStatus.builder()
-                                                                                                  .failureReason(INTERNAL_FAILURE)
-                                                                                                  .id(CREATE_ACCOUNT_STATUS_ID)
-                                                                                                  .state(FAILED)
-                                                                                                  .requestedTimestamp(REQUESTED_TIMESTAMP)
-                                                                                                  .build();
+                                                                                                    .failureReason(INTERNAL_FAILURE)
+                                                                                                    .id(CREATE_ACCOUNT_STATUS_ID)
+                                                                                                    .state(FAILED)
+                                                                                                    .requestedTimestamp(REQUESTED_TIMESTAMP)
+                                                                                                    .build();
+
+    protected static final CreateAccountStatus CreateAccountStatusFailedWithUnknownFailure = CreateAccountStatus.builder()
+                                                                                                    .failureReason(UNKNOWN_FAILURE)
+                                                                                                    .id(CREATE_ACCOUNT_STATUS_ID)
+                                                                                                    .state(FAILED)
+                                                                                                    .requestedTimestamp(REQUESTED_TIMESTAMP)
+                                                                                                    .build();
 
     protected static final CreateAccountStatus CreateAccountStatusSucceeded = CreateAccountStatus.builder()
                                                                                   .accountId(TEST_ACCOUNT_ID)

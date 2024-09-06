@@ -146,17 +146,30 @@ public class CreateHandler extends BaseHandlerStd {
         String errMsg = String.format("Account creation failed with reason [%s] for request id: %s", failureReason, callbackContext.getCreateAccountRequestId());
         logger.log(errMsg);
 
-        switch (failureReason) {
-            case CREATE_ACCOUNT_FAILURE_REASON_EMAIL_ALREADY_EXISTS:
-            case CREATE_ACCOUNT_FAILURE_REASON_GOVCLOUD_ACCOUNT_ALREADY_EXISTS:
-                return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists, errMsg);
-            case CREATE_ACCOUNT_FAILURE_REASON_ACCOUNT_LIMIT_EXCEEDED:
-                return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.ServiceLimitExceeded, errMsg);
-            case CREATE_ACCOUNT_FAILURE_REASON_INVALID_ADDRESS:
-            case CREATE_ACCOUNT_FAILURE_REASON_INVALID_EMAIL:
-                return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest, errMsg);
+        HandlerErrorCode errorCode = HandlerErrorCode.GeneralServiceException;
+        if (failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_EMAIL_ALREADY_EXISTS) ||
+                failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_GOVCLOUD_ACCOUNT_ALREADY_EXISTS)
+        ) {
+            errorCode = HandlerErrorCode.AlreadyExists;
+        } else if (failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_ACCOUNT_LIMIT_EXCEEDED)) {
+            errorCode = HandlerErrorCode.ServiceLimitExceeded;
+        } else if (failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_INTERNAL_FAILURE)) {
+            errorCode = HandlerErrorCode.ServiceInternalError;
+        } else if (failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_INVALID_ADDRESS) ||
+                failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_INVALID_EMAIL) ||
+                failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_FAILED_BUSINESS_VALIDATION) ||
+                failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_IDENTITY_INVALID_BUSINESS_VALIDATION) ||
+                failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_INVALID_PAYMENT_INSTRUMENT) ||
+                failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_MISSING_BUSINESS_VALIDATION) ||
+                failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_MISSING_PAYMENT_INSTRUMENT) ||
+                failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_PENDING_BUSINESS_VALIDATION) ||
+                failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_UNKNOWN_BUSINESS_VALIDATION) ||
+                failureReason.equals(CREATE_ACCOUNT_FAILURE_REASON_CONCURRENT_ACCOUNT_MODIFICATION)
+        ) {
+            errorCode = HandlerErrorCode.InvalidRequest;
         }
-        return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.GeneralServiceException, errMsg);
+        logger.log(String.format("[Exception] ProgressEvent failed in account creation, translated FailureReason: [%s] to CloudFormation error code: [%s].", failureReason, errorCode));
+        return ProgressEvent.failed(model, callbackContext, errorCode, errMsg);
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> moveAccount(
