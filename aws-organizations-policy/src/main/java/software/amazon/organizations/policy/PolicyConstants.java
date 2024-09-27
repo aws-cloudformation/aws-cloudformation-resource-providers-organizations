@@ -6,7 +6,8 @@ public class PolicyConstants {
         AISERVICES_OPT_OUT_POLICY("AISERVICES_OPT_OUT_POLICY"),
         BACKUP_POLICY("BACKUP_POLICY"),
         SERVICE_CONTROL_POLICY("SERVICE_CONTROL_POLICY"),
-        TAG_POLICY("TAG_POLICY");
+        TAG_POLICY("TAG_POLICY"),
+        CHATBOT_POLICY("CHATBOT_POLICY");
 
         private final String policyType;
 
