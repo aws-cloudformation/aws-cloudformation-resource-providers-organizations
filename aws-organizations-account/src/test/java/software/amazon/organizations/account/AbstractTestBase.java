@@ -49,6 +49,8 @@ public class AbstractTestBase {
     protected static final String TEST_NEXT_TOKEN = "mockNextTokenItem";
     protected static final String TEST_JOINED_METHOD = "CREATED";
     protected static final Instant TEST_JOINED_TIMESTAMP = Instant.parse("2017-02-03T10:47:30.00Z");
+    protected static final String ACCOUNT_JSON_SCHEMA_FILE_NAME = "aws-organizations-account.json";
+    protected static final String ACCOUNT_SCHEMA_SHA256_HEXSTRING = "C7FB7B74668A4F320299F978A5CE04E6B7952EC1B8D734D46A1AF75EFA6E2BD0";
 
     protected static final DescribeAccountResponse describeAccountResponse = DescribeAccountResponse.builder().account(Account.builder()
                                                                                                           .arn(TEST_ACCOUNT_ARN)

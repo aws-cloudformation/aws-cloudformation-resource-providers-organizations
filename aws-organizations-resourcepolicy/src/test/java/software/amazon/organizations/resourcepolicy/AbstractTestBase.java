@@ -49,7 +49,7 @@ public class AbstractTestBase {
   protected static final Map<String, Object> TEST_RESOURCEPOLICY_CONTENT_JSON = convertStringToJsonObject(TEST_RESOURCEPOLICY_CONTENT);
   protected static final Map<String, Object> TEST_RESOURCEPOLICY_UPDATED_CONTENT_JSON = convertStringToJsonObject(TEST_RESOURCEPOLICY_UPDATED_CONTENT);
   protected static final String TEST_NEXT_TOKEN = "mockNextTokenItem";
-  protected static final String RESOURCE_POLICY_SCHEMA_SHA256_HEXSTRING = "95A60E71BAFB423D08B4B465782CA3225FB500ED3160ECCEDA0E00FE7628D6C1";
+  protected static final String RESOURCE_POLICY_SCHEMA_SHA256_HEXSTRING = "0051A05AAD76896A301617BBDDD7053A20024CD6237BFDA005BD3B824D0C583B";
   protected static final String RESOURCE_POLICY_JSON_SCHEMA_FILE_NAME = "aws-organizations-resourcepolicy.json";
 
   protected static final Credentials MOCK_CREDENTIALS;
