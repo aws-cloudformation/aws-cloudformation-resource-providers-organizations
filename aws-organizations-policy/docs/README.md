@@ -63,7 +63,7 @@ _Required_: Yes
 
 _Type_: String
 
-_Allowed Values_: <code>SERVICE_CONTROL_POLICY</code> | <code>AISERVICES_OPT_OUT_POLICY</code> | <code>BACKUP_POLICY</code> | <code>TAG_POLICY</code> | <code>CHATBOT_POLICY</code>
+_Allowed Values_: <code>SERVICE_CONTROL_POLICY</code> | <code>AISERVICES_OPT_OUT_POLICY</code> | <code>BACKUP_POLICY</code> | <code>TAG_POLICY</code> | <code>CHATBOT_POLICY</code> | <code>RESOURCE_CONTROL_POLICY</code>
 
 _Update requires_: [Replacement](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-replacement)
 
