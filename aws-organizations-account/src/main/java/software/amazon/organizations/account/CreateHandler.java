@@ -1,26 +1,29 @@
 package software.amazon.organizations.account;
 
 import org.apache.commons.collections4.CollectionUtils;
-import software.amazon.awssdk.services.organizations.model.Account;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.Account;
+import software.amazon.awssdk.services.organizations.model.ListAccountsResponse;
 import software.amazon.awssdk.services.organizations.model.CreateAccountRequest;
 import software.amazon.awssdk.services.organizations.model.CreateAccountResponse;
 import software.amazon.awssdk.services.organizations.model.DescribeCreateAccountStatusResponse;
 import software.amazon.awssdk.services.organizations.model.DuplicateAccountException;
-import software.amazon.awssdk.services.organizations.model.ListAccountsRequest;
 import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
 import software.amazon.awssdk.services.organizations.model.ListParentsResponse;
 import software.amazon.awssdk.services.organizations.model.MoveAccountRequest;
 import software.amazon.awssdk.services.organizations.model.MoveAccountResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
+import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 
-import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 public class CreateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
@@ -50,56 +53,93 @@ public class CreateHandler extends BaseHandlerStd {
         }
 
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
-                .then(progress -> checkIfAccountExists(awsClientProxy, progress, orgsClient))
-                .then(progress -> {
-                    if (progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isDidResourceAlreadyExist()) {
-                        return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists,
-                                String.format("Account with email [%s] already exists.", model.getEmail()));
-                    }
-                    if (progress.getCallbackContext().isAccountCreated()) {
-                        log.log(String.format("Account has already been created in previous handler invoke with account Id: [%s]. Skip create account.", model.getAccountId()));
-                        return ProgressEvent.progress(model, callbackContext);
-                    }
-                    return awsClientProxy.initiate("AWS-Organizations-Account::CreateAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                            .translateToServiceRequest(Translator::translateToCreateAccountRequest)
-                            .makeServiceCall(this::createAccount)
-                            .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(organizationsRequest, request, e, proxyClient1, model1, context, logger))
-                            .done(CreateAccountResponse -> {
-                                callbackContext.setCreateAccountRequestId(CreateAccountResponse.createAccountStatus().id());
-                                logger.log(String.format("Successfully initiated new account creation request with CreateAccountRequestId [%s]", callbackContext.getCreateAccountRequestId()));
-                                return ProgressEvent.progress(model, callbackContext);
-                            });
-                })
+                   .then(progress -> checkForExistingResource(awsClientProxy, orgsClient, progress, request, logger))
+                   .then(progress -> createResourceIfNeeded(awsClientProxy, orgsClient, progress, request, logger))
                    .then(progress -> describeCreateAccountStatus(awsClientProxy, request, model, callbackContext, orgsClient, logger))
                    .then(progress -> moveAccount(awsClientProxy, request, model, callbackContext, orgsClient, logger))
                    .then(progress -> ProgressEvent.success(progress.getResourceModel(), progress.getCallbackContext()));
     }
 
-    private ProgressEvent<ResourceModel, CallbackContext> checkIfAccountExists(
-            final AmazonWebServicesClientProxy awsClientProxy,
-            ProgressEvent<ResourceModel, CallbackContext> progress,
-            final ProxyClient<OrganizationsClient> orgsClient) {
-
+    protected ProgressEvent<ResourceModel, CallbackContext> checkForExistingResource(
+            final AmazonWebServicesClientProxy proxy,
+            final ProxyClient<OrganizationsClient> proxyClient,
+            final ProgressEvent<ResourceModel, CallbackContext> progress,
+            final ResourceHandlerRequest<ResourceModel> request,
+            final OrgsLoggerWrapper logger
+    ) {
+        CallbackContext context = progress.getCallbackContext();
         ResourceModel model = progress.getResourceModel();
 
-        return awsClientProxy.initiate("AWS-Organizations-Account::ListAccounts", orgsClient, model, progress.getCallbackContext())
-                .translateToServiceRequest(resourceModel -> ListAccountsRequest.builder().build())
-                .makeServiceCall((listAccountsRequest, proxyClient) -> proxyClient.injectCredentialsAndInvokeV2(listAccountsRequest, proxyClient.client()::listAccounts))
-                .done((listAccountsRequest, listAccountsResponse, proxyClient, resourceModel, context) -> {
-                    Optional<Account> existingAccount = listAccountsResponse.accounts().stream()
-                            .filter(account -> account.email().equals(model.getEmail()))
-                            .findFirst();
+        context.setPreExistingResourceChecked(true);
+        if (!StringUtils.isBlank(context.getGeneratedAccountId())) {
+            return progress;
+        }
 
-                    if (existingAccount.isPresent()) {
-                        model.setAccountId(existingAccount.get().id());
-                        context.setDidResourceAlreadyExist(true);
-                        log.log(String.format("Failing PreExistenceCheck: Account with email [%s] already exists with Id: [%s]", model.getEmail(), model.getAccountId()));
+        return proxy.initiate("AWS-Organizations-Account::ListAccounts::PreCreate", proxyClient,
+                        progress.getResourceModel(), progress.getCallbackContext())
+                .translateToServiceRequest(t -> Translator.translateToListAccounts(request.getNextToken()))
+                .makeServiceCall((listAccountsRequest, client) -> {
+                    try {
+                        ListAccountsResponse response = client.injectCredentialsAndInvokeV2(listAccountsRequest, client.client()::listAccounts);
+                        for (Account account : response.accounts()) {
+                            if (account.email().equals(model.getEmail())) {
+                                model.setAccountId(account.id());
+                                context.setAccountCreated(true);
+                                context.setGeneratedAccountId(account.id());
+                                logger.log(String.format("Account with email [%s] already exists with ID [%s]", model.getEmail(), account.id()));
+                                throw new CfnAlreadyExistsException("AWS::Organizations::Account", model.getEmail());
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.log("No existing account found");
                     }
+                    return ListAccountsResponse.builder().build();
+                })
+                .handleError((ResourceHandlerRequest, exception, proxyClient1, resourceModel, callbackContext) -> {
+                    if (exception instanceof AwsServiceException) {
+                        if (((AwsServiceException) exception).isThrottlingException()) {
+                            callbackContext.setPreExistingResourceChecked(false);
+                            return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                                    .status(OperationStatus.IN_PROGRESS)
+                                    .errorCode(HandlerErrorCode.Throttling)
+                                    .callbackContext(callbackContext)
+                                    .resourceModel(resourceModel)
+                                    .callbackDelaySeconds(3)
+                                    .build();
+                        }
+                    }
+                    return handleError(request, resourceModel, callbackContext, exception, logger);
+                })
+                .progress();
+    }
 
-                    context.setPreExistenceCheckComplete(true);
+    private ProgressEvent<ResourceModel, CallbackContext> createResourceIfNeeded(
+            final AmazonWebServicesClientProxy awsClientProxy,
+            final ProxyClient<OrganizationsClient> orgsClient,
+            final ProgressEvent<ResourceModel, CallbackContext> progress,
+            final ResourceHandlerRequest<ResourceModel> request,
+            final OrgsLoggerWrapper logger) {
+
+        ResourceModel model = progress.getResourceModel();
+        CallbackContext context = progress.getCallbackContext();
+
+        if (context.isAccountCreated()) {
+            logger.log(String.format("Account has already been created with ID: [%s]. Skipping creation.", context.getGeneratedAccountId()));
+            return progress;
+        }
+
+        return awsClientProxy.initiate("AWS-Organizations-Account::CreateAccount", orgsClient, model, context)
+                .translateToServiceRequest(Translator::translateToCreateAccountRequest)
+                .makeServiceCall(this::createAccount)
+                .handleError((organizationsRequest, e, proxyClient1, model1, context1) ->
+                        handleError(organizationsRequest, request, e, proxyClient1, model1, context1, logger))
+                .done(createAccountResponse -> {
+                    context.setCreateAccountRequestId(createAccountResponse.createAccountStatus().id());
+                    logger.log(String.format("Successfully initiated new account creation request with CreateAccountRequestId [%s]", context.getCreateAccountRequestId()));
                     return ProgressEvent.progress(model, context);
                 });
     }
+
 
     protected ProgressEvent<ResourceModel, CallbackContext> describeCreateAccountStatus(
         final AmazonWebServicesClientProxy awsClientProxy,
