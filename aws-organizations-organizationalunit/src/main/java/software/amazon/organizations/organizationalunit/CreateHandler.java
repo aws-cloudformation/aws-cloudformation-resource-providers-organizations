@@ -31,7 +31,7 @@ public class CreateHandler extends BaseHandlerStd {
         return ProgressEvent.progress(model, callbackContext)
                    .then(progress ->
                              awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::CreateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                                 .translateToServiceRequest(Translator::translateToCreateOrganizationalUnitRequest)
+                                 .translateToServiceRequest(x -> Translator.translateToCreateOrganizationalUnitRequest(x, request))
                                  .makeServiceCall(this::createOrganizationalUnit)
                                  .stabilize(this::stabilized)
                                  .handleError((organizationsRequest, e, proxyClient1, model1, context) ->

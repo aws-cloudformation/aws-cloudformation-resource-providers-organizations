@@ -1,12 +1,12 @@
 package software.amazon.organizations.organizationalunit;
 
+import com.google.common.collect.ImmutableMap;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.Tag;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class TagTestResourcesHelper {
@@ -22,6 +22,12 @@ public class TagTestResourcesHelper {
         Tag.builder().key("Update").value("Has been updated").build(),
         Tag.builder().key("Add").value("Should be added").build()
     ));
+
+    final static Map<String, String> defaultStackTags = ImmutableMap.of(
+            "StackTagKey1", "StackTagValue1", "StackTagKey2", "StackTagValue2");
+
+    final static Map<String, String> updatedStackTags = ImmutableMap.of(
+            "StackTagKey1", "StackTagValue3", "StackTagKey4", "StackTagValue4");
 
     static ListTagsForResourceResponse buildDefaultTagsResponse() {
         return ListTagsForResourceResponse.builder()
@@ -55,21 +61,6 @@ public class TagTestResourcesHelper {
         return tagsToReturn;
     }
 
-    static Set<Tag> translateOrganizationalUnitTagsToOrganizationTags(Set<software.amazon.organizations.organizationalunit.Tag> tags) {
-        if (tags == null) return new HashSet<>();
-
-        final Set<Tag> tagsToReturn = new HashSet<>();
-        for (software.amazon.organizations.organizationalunit.Tag inputTags : tags) {
-            Tag tag = Tag.builder()
-                        .key(inputTags.getKey())
-                        .value(inputTags.getValue())
-                        .build();
-            tagsToReturn.add(tag);
-        }
-
-        return tagsToReturn;
-    }
-
     static boolean tagsEqual(Set<?> set1, Set<?> set2){
         if (set1 == null || set2 == null) {
             return false;
@@ -81,34 +72,31 @@ public class TagTestResourcesHelper {
     static boolean correctTagsInTagAndUntagRequests(Set<Tag> tagsToAddOrUpdate, Set<String> tagsToRemove) {
         boolean correctTagsInRequests = true;
 
-        Set<String> tagsToAddOrUpdateKeys = new HashSet<String>();
-        Set<String> tagsToRemoveKeys = new HashSet<String>();
-
+        Set<String> tagsToAddOrUpdateKeys = new HashSet<>();
         for (Tag tag : tagsToAddOrUpdate) {
             tagsToAddOrUpdateKeys.add(tag.key());
         }
 
-        for (String key : tagsToRemove) {
-            tagsToRemoveKeys.add(key);
-        }
-
         // Constant tag should be in neither tagsToAddOrUpdate nor tagsToRemove
-        if (tagsToAddOrUpdateKeys.contains("Constant") || tagsToRemoveKeys.contains("tagsToRemoveKeys")) {
+        if (tagsToAddOrUpdateKeys.contains("Constant") || tagsToRemove.contains("tagsToRemoveKeys")) {
             correctTagsInRequests = false;
         }
 
-        // Delete tag should be the single item in tagsToRemove
-        if (tagsToAddOrUpdateKeys.contains("Delete") || !tagsToRemoveKeys.contains("Delete") || tagsToRemoveKeys.size() != 1) {
+        // Only Delete and StackTagKey2 tags should be in tagsToRemove
+        if (tagsToAddOrUpdateKeys.contains("Delete") || tagsToAddOrUpdateKeys.contains("StackTagKey2") ||
+                !tagsToRemove.contains("Delete") || !tagsToRemove.contains("StackTagKey2") || tagsToRemove.size() != 2) {
             correctTagsInRequests = false;
         }
 
-        // Update tag should be in tagsToAddOrUpdate not tagsToRemove
-        if (!tagsToAddOrUpdateKeys.contains("Update") || tagsToRemoveKeys.contains("Update")) {
+        // Update and StackTagKey1 tags (getting updated) should be in tagsToAddOrUpdate and not in tagsToRemove
+        if (!tagsToAddOrUpdateKeys.contains("Update") || !tagsToAddOrUpdateKeys.contains("StackTagKey1") ||
+                tagsToRemove.contains("Update") || tagsToRemove.contains("StackTagKey1")) {
             correctTagsInRequests = false;
         }
 
-        // Add tag should be in tagsToAddOrUpdate not tagsToRemove
-        if (!tagsToAddOrUpdateKeys.contains("Add") || tagsToRemoveKeys.contains("Add")) {
+        // Add and StackTagKey4 tags (getting added) should be in tagsToAddOrUpdate and not in tagsToRemove
+        if (!tagsToAddOrUpdateKeys.contains("Add") || !tagsToAddOrUpdateKeys.contains("StackTagKey4") ||
+                tagsToRemove.contains("Add") || tagsToRemove.contains("StackTagKey4")) {
             correctTagsInRequests = false;
         }
 

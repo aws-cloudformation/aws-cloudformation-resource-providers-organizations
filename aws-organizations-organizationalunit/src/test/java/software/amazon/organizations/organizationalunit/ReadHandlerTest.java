@@ -99,7 +99,9 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getName()).isEqualTo(TEST_OU_NAME);
         assertThat(response.getResourceModel().getArn()).isEqualTo(TEST_OU_ARN);
         assertThat(response.getResourceModel().getId()).isEqualTo(TEST_OU_ID);
-        assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
+        assertThat(TagTestResourcesHelper.tagsEqual(
+                TagsHelper.convertOrganizationalUnitTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourcesHelper.defaultTags)).isTrue();
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
