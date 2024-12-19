@@ -1,9 +1,7 @@
 package software.amazon.organizations.organizationalunit;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
@@ -89,12 +87,12 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final Set<Tag> oldTags = TagsHelper.mergeTags(
                 TagsHelper.convertOrganizationalUnitTagToOrganizationTag(previousResourceModel.getTags()),
-                TagTestResourcesHelper.defaultStackTags
+                request.getPreviousResourceTags()
         );
 
         final Set<Tag> newTags = TagsHelper.mergeTags(
                 TagsHelper.convertOrganizationalUnitTagToOrganizationTag(model.getTags()),
-                TagTestResourcesHelper.updatedStackTags
+                request.getDesiredResourceTags()
         );
 
         final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(oldTags, newTags);
