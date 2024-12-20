@@ -44,6 +44,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static software.amazon.organizations.policy.TagTestResourceHelper.defaultStackTags;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateHandlerTest extends AbstractTestBase {
@@ -236,6 +237,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .desiredResourceTags(defaultStackTags)
             .build();
 
         final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
@@ -288,6 +290,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                                                                   .desiredResourceState(model)
+                                                                  .desiredResourceTags(defaultStackTags)
                                                                   .build();
 
         final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
@@ -413,6 +416,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .desiredResourceTags(defaultStackTags)
             .build();
 
         when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class))).thenThrow(DuplicatePolicyException.class);

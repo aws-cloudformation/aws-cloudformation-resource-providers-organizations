@@ -54,7 +54,7 @@ public class CreateHandler extends BaseHandlerStd {
                     return ProgressEvent.progress(model, callbackContext);
                 }
                 return awsClientProxy.initiate("AWS-Organizations-Policy::CreatePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                    .translateToServiceRequest(Translator::translateToCreateRequest)
+                    .translateToServiceRequest(x -> Translator.translateToCreateRequest(x, request))
                     .makeServiceCall(this::createPolicy)
                     .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
                                      handleError(organizationsRequest, e, proxyClient1, model1, context, logger))
