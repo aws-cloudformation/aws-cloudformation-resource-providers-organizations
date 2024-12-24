@@ -1,9 +1,7 @@
 package software.amazon.organizations.organizationalunit;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
@@ -71,6 +69,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .previousResourceState(previousResourceModel)
             .desiredResourceState(model)
+            .previousResourceTags(TagTestResourcesHelper.defaultStackTags)
+            .desiredResourceTags(TagTestResourcesHelper.updatedStackTags)
             .build();
 
         final UpdateOrganizationalUnitResponse updateOrganizationalUnitResponse = getUpdateOrganizationalUnitResponse();
@@ -85,15 +85,18 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Set<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
-                TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(previousResourceModel.getTags()),
-                TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(model.getTags())
+        final Set<Tag> oldTags = TagsHelper.mergeTags(
+                TagsHelper.convertOrganizationalUnitTagToOrganizationTag(previousResourceModel.getTags()),
+                request.getPreviousResourceTags()
         );
 
-        final Set<String> tagsToRemove = UpdateHandler.getTagKeysToRemove(
-                TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(previousResourceModel.getTags()),
-                TagTestResourcesHelper.translateOrganizationalUnitTagsToOrganizationTags(model.getTags())
+        final Set<Tag> newTags = TagsHelper.mergeTags(
+                TagsHelper.convertOrganizationalUnitTagToOrganizationTag(model.getTags()),
+                request.getDesiredResourceTags()
         );
+
+        final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(oldTags, newTags);
+        final Set<String> tagsToRemove = TagsHelper.getTagKeysToRemove(oldTags, newTags);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
@@ -102,8 +105,10 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getName()).isEqualTo(TEST_OU_UPDATED_NAME);
         assertThat(response.getResourceModel().getArn()).isEqualTo(TEST_OU_ARN);
         assertThat(response.getResourceModel().getId()).isEqualTo(TEST_OU_ID);
-        assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.updatedTags));
-        assertThat(TagTestResourcesHelper.correctTagsInTagAndUntagRequests(tagsToAddOrUpdate, tagsToRemove));
+        assertThat(TagTestResourcesHelper.tagsEqual(
+                TagsHelper.convertOrganizationalUnitTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourcesHelper.updatedTags)).isTrue();
+        assertThat(TagTestResourcesHelper.correctTagsInTagAndUntagRequests(tagsToAddOrUpdate, tagsToRemove)).isTrue();
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();

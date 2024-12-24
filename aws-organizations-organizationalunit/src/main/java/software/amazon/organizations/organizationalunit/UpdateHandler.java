@@ -1,6 +1,5 @@
 package software.amazon.organizations.organizationalunit;
 
-import com.google.common.collect.Sets;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
@@ -16,7 +15,6 @@ import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class UpdateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
@@ -45,8 +43,20 @@ public class UpdateHandler extends BaseHandlerStd {
         }
 
         // Check to see if previous model exist before calling getTags()
-        Set<software.amazon.organizations.organizationalunit.Tag> previousTags = previousModel == null ? null : previousModel.getTags();
-        Set<software.amazon.organizations.organizationalunit.Tag> desiredTags = model.getTags();
+        Set<Tag> allPreviousTags;
+        if (previousModel != null) {
+            Set<software.amazon.organizations.organizationalunit.Tag> previousTags = previousModel.getTags();
+            allPreviousTags = TagsHelper.mergeTags(
+                    TagsHelper.convertOrganizationalUnitTagToOrganizationTag(previousTags),
+                    request.getPreviousResourceTags());
+        } else {
+            allPreviousTags = new HashSet<>();
+        }
+
+        Set<software.amazon.organizations.organizationalunit.Tag> newTags = model.getTags();
+        Set<Tag> allNewTags = TagsHelper.mergeTags(
+                TagsHelper.convertOrganizationalUnitTagToOrganizationTag(newTags),
+                request.getDesiredResourceTags());
 
         // Call UpdateOrganizationalUnit API
         logger.log(String.format("Requesting UpdateOrganizationalUnit w/ id: %s and name: %s.%n", ouId, name));
@@ -58,10 +68,7 @@ public class UpdateHandler extends BaseHandlerStd {
                 .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, Constants.Action.UPDATE_OU, Constants.Handler.UPDATE))
                 .progress()
             )
-            .then(progress -> handleTagging(awsClientProxy, model, callbackContext,
-                                    convertOrganizationalUnitTagToOrganizationTag(desiredTags),
-                                    convertOrganizationalUnitTagToOrganizationTag(previousTags),
-                                    ouId, orgsClient, logger))
+            .then(progress -> handleTagging(awsClientProxy, model, callbackContext, allNewTags, allPreviousTags, ouId, orgsClient, logger))
             .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
@@ -76,16 +83,17 @@ public class UpdateHandler extends BaseHandlerStd {
             final AmazonWebServicesClientProxy awsClientProxy,
             final ResourceModel model,
             final CallbackContext callbackContext,
-            final Set<Tag> desiredTags,
+            final Set<Tag> newTags,
             final Set<Tag> previousTags,
             final String organizationalUnitId,
             final ProxyClient<OrganizationsClient> orgsClient,
-            final OrgsLoggerWrapper logger) {
+            final OrgsLoggerWrapper logger
+    ) {
         // Includes all old tags that do not exist in new tag list
-        final Set<String> tagsToRemove = getTagKeysToRemove(previousTags, desiredTags);
+        final Set<String> tagsToRemove = TagsHelper.getTagKeysToRemove(previousTags, newTags);
 
         // Excluded all old tags that do exist in new tag list
-        final Set<Tag> tagsToAddOrUpdate = getTagsToAddOrUpdate(previousTags, desiredTags);
+        final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(previousTags, newTags);
 
         // Delete tags only if tagsToRemove is not empty
         if (!tagsToRemove.isEmpty()) {
@@ -111,35 +119,4 @@ public class UpdateHandler extends BaseHandlerStd {
 
         return ProgressEvent.progress(model, callbackContext);
     }
-
-    static Set<Tag> convertOrganizationalUnitTagToOrganizationTag(final Set<software.amazon.organizations.organizationalunit.Tag> tags) {
-        final Set<Tag> tagsToReturn = new HashSet<Tag>();
-        if (tags == null) return tagsToReturn;
-        for (software.amazon.organizations.organizationalunit.Tag inputTags : tags) {
-            Tag tag = Tag.builder()
-                        .key(inputTags.getKey())
-                        .value(inputTags.getValue())
-                        .build();
-            tagsToReturn.add(tag);
-        }
-
-        return tagsToReturn;
-    }
-
-    static Set<String> getTagKeysToRemove(
-           Set<Tag> oldTags, Set<Tag> newTags) {
-        final Set<String> oldTagKeys = getTagKeySet(oldTags);
-        final Set<String> newTagKeys = getTagKeySet(newTags);
-        return Sets.difference(oldTagKeys, newTagKeys);
-    }
-
-    static Set<String> getTagKeySet(Set<Tag> oldTags) {
-        return oldTags.stream().map(Tag::key).collect(Collectors.toSet());
-    }
-
-    static Set<Tag> getTagsToAddOrUpdate(
-           Set<Tag> oldTags, Set<Tag> newTags) {
-        return Sets.difference(newTags, oldTags);
-     }
-
 }
