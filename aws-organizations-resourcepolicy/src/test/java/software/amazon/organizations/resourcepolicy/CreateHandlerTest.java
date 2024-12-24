@@ -35,6 +35,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static software.amazon.organizations.resourcepolicy.TagTestResourceHelper.defaultStackTags;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateHandlerTest extends AbstractTestBase {
@@ -86,10 +87,11 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_WithTags_SimpleSuccess() {
-        final ResourceModel model = generateInitialResourceModel(false, TEST_RESOURCEPOLICY_CONTENT);
+        final ResourceModel model = generateInitialResourceModel(true, TEST_RESOURCEPOLICY_CONTENT);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .desiredResourceTags(defaultStackTags)
             .build();
 
         final DescribeResourcePolicyResponse describeResourcePolicyResponse = getDescribeResourcePolicyResponse();
@@ -98,11 +100,14 @@ public class CreateHandlerTest extends AbstractTestBase {
         final PutResourcePolicyResponse putResourcePolicyResponse = getPutResourcePolicyResponse();
         when(mockProxyClient.client().putResourcePolicy(any(PutResourcePolicyRequest.class))).thenReturn(putResourcePolicyResponse);
 
-
         final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildDefaultTagsResponse();
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(TagTestResourceHelper.tagsEqual(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourceHelper.defaultTags)).isTrue();
 
         verifyHandlerSuccess(response, request);
 
@@ -116,10 +121,11 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_WithTags_WithJSONContent_SimpleSuccess() {
-        final ResourceModel model = generateInitialResourceModel(false, TEST_RESOURCEPOLICY_CONTENT_JSON);
+        final ResourceModel model = generateInitialResourceModel(true, TEST_RESOURCEPOLICY_CONTENT_JSON);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .desiredResourceTags(defaultStackTags)
             .build();
 
         final DescribeResourcePolicyResponse describeResourcePolicyResponse = getDescribeResourcePolicyResponse();
@@ -128,11 +134,14 @@ public class CreateHandlerTest extends AbstractTestBase {
         final PutResourcePolicyResponse putResourcePolicyResponse = getPutResourcePolicyResponse();
         when(mockProxyClient.client().putResourcePolicy(any(PutResourcePolicyRequest.class))).thenReturn(putResourcePolicyResponse);
 
-
         final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildDefaultTagsResponse();
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(TagTestResourceHelper.tagsEqual(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourceHelper.defaultTags)).isTrue();
 
         verifyHandlerSuccess(response, request);
 
@@ -163,10 +172,11 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_Fails_With_CfnAlreadyExistsException() {
-        final ResourceModel model = generateInitialResourceModel(false, TEST_RESOURCEPOLICY_CONTENT);
+        final ResourceModel model = generateInitialResourceModel(true, TEST_RESOURCEPOLICY_CONTENT);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .desiredResourceTags(defaultStackTags)
             .build();
 
         final DescribeResourcePolicyResponse describeResourcePolicyResponse = getDescribeResourcePolicyResponse();
@@ -187,10 +197,11 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_Fails_With_UnsupportedApiEndpointException() {
-        final ResourceModel model = generateInitialResourceModel(false, TEST_RESOURCEPOLICY_CONTENT);
+        final ResourceModel model = generateInitialResourceModel(true, TEST_RESOURCEPOLICY_CONTENT);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .desiredResourceTags(defaultStackTags)
             .build();
 
         when(mockProxyClient.client().describeResourcePolicy(any(DescribeResourcePolicyRequest.class))).thenThrow(UnsupportedApiEndpointException.class);
@@ -224,10 +235,11 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     private void handleRetriableException(Class<? extends Exception> exception, HandlerErrorCode errorCode) {
-        final ResourceModel model = generateInitialResourceModel(false, TEST_RESOURCEPOLICY_CONTENT);
+        final ResourceModel model = generateInitialResourceModel(true, TEST_RESOURCEPOLICY_CONTENT);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .desiredResourceTags(defaultStackTags)
             .build();
 
         final DescribeResourcePolicyResponse describeResourcePolicyResponse = getDescribeResourcePolicyResponse();

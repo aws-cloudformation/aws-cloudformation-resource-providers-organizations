@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 import software.amazon.cloudformation.exceptions.CfnHandlerInternalFailureException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
+import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,6 +23,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static software.amazon.organizations.resourcepolicy.TagsHelper.buildTag;
+
 /**
  * This class is a centralized placeholder for
  * - api request construction
@@ -31,21 +34,18 @@ import java.util.stream.Stream;
 public class Translator {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    static PutResourcePolicyRequest translateToCreateRequest(final ResourceModel model) {
+    static PutResourcePolicyRequest translateToCreateRequest(final ResourceModel model, final ResourceHandlerRequest<ResourceModel> request) {
         String content = convertObjectToString(model.getContent());
 
-        if (model.getTags() == null) {
+        if (model.getTags() == null && request.getDesiredResourceTags() == null) {
             return PutResourcePolicyRequest.builder()
                 .content(content)
                 .build();
         }
-        List<Tag> tags = new ArrayList<>();
-        model.getTags().forEach(tag -> {
-            tags.add(Tag.builder().key(tag.getKey()).value(tag.getValue()).build());
-        });
+
         return PutResourcePolicyRequest.builder()
             .content(content)
-            .tags(tags)
+            .tags(translateTagsForTagResourceRequest(model.getTags(), request.getDesiredResourceTags()))
             .build();
     }
 
@@ -66,6 +66,20 @@ public class Translator {
 
     static ListTagsForResourceRequest translateToListTagsForResourceRequest(final String resourcePolicyId) {
         return ListTagsForResourceRequest.builder().resourceId(resourcePolicyId).build();
+    }
+
+    static Collection<Tag> translateTagsForTagResourceRequest(Set<software.amazon.organizations.resourcepolicy.Tag> tags, Map<String, String> desiredResourceTags) {
+        final Collection<Tag> tagsToReturn = new ArrayList<>();
+
+        if (tags != null) {
+            tags.forEach(tag -> tagsToReturn.add(buildTag(tag.getKey(), tag.getValue())));
+        }
+
+        if (desiredResourceTags != null) {
+            desiredResourceTags.forEach((key, value) -> tagsToReturn.add(buildTag(key, value)));
+        }
+
+        return tagsToReturn;
     }
 
     static Set<software.amazon.organizations.resourcepolicy.Tag> translateTagsFromSdkResponse(List<Tag> inputTags) {

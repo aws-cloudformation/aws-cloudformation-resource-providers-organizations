@@ -47,7 +47,7 @@ public class CreateHandler extends BaseHandlerStd {
             .then(progress -> describeResourcePolicyProgressEvent(awsClientProxy, request, model, callbackContext, orgsClient, logger))
             .then(progress ->
                 awsClientProxy.initiate("AWS-Organizations-ResourcePolicy::CreateResourcePolicy", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                    .translateToServiceRequest(Translator::translateToCreateRequest)
+                    .translateToServiceRequest(x -> Translator.translateToCreateRequest(x, request))
                     .makeServiceCall(this::putResourcePolicy)
                     .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
                                     handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, ResourcePolicyConstants.Action.CREATE_RESOURCEPOLICY, ResourcePolicyConstants.Handler.CREATE))

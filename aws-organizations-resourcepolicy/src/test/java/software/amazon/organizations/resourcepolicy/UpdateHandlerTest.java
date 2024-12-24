@@ -126,6 +126,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .previousResourceState(initialResourceModel)
             .desiredResourceState(updatedResourceModel)
+            .previousResourceTags(TagTestResourceHelper.defaultStackTags)
+            .desiredResourceTags(TagTestResourceHelper.updatedStackTags)
             .build();
 
         mockReadHandler(true);
@@ -134,19 +136,24 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Set<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
+        final Set<Tag> oldTags = TagsHelper.mergeTags(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(initialResourceModel.getTags()),
+                request.getPreviousResourceTags()
         );
 
-        final Set<String> tagKeysToRemove = UpdateHandler.getTagKeysToRemove(
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
+        final Set<Tag> newTags = TagsHelper.mergeTags(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(updatedResourceModel.getTags()),
+                request.getDesiredResourceTags()
         );
+
+        final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(oldTags, newTags);
+        final Set<String> tagKeysToRemove = TagsHelper.getTagKeysToRemove(oldTags, newTags);
 
         verifyHandlerSuccess(response, request);
-        assertThat(TagTestResourceHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourceHelper.updatedTags));
-        assertThat(TagTestResourceHelper.correctTagsInTagAndUntagRequests(tagsToAddOrUpdate, tagKeysToRemove));
+        assertThat(TagTestResourceHelper.tagsEqual(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourceHelper.updatedTags)).isTrue();
+        assertThat(TagTestResourceHelper.correctTagsInTagAndUntagRequests(tagsToAddOrUpdate, tagKeysToRemove)).isTrue();
 
         verify(mockProxyClient.client()).putResourcePolicy(any(PutResourcePolicyRequest.class));
         verifyReadHandler();
@@ -165,6 +172,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .previousResourceState(initialResourceModel)
             .desiredResourceState(updatedResourceModel)
+            .desiredResourceTags(TagTestResourceHelper.updatedStackTags)
             .build();
 
         mockReadHandler(true);
@@ -173,19 +181,24 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Set<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
+        final Set<Tag> oldTags = TagsHelper.mergeTags(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(initialResourceModel.getTags()),
+                request.getPreviousResourceTags()
         );
 
-        final Set<String> tagKeysToRemove = UpdateHandler.getTagKeysToRemove(
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
+        final Set<Tag> newTags = TagsHelper.mergeTags(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(updatedResourceModel.getTags()),
+                request.getDesiredResourceTags()
         );
+
+        final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(oldTags, newTags);
+        final Set<String> tagKeysToRemove = TagsHelper.getTagKeysToRemove(oldTags, newTags);
 
         verifyHandlerSuccess(response, request);
-        assertThat(TagTestResourceHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourceHelper.updatedTags));
-        assertThat(TagTestResourceHelper.correctTagsInTagAndUntagRequests(tagsToAddOrUpdate, tagKeysToRemove));
+        assertThat(TagTestResourceHelper.tagsEqual(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourceHelper.updatedTags)).isTrue();
+        assertThat(TagTestResourceHelper.correctTagsInTagAndUntagRequestsAddTags(tagsToAddOrUpdate, tagKeysToRemove)).isTrue();
 
         verify(mockProxyClient.client()).putResourcePolicy(any(PutResourcePolicyRequest.class));
         verifyReadHandler();
@@ -204,6 +217,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .previousResourceState(initialResourceModel)
             .desiredResourceState(updatedResourceModel)
+            .previousResourceTags(TagTestResourceHelper.defaultStackTags)
             .build();
 
         mockReadHandler(true);
@@ -212,19 +226,24 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Set<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
+        final Set<Tag> oldTags = TagsHelper.mergeTags(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(initialResourceModel.getTags()),
+                request.getPreviousResourceTags()
         );
 
-        final Set<String> tagKeysToRemove = UpdateHandler.getTagKeysToRemove(
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
-            TagTestResourceHelper.translateResourcePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
+        final Set<Tag> newTags = TagsHelper.mergeTags(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(updatedResourceModel.getTags()),
+                request.getDesiredResourceTags()
         );
+
+        final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(oldTags, newTags);
+        final Set<String> tagKeysToRemove = TagsHelper.getTagKeysToRemove(oldTags, newTags);
 
         verifyHandlerSuccess(response, request);
-        assertThat(TagTestResourceHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourceHelper.updatedTags));
-        assertThat(TagTestResourceHelper.correctTagsInTagAndUntagRequests(tagsToAddOrUpdate, tagKeysToRemove));
+        assertThat(TagTestResourceHelper.tagsEqual(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourceHelper.updatedTags)).isTrue();
+        assertThat(TagTestResourceHelper.correctTagsInTagAndUntagRequestsRemoveTags(tagsToAddOrUpdate, tagKeysToRemove)).isTrue();
 
         verify(mockProxyClient.client()).putResourcePolicy(any(PutResourcePolicyRequest.class));
         verifyReadHandler();
