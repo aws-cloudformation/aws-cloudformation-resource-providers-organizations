@@ -1,10 +1,12 @@
 package software.amazon.organizations.resourcepolicy;
 
+import com.google.common.collect.ImmutableMap;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.Tag;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class TagTestResourceHelper {
@@ -26,6 +28,11 @@ public class TagTestResourceHelper {
         CHANGING_TAG_UPDATED,
         ADDED_TAG
     ));
+
+    final static Map<String, String> defaultStackTags = ImmutableMap.of(
+            "StackTagKey1", "StackTagValue1", "StackTagKey2", "StackTagValue2");
+    final static Map<String, String> updatedStackTags = ImmutableMap.of(
+            "StackTagKey1", "StackTagValue3", "StackTagKey4", "StackTagValue4");
 
     static ListTagsForResourceResponse buildDefaultTagsResponse() {
         return ListTagsForResourceResponse.builder()
@@ -59,21 +66,6 @@ public class TagTestResourceHelper {
         return tagsToReturn;
     }
 
-    static Set<Tag> translateResourcePolicyTagsToOrganizationTags(Set<software.amazon.organizations.resourcepolicy.Tag> tags) {
-        if (tags == null) return new HashSet<>();
-
-        final Set<Tag> tagsToReturn = new HashSet<>();
-        for (software.amazon.organizations.resourcepolicy.Tag inputTags : tags) {
-            Tag tag = Tag.builder()
-                .key(inputTags.getKey())
-                .value(inputTags.getValue())
-                .build();
-            tagsToReturn.add(tag);
-        }
-
-        return tagsToReturn;
-    }
-
     static boolean tagsEqual(Set<?> set1, Set<?> set2){
         if (set1 == null || set2 == null) {
             return false;
@@ -82,18 +74,13 @@ public class TagTestResourceHelper {
         return set1.equals(set2);
     }
 
-    static boolean correctTagsInTagAndUntagRequests(Set<Tag> tagsToAddOrUpdate, Set<String> tagsToRemove) {
+    static boolean correctTagsInTagAndUntagRequests(Set<Tag> tagsToAddOrUpdate, Set<String> tagsToRemoveKeys) {
         boolean correctTagsInRequests = true;
 
         Set<String> tagsToAddOrUpdateKeys = new HashSet<>();
-        Set<String> tagsToRemoveKeys = new HashSet<>();
 
         for (Tag tag : tagsToAddOrUpdate) {
             tagsToAddOrUpdateKeys.add(tag.key());
-        }
-
-        for (String key : tagsToRemove) {
-            tagsToRemoveKeys.add(key);
         }
 
         // Constant tag should be in neither tagsToAddOrUpdate nor tagsToRemove
@@ -101,18 +88,66 @@ public class TagTestResourceHelper {
             correctTagsInRequests = false;
         }
 
-        // Delete tag should be the single item in tagsToRemove
-        if (tagsToAddOrUpdateKeys.contains("Delete") || !tagsToRemoveKeys.contains("Delete") || tagsToRemoveKeys.size() != 1) {
+        // Only Delete and StackTagKey2 tags should be in tagsToRemove
+        if (tagsToAddOrUpdateKeys.contains("Delete") || tagsToAddOrUpdateKeys.contains("StackTagKey2") ||
+                !tagsToRemoveKeys.contains("Delete") || !tagsToRemoveKeys.contains("StackTagKey2") || tagsToRemoveKeys.size() != 2) {
             correctTagsInRequests = false;
         }
 
-        // Update tag should be in tagsToAddOrUpdate not tagsToRemove
-        if (!tagsToAddOrUpdateKeys.contains("Update") || tagsToRemoveKeys.contains("Update")) {
+        // Update and StackTagKey1 tags (getting updated) should be in tagsToAddOrUpdate and not in tagsToRemove
+        if (!tagsToAddOrUpdateKeys.contains("Update") || !tagsToAddOrUpdateKeys.contains("StackTagKey1") ||
+                tagsToRemoveKeys.contains("Update") || tagsToRemoveKeys.contains("StackTagKey1")) {
             correctTagsInRequests = false;
         }
 
-        // Add tag should be in tagsToAddOrUpdate not tagsToRemove
-        if (!tagsToAddOrUpdateKeys.contains("Add") || tagsToRemoveKeys.contains("Add")) {
+        // Add and StackTagKey4 tags (getting added) should be in tagsToAddOrUpdate and not in tagsToRemove
+        if (!tagsToAddOrUpdateKeys.contains("Add") || !tagsToAddOrUpdateKeys.contains("StackTagKey4") ||
+                tagsToRemoveKeys.contains("Add") || tagsToRemoveKeys.contains("StackTagKey4")) {
+            correctTagsInRequests = false;
+        }
+
+        return correctTagsInRequests;
+    }
+
+    static boolean correctTagsInTagAndUntagRequestsAddTags(Set<Tag> tagsToAddOrUpdate, Set<String> tagsToRemoveKeys) {
+        boolean correctTagsInRequests = true;
+
+        Set<String> tagsToAddOrUpdateKeys = new HashSet<>();
+
+        for (Tag tag : tagsToAddOrUpdate) {
+            tagsToAddOrUpdateKeys.add(tag.key());
+        }
+
+        // Constant, Update, Add, StackTagKey1, StackTagKey4 all should be in tagsToAdd
+        if (!tagsToAddOrUpdateKeys.contains("Constant") || !tagsToAddOrUpdateKeys.contains("Update") ||
+                !tagsToAddOrUpdateKeys.contains("Add") || !tagsToAddOrUpdateKeys.contains("StackTagKey1") ||
+                !tagsToAddOrUpdateKeys.contains("StackTagKey4")) {
+            correctTagsInRequests = false;
+        }
+
+        // tagsToRemove should be empty as we are just adding tags
+        if (!tagsToRemoveKeys.isEmpty()) correctTagsInRequests = false;
+
+        return correctTagsInRequests;
+    }
+
+    static boolean correctTagsInTagAndUntagRequestsRemoveTags(Set<Tag> tagsToAddOrUpdate, Set<String> tagsToRemoveKeys) {
+        boolean correctTagsInRequests = true;
+
+        Set<String> tagsToAddOrUpdateKeys = new HashSet<>();
+
+        for (Tag tag : tagsToAddOrUpdate) {
+            tagsToAddOrUpdateKeys.add(tag.key());
+        }
+
+        // Only Update, Add should be in tagsToAddOrUpdate
+        if (!tagsToAddOrUpdateKeys.contains("Update") || !tagsToAddOrUpdateKeys.contains("Add")) {
+            correctTagsInRequests = false;
+        }
+
+        // Delete, StackTagKey1, and StackTagKey2 should be in tagsToRemove
+        if (!tagsToRemoveKeys.contains("Delete") || !tagsToRemoveKeys.contains("StackTagKey1") ||
+                !tagsToRemoveKeys.contains("StackTagKey2")) {
             correctTagsInRequests = false;
         }
 

@@ -1,6 +1,5 @@
 package software.amazon.organizations.resourcepolicy;
 
-import com.google.common.collect.Sets;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.Tag;
 import software.amazon.awssdk.services.organizations.model.TagResourceRequest;
@@ -15,9 +14,7 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
-import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class UpdateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
@@ -53,6 +50,16 @@ public class UpdateHandler extends BaseHandlerStd {
                 "ResourcePolicy content had invalid JSON!");
         }
 
+        Set<software.amazon.organizations.resourcepolicy.Tag> previousTags = previousModel.getTags();
+        Set<Tag> allPreviousTags = TagsHelper.mergeTags(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(previousTags),
+                request.getPreviousResourceTags());
+
+        Set<software.amazon.organizations.resourcepolicy.Tag> newTags = model.getTags();
+        Set<Tag> allNewTags = TagsHelper.mergeTags(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(newTags),
+                request.getDesiredResourceTags());
+
         return ProgressEvent.progress(model, callbackContext)
             .then(progress -> {
                 logger.log(String.format("Requesting PutResourcePolicy w/ content: %s and management account Id [%s]", content, request.getAwsAccountId()));
@@ -66,10 +73,7 @@ public class UpdateHandler extends BaseHandlerStd {
                         return ProgressEvent.progress(model, callbackContext);
                     });
             })
-            .then(progress -> handleTagging(awsClientProxy, model, callbackContext,
-                                    convertResourcePolicyTagToOrganizationTag(model.getTags()),
-                                    convertResourcePolicyTagToOrganizationTag(previousModel.getTags()),
-                                    resourcePolicyId, orgsClient, logger))
+            .then(progress -> handleTagging(awsClientProxy, model, callbackContext, allNewTags, allPreviousTags, resourcePolicyId, orgsClient, logger))
             .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
@@ -77,17 +81,17 @@ public class UpdateHandler extends BaseHandlerStd {
             final AmazonWebServicesClientProxy awsClientProxy,
             final ResourceModel model,
             final CallbackContext callbackContext,
-            final Set<Tag> desiredTags,
+            final Set<Tag> newTags,
             final Set<Tag> previousTags,
             final String resourcePolicyId,
             final ProxyClient<OrganizationsClient> orgsClient,
             final OrgsLoggerWrapper logger
     ) {
         // Includes all old tags that do not exist in new tag list
-        final Set<String> tagsToRemove = getTagKeysToRemove(previousTags, desiredTags);
+        final Set<String> tagsToRemove = TagsHelper.getTagKeysToRemove(previousTags, newTags);
 
         // Excluded all old tags that do exist in new tag list
-        final Set<Tag> tagsToAddOrUpdate = getTagsToAddOrUpdate(previousTags, desiredTags);
+        final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(previousTags, newTags);
 
         // Delete tags only if tagsToRemove is not empty
         if (!tagsToRemove.isEmpty()) {
@@ -111,35 +115,6 @@ public class UpdateHandler extends BaseHandlerStd {
             }
         }
         return ProgressEvent.progress(model, callbackContext);
-    }
-
-    static Set<Tag> convertResourcePolicyTagToOrganizationTag(final Set<software.amazon.organizations.resourcepolicy.Tag> tags) {
-        final Set<Tag> tagsToReturn = new HashSet<>();
-        if (tags == null) return tagsToReturn;
-        for (software.amazon.organizations.resourcepolicy.Tag inputTag : tags) {
-            Tag tag = Tag.builder()
-                .key(inputTag.getKey())
-                .value(inputTag.getValue())
-                .build();
-            tagsToReturn.add(tag);
-        }
-        return tagsToReturn;
-    }
-
-    static Set<String> getTagKeysToRemove(
-            Set<Tag> oldTags, Set<Tag> newTags) {
-        final Set<String> oldTagKeys = getTagKeySet(oldTags);
-        final Set<String> newTagKeys = getTagKeySet(newTags);
-        return Sets.difference(oldTagKeys, newTagKeys);
-    }
-
-    static Set<Tag> getTagsToAddOrUpdate(
-        Set<Tag> oldTags, Set<Tag> newTags) {
-        return Sets.difference(newTags, oldTags);
-    }
-
-    static Set<String> getTagKeySet(Set<Tag> oldTags) {
-        return oldTags.stream().map(Tag::key).collect(Collectors.toSet());
     }
 
     protected PutResourcePolicyResponse putResourcePolicy(final PutResourcePolicyRequest putResourcePolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
