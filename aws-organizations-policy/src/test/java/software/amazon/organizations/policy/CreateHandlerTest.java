@@ -274,6 +274,10 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
+        assertThat(TagTestResourceHelper.tagsEqual(
+                TagsHelper.convertPolicyTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourceHelper.defaultTags)).isTrue();
+
         verify(mockProxyClient.client()).createPolicy(any(CreatePolicyRequest.class));
         verify(mockProxyClient.client(), times(2)).attachPolicy(any(AttachPolicyRequest.class));
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));

@@ -66,21 +66,6 @@ public class TagTestResourceHelper {
         return tagsToReturn;
     }
 
-    static Set<Tag> translatePolicyTagsToOrganizationTags(Set<software.amazon.organizations.policy.Tag> tags) {
-        if (tags == null) return new HashSet<>();
-
-        final Set<Tag> tagsToReturn = new HashSet<>();
-        for (software.amazon.organizations.policy.Tag inputTags : tags) {
-            Tag tag = Tag.builder()
-                .key(inputTags.getKey())
-                .value(inputTags.getValue())
-                .build();
-            tagsToReturn.add(tag);
-        }
-
-        return tagsToReturn;
-    }
-
     static boolean tagsEqual(Set<?> set1, Set<?> set2){
         if (set1 == null || set2 == null) {
             return false;

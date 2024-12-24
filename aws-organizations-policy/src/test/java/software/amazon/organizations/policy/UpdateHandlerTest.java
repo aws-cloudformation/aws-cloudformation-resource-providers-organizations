@@ -298,12 +298,12 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final Set<Tag> oldTags = TagsHelper.mergeTags(
                 TagsHelper.convertPolicyTagToOrganizationTag(initialResourceModel.getTags()),
-                TagTestResourceHelper.defaultStackTags
+                request.getPreviousResourceTags()
         );
 
         final Set<Tag> newTags = TagsHelper.mergeTags(
                 TagsHelper.convertPolicyTagToOrganizationTag(updatedResourceModel.getTags()),
-                TagTestResourceHelper.updatedStackTags
+                request.getDesiredResourceTags()
         );
 
         final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(oldTags, newTags);
