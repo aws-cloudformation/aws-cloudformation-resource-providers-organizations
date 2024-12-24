@@ -37,8 +37,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -276,6 +274,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .previousResourceState(initialResourceModel)
             .desiredResourceState(updatedResourceModel)
+            .previousResourceTags(TagTestResourceHelper.defaultStackTags)
+            .desiredResourceTags(TagTestResourceHelper.updatedStackTags)
             .build();
 
         final UpdatePolicyResponse updatePolicyResponse = getUpdatePolicyResponse();
@@ -296,14 +296,18 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = updateHandlerToTest.handleRequest(mockAwsClientproxy, request, new CallbackContext(), mockProxyClient, logger);
 
-        final Set<Tag> tagsToAddOrUpdate = UpdateHandler.getTagsToAddOrUpdate(
-            TagTestResourceHelper.translatePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
-            TagTestResourceHelper.translatePolicyTagsToOrganizationTags(updatedResourceModel.getTags()));
-
-        final Set<String> tagKeysToRemove = UpdateHandler.getTagKeysToRemove(
-            TagTestResourceHelper.translatePolicyTagsToOrganizationTags(initialResourceModel.getTags()),
-            TagTestResourceHelper.translatePolicyTagsToOrganizationTags(updatedResourceModel.getTags())
+        final Set<Tag> oldTags = TagsHelper.mergeTags(
+                TagsHelper.convertPolicyTagToOrganizationTag(initialResourceModel.getTags()),
+                request.getPreviousResourceTags()
         );
+
+        final Set<Tag> newTags = TagsHelper.mergeTags(
+                TagsHelper.convertPolicyTagToOrganizationTag(updatedResourceModel.getTags()),
+                request.getDesiredResourceTags()
+        );
+
+        final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(oldTags, newTags);
+        final Set<String> tagKeysToRemove = TagsHelper.getTagKeysToRemove(oldTags, newTags);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
@@ -311,8 +315,10 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isEqualTo(request.getDesiredResourceState());
         assertThat(response.getResourceModels()).isNull();
-        assertThat(TagTestResourceHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourceHelper.updatedTags));
-        assertThat(TagTestResourceHelper.correctTagsInTagAndUntagRequests(tagsToAddOrUpdate, tagKeysToRemove));
+        assertThat(TagTestResourceHelper.tagsEqual(
+                TagsHelper.convertPolicyTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourceHelper.updatedTags)).isTrue();
+        assertThat(TagTestResourceHelper.correctTagsInTagAndUntagRequests(tagsToAddOrUpdate, tagKeysToRemove)).isTrue();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
@@ -395,6 +401,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .previousResourceState(initialResourceModel)
             .desiredResourceState(updatedResourceModel)
+            .previousResourceTags(TagTestResourceHelper.defaultStackTags)
+            .desiredResourceTags(TagTestResourceHelper.updatedStackTags)
             .build();
 
         final UpdatePolicyResponse updatePolicyResponse = getUpdatePolicyResponse();
@@ -425,6 +433,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .previousResourceState(initialResourceModel)
             .desiredResourceState(updatedResourceModel)
+            .previousResourceTags(TagTestResourceHelper.defaultStackTags)
+            .desiredResourceTags(TagTestResourceHelper.updatedStackTags)
             .build();
 
         final UpdatePolicyResponse updatePolicyResponse = getUpdatePolicyResponse();
