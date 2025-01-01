@@ -20,7 +20,9 @@ public class CallbackContext extends StdCallbackContext {
         this.actionToRetryAttemptMap.put(key, getCurrentRetryAttempt(actionName, handlerName)+1);
     }
     // used in CREATE handler
+    private boolean isPreExistingResourceChecked = false;
     private boolean isAccountCreated = false;
     private String createAccountRequestId;
     private String failureReason;
+    private String generatedAccountId;
 }
