@@ -21,6 +21,8 @@ public class CallbackContext extends StdCallbackContext {
     }
     // used in CREATE handler re-invoking
     private boolean isPolicyCreated = false;
+    private boolean isPreExistenceCheckComplete = false;
+    private boolean didResourceAlreadyExist = false;
     // used in DELETE handler re-invoking
     private boolean isPolicyDetachedInDelete = false;
     // used in UPDATE handler re-invoking
