@@ -93,7 +93,7 @@ public class CreateHandler extends BaseHandlerStd {
                     if (existingAccount.isPresent()) {
                         model.setAccountId(existingAccount.get().id());
                         context.setDidResourceAlreadyExist(true);
-                        log.log(String.format("Account with email [%s] already exists with Id: [%s]", model.getEmail(), model.getAccountId()));
+                        log.log(String.format("Failing PreExistenceCheck: Account with email [%s] already exists with Id: [%s]", model.getEmail(), model.getAccountId()));
                     }
 
                     context.setPreExistenceCheckComplete(true);
