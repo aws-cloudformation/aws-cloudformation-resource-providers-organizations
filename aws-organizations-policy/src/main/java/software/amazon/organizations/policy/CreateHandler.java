@@ -85,9 +85,8 @@ public class CreateHandler extends BaseHandlerStd {
             final ProxyClient<OrganizationsClient> orgsClient) {
 
         ResourceModel model = progress.getResourceModel();
-        CallbackContext callbackContext = progress.getCallbackContext();
 
-        return awsClientProxy.initiate("AWS-Organizations-Policy::ListPolicies", orgsClient, model, callbackContext)
+        return awsClientProxy.initiate("AWS-Organizations-Policy::ListPolicies", orgsClient, model, progress.getCallbackContext())
                 .translateToServiceRequest(resourceModel -> ListPoliciesRequest.builder()
                         .filter(resourceModel.getType())
                         .build())
@@ -103,7 +102,7 @@ public class CreateHandler extends BaseHandlerStd {
                         log.log(String.format("Failing PreExistenceCheck: Policy [%s] already exists with Id: [%s]", model.getName(), model.getId()));
                     }
 
-                    callbackContext.setPreExistenceCheckComplete(true);
+                    context.setPreExistenceCheckComplete(true);
                     return ProgressEvent.progress(model, context);
                 });
     }
