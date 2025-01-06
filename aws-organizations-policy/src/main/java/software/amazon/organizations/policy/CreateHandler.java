@@ -7,8 +7,6 @@ import software.amazon.awssdk.services.organizations.model.AttachPolicyResponse;
 import software.amazon.awssdk.services.organizations.model.CreatePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.CreatePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.DuplicatePolicyAttachmentException;
-import software.amazon.awssdk.services.organizations.model.ListPoliciesRequest;
-import software.amazon.awssdk.services.organizations.model.PolicySummary;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
@@ -17,7 +15,6 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
-import java.util.Optional;
 import java.util.Set;
 
 public class CreateHandler extends BaseHandlerStd {
@@ -50,13 +47,7 @@ public class CreateHandler extends BaseHandlerStd {
         logger.log(String.format("Entered %s create handler with account Id [%s], with Content [%s], Description [%s], Name [%s], Type [%s]",
             ResourceModel.TYPE_NAME, request.getAwsAccountId(), content, model.getDescription(), model.getName(), model.getType()));
         return ProgressEvent.progress(model, callbackContext)
-                .then(progress -> checkIfPolicyExists(awsClientProxy, progress, orgsClient))
             .then(progress -> {
-                if(progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isDidResourceAlreadyExist())
-                {
-                    return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists,
-                        String.format("Policy already exists for policy name [%s].", model.getName()));
-                }
                 if (progress.getCallbackContext().isPolicyCreated()) {
                     // skip to attach policy
                     log.log(String.format("Policy has already been created in previous handler invoke, policy id: [%s]. Skip to attach policy.", model.getId()));
@@ -77,36 +68,6 @@ public class CreateHandler extends BaseHandlerStd {
             )
             .then(progress -> attachPolicyToTargets(awsClientProxy, request, model, callbackContext, orgsClient, logger))
             .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
-    }
-
-    private ProgressEvent<ResourceModel, CallbackContext> checkIfPolicyExists(
-            final AmazonWebServicesClientProxy awsClientProxy,
-            ProgressEvent<ResourceModel, CallbackContext> progress,
-            final ProxyClient<OrganizationsClient> orgsClient) {
-
-        ResourceModel model = progress.getResourceModel();
-        CallbackContext callbackContext = progress.getCallbackContext();
-        callbackContext.setPreExistenceCheckComplete(true);
-
-        return awsClientProxy.initiate("AWS-Organizations-Policy::ListPolicies", orgsClient, model, callbackContext)
-                .translateToServiceRequest(resourceModel -> ListPoliciesRequest.builder()
-                        .filter(resourceModel.getType())
-                        .build())
-                .makeServiceCall((listPoliciesRequest, proxyClient) -> proxyClient.injectCredentialsAndInvokeV2(listPoliciesRequest, proxyClient.client()::listPolicies))
-                .done((listPoliciesRequest, listPoliciesResponse, proxyClient, resourceModel, context) -> {
-                    Optional<PolicySummary> existingPolicy = listPoliciesResponse.policies().stream()
-                            .filter(policy -> policy.name().equals(model.getName()))
-                            .findFirst();
-
-                    if (existingPolicy.isPresent()) {
-                        model.setId(existingPolicy.get().id());
-                        context.setPolicyCreated(true);
-                        context.setDidResourceAlreadyExist(true);
-                        log.log(String.format("Policy [%s] already exists with Id: [%s]", model.getName(), model.getId()));
-                    }
-
-                    return ProgressEvent.progress(model, context);
-                });
     }
 
     protected CreatePolicyResponse createPolicy(final CreatePolicyRequest createPolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {

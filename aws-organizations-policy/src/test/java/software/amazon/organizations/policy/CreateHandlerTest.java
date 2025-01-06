@@ -2,7 +2,6 @@ package software.amazon.organizations.policy;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
@@ -14,8 +13,6 @@ import software.amazon.awssdk.services.organizations.model.ConcurrentModificatio
 import software.amazon.awssdk.services.organizations.model.DescribePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.DuplicatePolicyException;
-import software.amazon.awssdk.services.organizations.model.ListPoliciesRequest;
-import software.amazon.awssdk.services.organizations.model.ListPoliciesResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.organizations.model.ListTargetsForPolicyRequest;
@@ -75,9 +72,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .desiredResourceState(model)
             .build();
 
-        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
-                .thenReturn(ListPoliciesResponse.builder().policies(Collections.<PolicySummary>emptyList()).build());
-
         final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
         when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class))).thenReturn(createPolicyResponse);
 
@@ -114,7 +108,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
-        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
         verify(mockProxyClient.client()).createPolicy(any(CreatePolicyRequest.class));
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
         verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
@@ -131,10 +124,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                                                                   .desiredResourceState(model)
                                                                   .build();
-        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
-                .thenReturn(ListPoliciesResponse.builder()
-                        .policies(Collections.<PolicySummary>emptyList())
-                        .build());
 
         final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
         when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class))).thenReturn(createPolicyResponse);
@@ -172,7 +161,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
-        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
         verify(mockProxyClient.client()).createPolicy(any(CreatePolicyRequest.class));
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
         verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
@@ -196,11 +184,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
             .build();
-
-        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
-                .thenReturn(ListPoliciesResponse.builder()
-                        .policies(Collections.<PolicySummary>emptyList())
-                        .build());
 
         final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
         when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class))).thenReturn(createPolicyResponse);
@@ -238,7 +221,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
-        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
         verify(mockProxyClient.client()).createPolicy(any(CreatePolicyRequest.class));
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
         verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
@@ -255,11 +237,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
             .build();
-
-        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
-                .thenReturn(ListPoliciesResponse.builder()
-                        .policies(Collections.<PolicySummary>emptyList())
-                        .build());
 
         final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
         when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class))).thenReturn(createPolicyResponse);
@@ -295,7 +272,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
-        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
         verify(mockProxyClient.client()).createPolicy(any(CreatePolicyRequest.class));
         verify(mockProxyClient.client(), times(2)).attachPolicy(any(AttachPolicyRequest.class));
         verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
@@ -313,17 +289,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                                                                   .desiredResourceState(model)
                                                                   .build();
-        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
-                .thenReturn(ListPoliciesResponse.builder()
-                        .policies(Collections.<PolicySummary>emptyList())
-                        .build())
-                .thenReturn(ListPoliciesResponse.builder()
-                        .policies(Collections.singletonList(PolicySummary.builder()
-                                .id(TEST_POLICY_ID)
-                                .name(TEST_POLICY_NAME)
-                                .type(TEST_TYPE)
-                                .build()))
-                        .build());
 
         final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
         when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class))).thenReturn(createPolicyResponse);
@@ -354,7 +319,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModels()).isNull();
 
         // verify createPolicy is only invoked 1 time and attachPolicy invoked at least maxRetryCount times
-        verify(mockProxyClient.client(), atLeastOnce()).listPolicies(any(ListPoliciesRequest.class));
         verify(mockProxyClient.client(), times(1)).createPolicy(any(CreatePolicyRequest.class));
         verify(mockProxyClient.client(), atLeast(3)).attachPolicy(any(AttachPolicyRequest.class));
 
@@ -427,11 +391,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .desiredResourceState(model)
             .build();
 
-        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
-                .thenReturn(ListPoliciesResponse.builder()
-                        .policies(Collections.<PolicySummary>emptyList())
-                        .build());
-
         final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
         when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class))).thenReturn(createPolicyResponse);
 
@@ -444,9 +403,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
 
-        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
-        verify(mockProxyClient.client()).createPolicy(any(CreatePolicyRequest.class));
-        verify(mockProxyClient.client()).attachPolicy(any(AttachPolicyRequest.class));
         verify(mockOrgsClient, atLeastOnce()).serviceName();
         verifyNoMoreInteractions(mockOrgsClient);
     }
@@ -459,106 +415,13 @@ public class CreateHandlerTest extends AbstractTestBase {
             .desiredResourceState(model)
             .build();
 
-        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
-                .thenReturn(ListPoliciesResponse.builder()
-                        .policies(Collections.singletonList(PolicySummary.builder()
-                                .id(TEST_POLICY_ID)
-                                .name(TEST_POLICY_NAME)
-                                .type(TEST_TYPE)
-                                .build()))
-                        .build());
+        when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class))).thenThrow(DuplicatePolicyException.class);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AlreadyExists);
-        assertThat(response.getMessage()).isEqualTo(String.format("Policy already exists for policy name [%s].", model.getName()));
-
-        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
-        verify(mockProxyClient.client(), times(0)).createPolicy(any(CreatePolicyRequest.class));
-        verify(mockOrgsClient, atLeastOnce()).serviceName();
-        verifyNoMoreInteractions(mockOrgsClient);
-    }
-
-    @Test
-    public void handleRequest_PolicyAlreadyExists_ReturnsAlreadyExistsError() {
-        final ResourceModel model = generateInitialResourceModel(false, false);
-
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
-
-        final PolicySummary existingPolicy = PolicySummary.builder()
-                .id(TEST_POLICY_ID)
-                .name(TEST_POLICY_NAME)
-                .type(TEST_TYPE)
-                .build();
-        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
-                .thenReturn(ListPoliciesResponse.builder().policies(existingPolicy).build());
-
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
-
-        assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
-        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
-        assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel().getId()).isEqualTo(TEST_POLICY_ID);
-        assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getMessage()).isEqualTo(String.format("Policy already exists for policy name [%s].", TEST_POLICY_NAME));
-        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AlreadyExists);
-
-        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
-        verify(mockProxyClient.client(), times(0)).createPolicy(any(CreatePolicyRequest.class));
-
-        verify(mockOrgsClient, atLeastOnce()).serviceName();
-        verifyNoMoreInteractions(mockOrgsClient);
-    }
-
-    @Test
-    public void handleRequest_PolicyDoesNotExist_CreatesNewPolicy() {
-        final ResourceModel model = generateInitialResourceModel(false, false);
-
-        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .build();
-
-        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
-                .thenReturn(ListPoliciesResponse.builder().policies(Collections.<PolicySummary>emptyList()).build());
-
-        final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
-        when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class)))
-                .thenReturn(createPolicyResponse);
-
-        when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class)))
-                .thenReturn(getDescribePolicyResponse());
-
-        final ListTargetsForPolicyResponse listTargetsResponse = ListTargetsForPolicyResponse.builder()
-                .nextToken(null)
-                .build();
-        when(mockProxyClient.client().listTargetsForPolicy(any(ListTargetsForPolicyRequest.class)))
-                .thenReturn(listTargetsResponse);
-
-        final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildEmptyTagsResponse();
-        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class)))
-                .thenReturn(listTagsResponse);
-
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
-
-        assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
-        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
-        assertThat(response.getResourceModel()).isNotNull();
-        assertThat(response.getResourceModel().getId()).isEqualTo(TEST_POLICY_ID);
-        assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getMessage()).isNull();
-        assertThat(response.getErrorCode()).isNull();
-
-        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
-        verify(mockProxyClient.client()).createPolicy(any(CreatePolicyRequest.class));
-        verify(mockProxyClient.client()).describePolicy(any(DescribePolicyRequest.class));
-        verify(mockProxyClient.client()).listTargetsForPolicy(any(ListTargetsForPolicyRequest.class));
-        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
 
         verify(mockOrgsClient, atLeastOnce()).serviceName();
         verifyNoMoreInteractions(mockOrgsClient);
