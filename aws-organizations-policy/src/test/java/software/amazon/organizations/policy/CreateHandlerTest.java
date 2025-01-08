@@ -13,7 +13,6 @@ import software.amazon.awssdk.services.organizations.model.CreatePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyResponse;
-import software.amazon.awssdk.services.organizations.model.DuplicatePolicyException;
 import software.amazon.awssdk.services.organizations.model.ListPoliciesRequest;
 import software.amazon.awssdk.services.organizations.model.ListPoliciesResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
@@ -47,6 +46,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static software.amazon.organizations.policy.TagTestResourceHelper.defaultStackTags;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateHandlerTest extends AbstractTestBase {
@@ -254,6 +254,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .desiredResourceTags(defaultStackTags)
             .build();
 
         when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
@@ -295,6 +296,10 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
+        assertThat(TagTestResourceHelper.tagsEqual(
+                TagsHelper.convertPolicyTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourceHelper.defaultTags)).isTrue();
+
         verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
         verify(mockProxyClient.client()).createPolicy(any(CreatePolicyRequest.class));
         verify(mockProxyClient.client(), times(2)).attachPolicy(any(AttachPolicyRequest.class));
@@ -312,6 +317,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                                                                   .desiredResourceState(model)
+                                                                  .desiredResourceTags(defaultStackTags)
                                                                   .build();
         when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
                 .thenReturn(ListPoliciesResponse.builder()
@@ -457,6 +463,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .desiredResourceTags(defaultStackTags)
             .build();
 
         when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
