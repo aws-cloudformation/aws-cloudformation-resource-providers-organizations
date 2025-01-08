@@ -41,7 +41,7 @@ public class CreateHandler extends BaseHandlerStd {
                                 String.format("Failing PreExistenceCheck: OrganizationalUnit with name [%s] already exists in parent [%s].", name, parentId));
                     }
                     return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::CreateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                            .translateToServiceRequest(Translator::translateToCreateOrganizationalUnitRequest)
+                            .translateToServiceRequest(x -> Translator.translateToCreateOrganizationalUnitRequest(x, request))
                             .makeServiceCall(this::createOrganizationalUnit)
                             .stabilize(this::stabilized)
                             .handleError((organizationsRequest, e, proxyClient1, model1, context) ->

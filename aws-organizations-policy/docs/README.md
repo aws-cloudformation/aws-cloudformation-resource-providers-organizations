@@ -57,13 +57,13 @@ _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormati
 
 #### Type
 
-The type of policy to create. You can specify one of the following values: AISERVICES_OPT_OUT_POLICY, BACKUP_POLICY, SERVICE_CONTROL_POLICY, TAG_POLICY, CHATBOT_POLICY, RESOURCE_CONTROL_POLICY
+The type of policy to create. You can specify one of the following values: AISERVICES_OPT_OUT_POLICY, BACKUP_POLICY, SERVICE_CONTROL_POLICY, TAG_POLICY, CHATBOT_POLICY, RESOURCE_CONTROL_POLICY,DECLARATIVE_POLICY_EC2
 
 _Required_: Yes
 
 _Type_: String
 
-_Allowed Values_: <code>SERVICE_CONTROL_POLICY</code> | <code>AISERVICES_OPT_OUT_POLICY</code> | <code>BACKUP_POLICY</code> | <code>TAG_POLICY</code> | <code>CHATBOT_POLICY</code> | <code>RESOURCE_CONTROL_POLICY</code>
+_Allowed Values_: <code>SERVICE_CONTROL_POLICY</code> | <code>AISERVICES_OPT_OUT_POLICY</code> | <code>BACKUP_POLICY</code> | <code>TAG_POLICY</code> | <code>CHATBOT_POLICY</code> | <code>RESOURCE_CONTROL_POLICY</code> | <code>DECLARATIVE_POLICY_EC2</code>
 
 _Update requires_: [Replacement](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-replacement)
 

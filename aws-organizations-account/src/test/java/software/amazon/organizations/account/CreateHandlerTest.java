@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
+import software.amazon.awssdk.services.organizations.model.Account;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
 import software.amazon.awssdk.services.organizations.model.CreateAccountRequest;
@@ -15,6 +16,8 @@ import software.amazon.awssdk.services.organizations.model.DescribeCreateAccount
 import software.amazon.awssdk.services.organizations.model.DescribeCreateAccountStatusResponse;
 import software.amazon.awssdk.services.organizations.model.DestinationParentNotFoundException;
 import software.amazon.awssdk.services.organizations.model.DuplicateAccountException;
+import software.amazon.awssdk.services.organizations.model.ListAccountsRequest;
+import software.amazon.awssdk.services.organizations.model.ListAccountsResponse;
 import software.amazon.awssdk.services.organizations.model.ListParentsRequest;
 import software.amazon.awssdk.services.organizations.model.ListParentsResponse;
 import software.amazon.awssdk.services.organizations.model.MoveAccountRequest;
@@ -28,6 +31,7 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 import java.time.Duration;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,6 +70,11 @@ public class CreateHandlerTest extends AbstractTestBase {
                                                                   .desiredResourceState(model)
                                                                   .build();
 
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
+
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
         final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = getDescribeCreateAccountStatusResponse(SUCCEEDED);
         final MoveAccountResponse moveAccountResponse = getMoveAccountResponse();
@@ -91,6 +100,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
         verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
         verify(mockProxyClient.client()).moveAccount(any(MoveAccountRequest.class));
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
@@ -131,10 +141,15 @@ public class CreateHandlerTest extends AbstractTestBase {
                                                                   .desiredResourceState(model)
                                                                   .build();
 
-        final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
-        final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = getDescribeCreateAccountStatusResponse(FAILED);
-        when(mockProxyClient.client().createAccount(any(CreateAccountRequest.class))).thenReturn(createAccountResponse);
-        when(mockProxyClient.client().describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class))).thenReturn(describeCreateAccountStatusResponse);
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.singletonList(Account.builder()
+                        .id(TEST_ACCOUNT_ID)
+                        .email(TEST_ACCOUNT_EMAIL)
+                        .name(TEST_ACCOUNT_NAME)
+                        .build()))
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
+
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
@@ -142,14 +157,15 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AlreadyExists);
-        assertThat(response.getResourceModel().getAccountId()).isNull();
+        assertThat(response.getResourceModel().getAccountId()).isEqualTo(TEST_ACCOUNT_ID);
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
         assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
         assertThat(response.getResourceModel().getParentIds()).isEqualTo(TEST_PARENT_IDS);
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
 
-        verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
-        verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
+        verify(mockProxyClient.client(), times(0)).createAccount(any(CreateAccountRequest.class));
+        verify(mockProxyClient.client(), times(0)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
     }
 
@@ -187,6 +203,11 @@ public class CreateHandlerTest extends AbstractTestBase {
                                                                   .desiredResourceState(model)
                                                                   .build();
 
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
+
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
         final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = getDescribeCreateAccountStatusResponse(SUCCEEDED);
         final ListParentsResponse listParentsResponse = getListParentsResponseBeforeMoveAccount();
@@ -210,6 +231,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getParentIds()).isEqualTo(TEST_PARENT_IDS);
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
 
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
         verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockProxyClient.client(), times(1)).moveAccount(any(MoveAccountRequest.class));
@@ -222,6 +244,21 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                                                                   .desiredResourceState(model)
                                                                   .build();
+
+        final ListAccountsResponse emptyListAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+
+        final ListAccountsResponse existingAccountResponse = ListAccountsResponse.builder()
+                .accounts(Collections.singletonList(Account.builder()
+                        .id(TEST_ACCOUNT_ID)
+                        .email(TEST_ACCOUNT_EMAIL)
+                        .name(TEST_ACCOUNT_NAME)
+                        .build()))
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class)))
+                .thenReturn(emptyListAccountsResponse)
+                .thenReturn(existingAccountResponse);
 
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
         final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = getDescribeCreateAccountStatusResponse(SUCCEEDED);
@@ -247,6 +284,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
         assertThat(response.getCallbackContext().isAccountCreated()).isEqualTo(true);
 
+        verify(mockProxyClient.client(), times(1)).listAccounts(any(ListAccountsRequest.class));
         verify(mockProxyClient.client(), times(1)).createAccount(any(CreateAccountRequest.class));
         verify(mockProxyClient.client(), atMost(3)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockProxyClient.client(), times(2)).moveAccount(any(MoveAccountRequest.class));
@@ -259,6 +297,11 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                                                                   .desiredResourceState(model)
                                                                   .build();
+
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
 
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
         final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = DescribeCreateAccountStatusResponse.builder()
@@ -280,6 +323,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getParentIds()).isEqualTo(TEST_PARENT_IDS);
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
 
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
         verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
@@ -292,6 +336,11 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                                                                   .desiredResourceState(model)
                                                                   .build();
+
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
 
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
         final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = DescribeCreateAccountStatusResponse.builder()
@@ -313,6 +362,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getParentIds()).isEqualTo(TEST_PARENT_IDS);
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
 
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
         verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
@@ -325,6 +375,11 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                 .desiredResourceState(model)
                 .build();
+
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
 
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
         final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = DescribeCreateAccountStatusResponse.builder()
@@ -346,6 +401,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getParentIds()).isEqualTo(TEST_PARENT_IDS);
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
 
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
         verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
@@ -358,6 +414,11 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                 .desiredResourceState(model)
                 .build();
+
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
 
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
         final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = DescribeCreateAccountStatusResponse.builder()
@@ -379,6 +440,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getParentIds()).isEqualTo(TEST_PARENT_IDS);
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
 
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
         verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
@@ -418,6 +480,11 @@ public class CreateHandlerTest extends AbstractTestBase {
                                                                   .desiredResourceState(model)
                                                                   .build();
 
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
+
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
         final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = getDescribeCreateAccountStatusResponse(SUCCEEDED);
 
@@ -439,6 +506,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
         verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
         verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
@@ -451,6 +519,11 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                                                                   .desiredResourceState(model)
                                                                   .build();
+
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
 
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
         final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = getDescribeCreateAccountStatusResponse(SUCCEEDED);
@@ -473,6 +546,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
 
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
         verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockProxyClient.client(), times(1)).moveAccount(any(MoveAccountRequest.class));
@@ -485,6 +559,11 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                                                                   .desiredResourceState(model)
                                                                   .build();
+
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
 
         final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
 
@@ -503,9 +582,81 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
         assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
 
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
         verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
         verify(mockProxyClient.client(), times(0)).moveAccount(any(MoveAccountRequest.class));
+    }
+
+    @Test
+    public void handleRequest_checkIfAccountExists_AccountAlreadyExists() {
+        final ResourceModel model = ResourceModel.builder()
+                .email(TEST_ACCOUNT_EMAIL)
+                .accountName(TEST_ACCOUNT_NAME)
+                .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.singletonList(Account.builder()
+                        .id(TEST_ACCOUNT_ID)
+                        .email(TEST_ACCOUNT_EMAIL)
+                        .name(TEST_ACCOUNT_NAME)
+                        .build()))
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNotNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AlreadyExists);
+        assertThat(response.getResourceModel().getAccountId()).isEqualTo(TEST_ACCOUNT_ID);
+        assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
+        assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
+        assertThat(response.getMessage()).contains("Account with email [" + TEST_ACCOUNT_EMAIL + "] already exists");
+
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
+    }
+
+    @Test
+    public void handleRequest_checkIfAccountExists_AccountDoesNotExist() {
+        final ResourceModel model = ResourceModel.builder()
+                .email(TEST_ACCOUNT_EMAIL)
+                .accountName(TEST_ACCOUNT_NAME)
+                .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        final ListAccountsResponse listAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.emptyList())
+                .build();
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class))).thenReturn(listAccountsResponse);
+
+        final CreateAccountResponse createAccountResponse = getCreateAccountResponse();
+        final DescribeCreateAccountStatusResponse describeCreateAccountStatusResponse = getDescribeCreateAccountStatusResponse(SUCCEEDED);
+        when(mockProxyClient.client().createAccount(any(CreateAccountRequest.class))).thenReturn(createAccountResponse);
+        when(mockProxyClient.client().describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class))).thenReturn(describeCreateAccountStatusResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNotNull();
+        assertThat(response.getResourceModel().getAccountId()).isEqualTo(TEST_ACCOUNT_ID);
+        assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
+        assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
+
+        verify(mockProxyClient.client()).listAccounts(any(ListAccountsRequest.class));
+        verify(mockProxyClient.client()).createAccount(any(CreateAccountRequest.class));
+        verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
     }
 
     protected ResourceModel generateCreateResourceModel() {
