@@ -49,7 +49,7 @@ public class AbstractTestBase {
     protected static final Set<String> TEST_TARGET_IDS = ImmutableSet.of(TEST_TARGET_ROOT_ID, TEST_TARGET_OU_ID);
     protected static final Set<String> TEST_UPDATED_TARGET_IDS = ImmutableSet.of(TEST_TARGET_ROOT_ID, TEST_TARGET_ACCOUNT_ID);
     protected static final String TEST_NEXT_TOKEN = "mockNextTokenItem";
-    protected static final String POLICY_SCHEMA_SHA256_HEXSTRING = "A182DD7473C4969EC112502EAE15828751A4C9714B158F0E3DE64065C6170842";
+    protected static final String POLICY_SCHEMA_SHA256_HEXSTRING = "4F8BADE6D11D6984EECB9B8561FCD73697E744E1A2AD44F069D73D08C495962B";
     protected static final String POLICY_JSON_SCHEMA_FILE_NAME = "aws-organizations-policy.json";
 
     protected static final Credentials MOCK_CREDENTIALS;
