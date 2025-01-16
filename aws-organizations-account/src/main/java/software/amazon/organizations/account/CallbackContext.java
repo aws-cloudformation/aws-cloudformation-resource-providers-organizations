@@ -21,6 +21,8 @@ public class CallbackContext extends StdCallbackContext {
     }
     // used in CREATE handler
     private boolean isAccountCreated = false;
+    private boolean isPreExistenceCheckComplete = false;
+    private boolean isDidResourceAlreadyExist = false;
     private String createAccountRequestId;
     private String failureReason;
 }

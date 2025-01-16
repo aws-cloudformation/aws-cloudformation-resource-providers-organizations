@@ -4,11 +4,16 @@ import com.amazonaws.util.StringUtils;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitResponse;
+import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
+import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentRequest;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
+import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
+
+import java.util.Optional;
 
 public class CreateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
@@ -29,16 +34,49 @@ public class CreateHandler extends BaseHandlerStd {
 
         logger.log(String.format("Requesting CreateOrganizationalUnit w/ name: %s and parentId: %s.", name, parentId));
         return ProgressEvent.progress(model, callbackContext)
-                   .then(progress ->
-                             awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::CreateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                                 .translateToServiceRequest(Translator::translateToCreateOrganizationalUnitRequest)
-                                 .makeServiceCall(this::createOrganizationalUnit)
-                                 .stabilize(this::stabilized)
-                                 .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
-                                                  handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, Constants.Action.CREATE_OU, Constants.Handler.CREATE))
-                                 .progress()
-                   )
-                   .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
+                .then(progress -> checkIfOrganizationalUnitExists(awsClientProxy, progress, orgsClient))
+                .then(progress -> {
+                    if (progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isDidResourceAlreadyExist()) {
+                        return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists,
+                                String.format("Failing PreExistenceCheck: OrganizationalUnit with name [%s] already exists in parent [%s].", name, parentId));
+                    }
+                    return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::CreateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
+                            .translateToServiceRequest(x -> Translator.translateToCreateOrganizationalUnitRequest(x, request))
+                            .makeServiceCall(this::createOrganizationalUnit)
+                            .stabilize(this::stabilized)
+                            .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
+                                    handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, Constants.Action.CREATE_OU, Constants.Handler.CREATE))
+                            .progress();
+                })
+                .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
+    }
+
+    private ProgressEvent<ResourceModel, CallbackContext> checkIfOrganizationalUnitExists(
+            final AmazonWebServicesClientProxy awsClientProxy,
+            ProgressEvent<ResourceModel, CallbackContext> progress,
+            final ProxyClient<OrganizationsClient> orgsClient) {
+
+        ResourceModel model = progress.getResourceModel();
+
+        return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::ListOrganizationalUnitsForParent", orgsClient, model, progress.getCallbackContext())
+                .translateToServiceRequest(resourceModel -> ListOrganizationalUnitsForParentRequest.builder()
+                        .parentId(resourceModel.getParentId())
+                        .build())
+                .makeServiceCall((listOURequest, proxyClient) -> proxyClient.injectCredentialsAndInvokeV2(listOURequest, proxyClient.client()::listOrganizationalUnitsForParent))
+                .done((listOURequest, listOUResponse, proxyClient, resourceModel, context) -> {
+                    Optional<OrganizationalUnit> existingOU = listOUResponse.organizationalUnits().stream()
+                            .filter(ou -> ou.name().equals(model.getName()))
+                            .findFirst();
+
+                    if (existingOU.isPresent()) {
+                        model.setId(existingOU.get().id());
+                        context.setDidResourceAlreadyExist(true);
+                        log.log(String.format("OrganizationalUnit [%s] already exists with Id: [%s]", model.getName(), model.getId()));
+                    }
+
+                    context.setPreExistenceCheckComplete(true);
+                    return ProgressEvent.progress(model, context);
+                });
     }
 
     protected CreateOrganizationalUnitResponse createOrganizationalUnit(final CreateOrganizationalUnitRequest createOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
