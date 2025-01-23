@@ -16,9 +16,6 @@ import software.amazon.cloudformation.LambdaWrapper;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ClientBuilder {
 
@@ -58,33 +55,7 @@ public class ClientBuilder {
                    .overrideConfiguration(ClientOverrideConfiguration.builder()
                                               .retryPolicy(ORGANIZATIONS_RETRY_POLICY)
                                               .build())
-                   .region(getGlobalRegion(region))
+                   .region(Region.of(region))
                    .build();
     }
-
-    /**
-     * Returns aws-us-gov-global Region if current region is a gov region.
-     * Returns aws-cn-global Region if current region is a china region.
-     * Otherwise returns aws-global Region
-     *
-     * @param region current AWS region {@link ResourceHandlerRequest#getRegion()}
-     * @return IAM Global Region
-     */
-    private static Region getGlobalRegion(final String region) {
-        final String currentRegion = Optional.ofNullable(region).orElse("");
-        final Pattern isGovPattern = Pattern.compile("us-gov");
-        final Pattern isChinaPattern = Pattern.compile("cn");
-
-        final Matcher isGovMatcher = isGovPattern.matcher(currentRegion);
-        final Matcher isChinaMatcher = isChinaPattern.matcher(currentRegion);
-
-        if (isGovMatcher.find()) {
-            return Region.AWS_US_GOV_GLOBAL;
-        } else if (isChinaMatcher.find()) {
-            return Region.AWS_CN_GLOBAL;
-        }
-
-        return Region.AWS_GLOBAL;
-    }
-
 }
