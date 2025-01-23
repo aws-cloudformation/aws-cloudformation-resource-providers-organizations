@@ -24,7 +24,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2.2.2
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install Python packages
         run: pip install pre-commit cloudformation-cli cloudformation-cli-java-plugin
       - name: Run pre-commit
