@@ -14,8 +14,8 @@ import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static software.amazon.organizations.resourcepolicy.TagsHelper.buildTag;
 
 /**
  * This class is a centralized placeholder for
@@ -69,17 +68,19 @@ public class Translator {
     }
 
     static Collection<Tag> translateTagsForTagResourceRequest(Set<software.amazon.organizations.resourcepolicy.Tag> tags, Map<String, String> desiredResourceTags) {
-        final Collection<Tag> tagsToReturn = new ArrayList<>();
+        Map<String, String> tagsToReturn = new HashMap<>();
 
-        if (tags != null) {
-            tags.forEach(tag -> tagsToReturn.add(buildTag(tag.getKey(), tag.getValue())));
-        }
-
+        // Add stack level tags
         if (desiredResourceTags != null) {
-            desiredResourceTags.forEach((key, value) -> tagsToReturn.add(buildTag(key, value)));
+            tagsToReturn.putAll(desiredResourceTags);
         }
 
-        return tagsToReturn;
+        // Add resource level tags
+        if (tags != null) {
+            tags.forEach(tag -> tagsToReturn.put(tag.getKey(), tag.getValue()));
+        }
+
+        return TagsHelper.tagMapToTagSetConverter(tagsToReturn);
     }
 
     static Set<software.amazon.organizations.resourcepolicy.Tag> translateTagsFromSdkResponse(List<Tag> inputTags) {
