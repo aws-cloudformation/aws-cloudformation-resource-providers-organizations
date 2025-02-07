@@ -571,6 +571,45 @@ public class CreateHandlerTest extends AbstractTestBase {
         verifyNoMoreInteractions(mockOrgsClient);
     }
 
+    @Test
+    public void handleRequest_PolicyDoesNotExist_CreatesNewPolicy_WithTags() {
+        final ResourceModel model = generateInitialResourceModel(true, true);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .desiredResourceTags(defaultStackTags)
+                .build();
+
+        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
+                .thenReturn(ListPoliciesResponse.builder().policies(Collections.<PolicySummary>emptyList()).build());
+
+        final CreatePolicyResponse createPolicyResponse = getCreatePolicyResponse();
+        when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class)))
+                .thenReturn(createPolicyResponse);
+
+        when(mockProxyClient.client().describePolicy(any(DescribePolicyRequest.class)))
+                .thenReturn(getDescribePolicyResponse());
+
+        final ListTargetsForPolicyResponse listTargetsResponse = ListTargetsForPolicyResponse.builder()
+                .nextToken(null)
+                .build();
+        when(mockProxyClient.client().listTargetsForPolicy(any(ListTargetsForPolicyRequest.class)))
+                .thenReturn(listTargetsResponse);
+
+        final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildDefaultTagsResponse();
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class)))
+                .thenReturn(listTagsResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getResourceModel().getId()).isEqualTo(TEST_POLICY_ID);
+
+        verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
+        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+    }
+
     protected CreatePolicyResponse getCreatePolicyResponse() {
         return CreatePolicyResponse.builder().policy(
             Policy.builder()

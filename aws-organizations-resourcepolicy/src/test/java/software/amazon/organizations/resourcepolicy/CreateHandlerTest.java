@@ -234,6 +234,40 @@ public class CreateHandlerTest extends AbstractTestBase {
         handleRetriableException(ServiceException.class, HandlerErrorCode.ServiceInternalError);
     }
 
+    @Test
+    public void handleRequest_WithTagsOverride() {
+        final ResourceModel model = generateInitialResourceModel(true, TEST_RESOURCEPOLICY_CONTENT);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .desiredResourceTags(defaultStackTags)
+                .build();
+
+        final DescribeResourcePolicyResponse describeResourcePolicyResponse = getDescribeResourcePolicyResponse();
+        when(mockProxyClient.client().describeResourcePolicy(any(DescribeResourcePolicyRequest.class))).thenReturn(null, describeResourcePolicyResponse);
+
+        final PutResourcePolicyResponse putResourcePolicyResponse = getPutResourcePolicyResponse();
+        when(mockProxyClient.client().putResourcePolicy(any(PutResourcePolicyRequest.class))).thenReturn(putResourcePolicyResponse);
+
+        final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildDefaultTagsResponse();
+        when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(TagTestResourceHelper.tagsEqual(
+                TagsHelper.convertResourcePolicyTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourceHelper.defaultTags)).isTrue();
+
+        verifyHandlerSuccess(response, request);
+
+        verify(mockProxyClient.client()).putResourcePolicy(any(PutResourcePolicyRequest.class));
+        verify(mockProxyClient.client(), times(2)).describeResourcePolicy(any(DescribeResourcePolicyRequest.class));
+        verify(mockProxyClient.client()).listTagsForResource(any(ListTagsForResourceRequest.class));
+
+        verify(mockOrgsClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(mockOrgsClient);
+    }
+
     private void handleRetriableException(Class<? extends Exception> exception, HandlerErrorCode errorCode) {
         final ResourceModel model = generateInitialResourceModel(true, TEST_RESOURCEPOLICY_CONTENT);
 
