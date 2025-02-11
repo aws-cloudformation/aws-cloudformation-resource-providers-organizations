@@ -12,11 +12,14 @@ import software.amazon.awssdk.services.organizations.model.PolicySummary;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
+import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -85,14 +88,19 @@ public class CreateHandler extends BaseHandlerStd {
             final ProxyClient<OrganizationsClient> orgsClient) {
 
         ResourceModel model = progress.getResourceModel();
+        final List<PolicySummary> allPolicies = new ArrayList<>();
 
         return awsClientProxy.initiate("AWS-Organizations-Policy::ListPolicies", orgsClient, model, progress.getCallbackContext())
                 .translateToServiceRequest(resourceModel -> ListPoliciesRequest.builder()
                         .filter(resourceModel.getType())
+                        .nextToken(progress.getNextToken())
                         .build())
                 .makeServiceCall((listPoliciesRequest, proxyClient) -> proxyClient.injectCredentialsAndInvokeV2(listPoliciesRequest, proxyClient.client()::listPolicies))
                 .done((listPoliciesRequest, listPoliciesResponse, proxyClient, resourceModel, context) -> {
-                    Optional<PolicySummary> existingPolicy = listPoliciesResponse.policies().stream()
+                    String nextToken = listPoliciesResponse.nextToken();
+                    allPolicies.addAll(listPoliciesResponse.policies());
+
+                    Optional<PolicySummary> existingPolicy = allPolicies.stream()
                             .filter(policy -> policy.name().equals(model.getName()))
                             .findFirst();
 
@@ -103,7 +111,12 @@ public class CreateHandler extends BaseHandlerStd {
                     }
 
                     context.setPreExistenceCheckComplete(true);
-                    return ProgressEvent.progress(model, context);
+                    return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                            .resourceModel(model)
+                            .callbackContext(context)
+                            .nextToken(nextToken)
+                            .status(OperationStatus.IN_PROGRESS)
+                            .build();
                 });
     }
 
