@@ -571,6 +571,53 @@ public class CreateHandlerTest extends AbstractTestBase {
         verifyNoMoreInteractions(mockOrgsClient);
     }
 
+    @Test
+    public void handleRequest_PolicyAlreadyExists_ReturnsAlreadyExistsError_PaginationTest() {
+        final ResourceModel model = generateInitialResourceModel(false, false);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        final ListPoliciesResponse firstPageResponse = ListPoliciesResponse.builder()
+                .policies(Arrays.asList(
+                        PolicySummary.builder().id("other-id-1").name("other-name-1").type(TEST_TYPE).build(),
+                        PolicySummary.builder().id("other-id-2").name("other-name-2").type(TEST_TYPE).build()
+                ))
+                .nextToken("nextPageToken")
+                .build();
+
+        final PolicySummary existingPolicy = PolicySummary.builder()
+                .id(TEST_POLICY_ID)
+                .name(TEST_POLICY_NAME)
+                .type(TEST_TYPE)
+                .build();
+
+        final ListPoliciesResponse secondPageResponse = ListPoliciesResponse.builder().policies(Collections.singletonList(existingPolicy)).build();
+        System.out.println("secondPageRespose"+secondPageResponse);
+
+        when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
+                .thenReturn(firstPageResponse)
+                .thenReturn(secondPageResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNotNull();
+        assertThat(response.getResourceModel().getId()).isEqualTo(TEST_POLICY_ID);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isEqualTo(String.format("Policy already exists for policy name [%s].", TEST_POLICY_NAME));
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AlreadyExists);
+
+        verify(mockProxyClient.client(), times(2)).listPolicies(any(ListPoliciesRequest.class));
+        verify(mockProxyClient.client(), times(0)).createPolicy(any(CreatePolicyRequest.class));
+
+        verify(mockOrgsClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(mockOrgsClient);
+    }
+
     protected CreatePolicyResponse getCreatePolicyResponse() {
         return CreatePolicyResponse.builder().policy(
             Policy.builder()
