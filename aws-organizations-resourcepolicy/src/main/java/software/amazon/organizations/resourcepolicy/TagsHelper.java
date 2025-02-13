@@ -47,7 +47,7 @@ public class TagsHelper {
         return result;
     }
 
-    private static Set<Tag> tagMapToTagSetConverter(final Map<String, String> map) {
+    static Set<Tag> tagMapToTagSetConverter(final Map<String, String> map) {
         return map.entrySet()
                 .stream()
                 .map(entry -> buildTag(entry.getKey(), entry.getValue()))
