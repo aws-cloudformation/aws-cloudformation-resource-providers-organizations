@@ -594,12 +594,11 @@ public class CreateHandlerTest extends AbstractTestBase {
                 .build();
 
         final ListPoliciesResponse secondPageResponse = ListPoliciesResponse.builder().policies(Collections.singletonList(existingPolicy)).build();
-        System.out.println("secondPageRespose"+secondPageResponse);
 
         when(mockProxyClient.client().listPolicies(any(ListPoliciesRequest.class)))
                 .thenReturn(firstPageResponse)
                 .thenReturn(secondPageResponse);
-
+  
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
 
         assertThat(response).isNotNull();
