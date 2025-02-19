@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.organizations.model.PolicySummary;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
+import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
@@ -84,27 +85,50 @@ public class CreateHandler extends BaseHandlerStd {
             ProgressEvent<ResourceModel, CallbackContext> progress,
             final ProxyClient<OrganizationsClient> orgsClient) {
 
-        ResourceModel model = progress.getResourceModel();
+        final ResourceModel model = progress.getResourceModel();
+        final CallbackContext context = progress.getCallbackContext();
+        String nextToken = null;
 
-        return awsClientProxy.initiate("AWS-Organizations-Policy::ListPolicies", orgsClient, model, progress.getCallbackContext())
-                .translateToServiceRequest(resourceModel -> ListPoliciesRequest.builder()
-                        .filter(resourceModel.getType())
-                        .build())
-                .makeServiceCall((listPoliciesRequest, proxyClient) -> proxyClient.injectCredentialsAndInvokeV2(listPoliciesRequest, proxyClient.client()::listPolicies))
-                .done((listPoliciesRequest, listPoliciesResponse, proxyClient, resourceModel, context) -> {
-                    Optional<PolicySummary> existingPolicy = listPoliciesResponse.policies().stream()
-                            .filter(policy -> policy.name().equals(model.getName()))
-                            .findFirst();
+        do {
+            final String currentToken = nextToken;
 
-                    if (existingPolicy.isPresent()) {
-                        model.setId(existingPolicy.get().id());
-                        context.setDidResourceAlreadyExist(true);
-                        log.log(String.format("Failing PreExistenceCheck: Policy [%s] already exists with Id: [%s]", model.getName(), model.getId()));
-                    }
+            ProgressEvent<ResourceModel, CallbackContext> currentProgress = awsClientProxy.initiate("AWS-Organizations-Policy::ListPolicies", orgsClient, model, context)
+                    .translateToServiceRequest(resourceModel -> ListPoliciesRequest.builder()
+                            .filter(resourceModel.getType())
+                            .nextToken(currentToken)
+                            .build())
+                    .makeServiceCall((listPoliciesRequest, proxyClient) -> proxyClient.injectCredentialsAndInvokeV2(listPoliciesRequest, proxyClient.client()::listPolicies))
+                    .done((listPoliciesRequest, listPoliciesResponse, proxyClient, resourceModel, ctx) -> {
 
-                    context.setPreExistenceCheckComplete(true);
-                    return ProgressEvent.progress(model, context);
-                });
+                        Optional<PolicySummary> existingPolicy = listPoliciesResponse.policies().stream()
+                                .filter(policy -> policy.name().equals(model.getName()))
+                                .findFirst();
+
+                        if (existingPolicy.isPresent()) {
+                            model.setId(existingPolicy.get().id());
+                            context.setDidResourceAlreadyExist(true);
+                            log.log(String.format("Failing PreExistenceCheck: Policy [%s] already exists with Id: [%s]",
+                                    model.getName(), model.getId()));
+                        }
+
+                        return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                                .resourceModel(model)
+                                .callbackContext(context)
+                                .nextToken(listPoliciesResponse.nextToken())
+                                .status(OperationStatus.IN_PROGRESS)
+                                .build();
+                    });
+
+            nextToken = currentProgress.getNextToken();
+
+        } while (nextToken != null);
+
+        context.setPreExistenceCheckComplete(true);
+        return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                .resourceModel(model)
+                .callbackContext(context)
+                .status(OperationStatus.IN_PROGRESS)
+                .build();
     }
 
     protected CreatePolicyResponse createPolicy(final CreatePolicyRequest createPolicyRequest, final ProxyClient<OrganizationsClient> orgsClient) {
