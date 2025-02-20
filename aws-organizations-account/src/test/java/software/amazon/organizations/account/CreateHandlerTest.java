@@ -659,6 +659,53 @@ public class CreateHandlerTest extends AbstractTestBase {
         verify(mockProxyClient.client(), atLeast(1)).describeCreateAccountStatus(any(DescribeCreateAccountStatusRequest.class));
     }
 
+    @Test
+    public void handleRequest_checkIfAccountExists_Pagination_AccountAlreadyExists() {
+        final ResourceModel model = ResourceModel.builder()
+                .email(TEST_ACCOUNT_EMAIL)
+                .accountName(TEST_ACCOUNT_NAME)
+                .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        final ListAccountsResponse firstListAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.singletonList(Account.builder()
+                        .id("Account 1")
+                        .email("paginationtestaccount")
+                        .name("Account1")
+                        .build()))
+                .nextToken("nextPageToken")
+                .build();
+
+        final ListAccountsResponse secondListAccountsResponse = ListAccountsResponse.builder()
+                .accounts(Collections.singletonList(Account.builder()
+                        .id(TEST_ACCOUNT_ID)
+                        .email(TEST_ACCOUNT_EMAIL)
+                        .name(TEST_ACCOUNT_NAME)
+                        .build()))
+                .build();
+
+        when(mockProxyClient.client().listAccounts(any(ListAccountsRequest.class)))
+                .thenReturn(firstListAccountsResponse)
+                .thenReturn(secondListAccountsResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNotNull();
+        assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.AlreadyExists);
+        assertThat(response.getResourceModel().getAccountId()).isEqualTo(TEST_ACCOUNT_ID);
+        assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
+        assertThat(response.getResourceModel().getAccountName()).isEqualTo(TEST_ACCOUNT_NAME);
+        assertThat(response.getMessage()).contains("Account with email [" + TEST_ACCOUNT_EMAIL + "] already exists");
+
+        verify(mockProxyClient.client(), times(2)).listAccounts(any(ListAccountsRequest.class));
+    }
+
     protected ResourceModel generateCreateResourceModel() {
         ResourceModel model = ResourceModel.builder()
                                   .email(TEST_ACCOUNT_EMAIL)

@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.organizations.model.MoveAccountRequest;
 import software.amazon.awssdk.services.organizations.model.MoveAccountResponse;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
+import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
@@ -81,24 +82,47 @@ public class CreateHandler extends BaseHandlerStd {
             final ProxyClient<OrganizationsClient> orgsClient) {
 
         ResourceModel model = progress.getResourceModel();
+        final CallbackContext context = progress.getCallbackContext();
+        String nextToken = null;
 
-        return awsClientProxy.initiate("AWS-Organizations-Account::ListAccounts", orgsClient, model, progress.getCallbackContext())
-                .translateToServiceRequest(resourceModel -> ListAccountsRequest.builder().build())
-                .makeServiceCall((listAccountsRequest, proxyClient) -> proxyClient.injectCredentialsAndInvokeV2(listAccountsRequest, proxyClient.client()::listAccounts))
-                .done((listAccountsRequest, listAccountsResponse, proxyClient, resourceModel, context) -> {
-                    Optional<Account> existingAccount = listAccountsResponse.accounts().stream()
-                            .filter(account -> account.email().equals(model.getEmail()))
-                            .findFirst();
+        do {
+            final String currentToken = nextToken;
 
-                    if (existingAccount.isPresent()) {
-                        model.setAccountId(existingAccount.get().id());
-                        context.setDidResourceAlreadyExist(true);
-                        log.log(String.format("Failing PreExistenceCheck: Account with email [%s] already exists with Id: [%s]", model.getEmail(), model.getAccountId()));
-                    }
+            ProgressEvent<ResourceModel, CallbackContext> currentProgress = awsClientProxy.initiate("AWS-Organizations-Account::ListAccounts", orgsClient, model, context)
+                    .translateToServiceRequest(resourceModel -> ListAccountsRequest.builder()
+                            .nextToken(currentToken)
+                            .build())
+                    .makeServiceCall((listAccountsRequest, proxyClient) -> proxyClient.injectCredentialsAndInvokeV2(listAccountsRequest, proxyClient.client()::listAccounts))
+                    .done((listAccountsRequest, listAccountsResponse, proxyClient, resourceModel, ctx) -> {
+                        Optional<Account> existingAccount = listAccountsResponse.accounts().stream()
+                                .filter(account -> account.email().equals(model.getEmail()))
+                                .findFirst();
 
-                    context.setPreExistenceCheckComplete(true);
-                    return ProgressEvent.progress(model, context);
-                });
+                        if (existingAccount.isPresent()) {
+                            model.setAccountId(existingAccount.get().id());
+                            context.setDidResourceAlreadyExist(true);
+                            log.log(String.format("Failing PreExistenceCheck: Account with email [%s] already exists with Id: [%s]", model.getEmail(), model.getAccountId()));
+                        }
+
+                        context.setPreExistenceCheckComplete(true);
+                        return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                                .resourceModel(model)
+                                .callbackContext(context)
+                                .nextToken(listAccountsResponse.nextToken())
+                                .status(OperationStatus.IN_PROGRESS)
+                                .build();
+                    });
+
+            nextToken = currentProgress.getNextToken();
+
+        } while(nextToken != null);
+
+        context.setPreExistenceCheckComplete(true);
+        return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                .resourceModel(model)
+                .callbackContext(context)
+                .status(OperationStatus.IN_PROGRESS)
+                .build();
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> describeCreateAccountStatus(
