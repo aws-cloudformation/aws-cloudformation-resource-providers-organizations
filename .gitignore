@@ -12,6 +12,7 @@ out.java
 out/
 .settings
 .project
+.vscode
 
 # build and test auto-generated files
 target/
