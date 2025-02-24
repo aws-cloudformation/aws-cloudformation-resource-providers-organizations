@@ -12,6 +12,7 @@ out.java
 out/
 .settings
 .project
+.vscode
 
 .vscode/
 

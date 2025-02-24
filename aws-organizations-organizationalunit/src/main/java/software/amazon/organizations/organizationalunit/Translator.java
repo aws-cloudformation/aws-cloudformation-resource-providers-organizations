@@ -15,8 +15,8 @@ import software.amazon.awssdk.services.organizations.model.UntagResourceRequest;
 import software.amazon.awssdk.services.organizations.model.UpdateOrganizationalUnitRequest;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static software.amazon.organizations.organizationalunit.TagsHelper.buildTag;
 
 public class Translator {
 
@@ -92,23 +91,17 @@ public class Translator {
     }
 
     static Collection<Tag> translateTagsForTagResourceRequest(Set<software.amazon.organizations.organizationalunit.Tag> tags, Map<String, String> desiredResourceTags) {
-        final Collection<Tag> tagsToReturn = new ArrayList<>();
-
-        if (tags != null) {
-            for (software.amazon.organizations.organizationalunit.Tag inputTags : tags) {
-                Tag tag = buildTag(inputTags.getKey(), inputTags.getValue());
-                tagsToReturn.add(tag);
-            }
-        }
+        Map<String, String> tagsToReturn = new HashMap<>();
 
         if (desiredResourceTags != null) {
-            for (Map.Entry<String, String> resourceTag : desiredResourceTags.entrySet()) {
-                Tag tag = buildTag(resourceTag.getKey(), resourceTag.getValue());
-                tagsToReturn.add(tag);
-            }
+            tagsToReturn.putAll(desiredResourceTags);
         }
 
-        return tagsToReturn;
+        if (tags != null) {
+            tags.forEach(tag -> tagsToReturn.put(tag.getKey(), tag.getValue()));
+        }
+
+        return TagsHelper.tagMapToTagSetConverter(tagsToReturn);
     }
 
     static ResourceModel getResourceModelFromOrganizationalUnit(
