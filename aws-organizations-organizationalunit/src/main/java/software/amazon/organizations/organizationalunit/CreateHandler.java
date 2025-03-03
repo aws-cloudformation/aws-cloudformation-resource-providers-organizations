@@ -8,6 +8,7 @@ import software.amazon.awssdk.services.organizations.model.OrganizationalUnit;
 import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentRequest;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.HandlerErrorCode;
+import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
@@ -57,13 +58,19 @@ public class CreateHandler extends BaseHandlerStd {
             final ProxyClient<OrganizationsClient> orgsClient) {
 
         ResourceModel model = progress.getResourceModel();
+        final CallbackContext context = progress.getCallbackContext();
+        String nextToken = null;
 
-        return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::ListOrganizationalUnitsForParent", orgsClient, model, progress.getCallbackContext())
+        do {
+            final String currentToken = nextToken;
+
+            ProgressEvent<ResourceModel, CallbackContext> currentProgress = awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::ListOrganizationalUnitsForParent", orgsClient, model, context)
                 .translateToServiceRequest(resourceModel -> ListOrganizationalUnitsForParentRequest.builder()
                         .parentId(resourceModel.getParentId())
+                        .nextToken(currentToken)
                         .build())
                 .makeServiceCall((listOURequest, proxyClient) -> proxyClient.injectCredentialsAndInvokeV2(listOURequest, proxyClient.client()::listOrganizationalUnitsForParent))
-                .done((listOURequest, listOUResponse, proxyClient, resourceModel, context) -> {
+                .done((listOURequest, listOUResponse, proxyClient, resourceModel, ctx) -> {
                     Optional<OrganizationalUnit> existingOU = listOUResponse.organizationalUnits().stream()
                             .filter(ou -> ou.name().equals(model.getName()))
                             .findFirst();
@@ -75,8 +82,24 @@ public class CreateHandler extends BaseHandlerStd {
                     }
 
                     context.setPreExistenceCheckComplete(true);
-                    return ProgressEvent.progress(model, context);
+                    return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                            .resourceModel(model)
+                            .callbackContext(context)
+                            .nextToken(listOUResponse.nextToken())
+                            .status(OperationStatus.IN_PROGRESS)
+                            .build();
                 });
+
+            nextToken = currentProgress.getNextToken();
+
+        } while (nextToken != null);
+
+        context.setPreExistenceCheckComplete(true);
+        return ProgressEvent.<ResourceModel, CallbackContext>builder()
+                .resourceModel(model)
+                .callbackContext(context)
+                .status(OperationStatus.IN_PROGRESS)
+                .build();
     }
 
     protected CreateOrganizationalUnitResponse createOrganizationalUnit(final CreateOrganizationalUnitRequest createOrganizationalUnitRequest, final ProxyClient<OrganizationsClient> orgsClient) {
