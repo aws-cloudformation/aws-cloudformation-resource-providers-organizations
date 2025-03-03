@@ -64,7 +64,7 @@ public class CreateHandler extends BaseHandlerStd {
         do {
             final String currentToken = nextToken;
 
-            ProgressEvent<ResourceModel, CallbackContext> currentProgress = awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::ListOrganizationalUnitsForParent", orgsClient, model, progress.getCallbackContext())
+            ProgressEvent<ResourceModel, CallbackContext> currentProgress = awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::ListOrganizationalUnitsForParent", orgsClient, model, context)
                 .translateToServiceRequest(resourceModel -> ListOrganizationalUnitsForParentRequest.builder()
                         .parentId(resourceModel.getParentId())
                         .nextToken(currentToken)
