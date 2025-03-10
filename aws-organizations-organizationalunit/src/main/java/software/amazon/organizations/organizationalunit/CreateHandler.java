@@ -35,11 +35,12 @@ public class CreateHandler extends BaseHandlerStd {
 
         logger.log(String.format("Requesting CreateOrganizationalUnit w/ name: %s and parentId: %s.", name, parentId));
         return ProgressEvent.progress(model, callbackContext)
-                .then(progress -> checkIfOrganizationalUnitExists(awsClientProxy, progress, orgsClient))
+                .then(progress -> callbackContext.isPreExistenceCheckComplete() ? progress : checkIfOrganizationalUnitExists(awsClientProxy, progress, orgsClient))
                 .then(progress -> {
                     if (progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isDidResourceAlreadyExist()) {
-                        return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists,
-                                String.format("Failing PreExistenceCheck: OrganizationalUnit with name [%s] already exists in parent [%s].", name, parentId));
+                        String message = String.format("Failing PreExistenceCheck: OrganizationalUnit with name [%s] already exists in parent [%s].", name, parentId);
+                        log.log(message);
+                        return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists, message);
                     }
                     return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::CreateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                             .translateToServiceRequest(x -> Translator.translateToCreateOrganizationalUnitRequest(x, request))

@@ -51,12 +51,13 @@ public class CreateHandler extends BaseHandlerStd {
         logger.log(String.format("Entered %s create handler with account Id [%s], with Content [%s], Description [%s], Name [%s], Type [%s]",
             ResourceModel.TYPE_NAME, request.getAwsAccountId(), content, model.getDescription(), model.getName(), model.getType()));
         return ProgressEvent.progress(model, callbackContext)
-                .then(progress -> checkIfPolicyExists(awsClientProxy, progress, orgsClient))
+            .then(progress -> callbackContext.isPreExistenceCheckComplete() ? progress : checkIfPolicyExists(awsClientProxy, progress, orgsClient))
             .then(progress -> {
                 if(progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isDidResourceAlreadyExist())
                 {
-                    return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists,
-                        String.format("Policy already exists for policy name [%s].", model.getName()));
+                    String message = String.format("Policy already exists for policy name [%s].", model.getName());
+                    log.log(message);
+                    return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists, message);
                 }
                 if (progress.getCallbackContext().isPolicyCreated()) {
                     // skip to attach policy
