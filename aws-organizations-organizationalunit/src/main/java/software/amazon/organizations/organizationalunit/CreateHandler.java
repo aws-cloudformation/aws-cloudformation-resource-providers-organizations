@@ -14,10 +14,14 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 public class CreateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
+
+    private static final String ALREADY_EXISTS_ERROR_CODE = "AlreadyExists";
+    private static final String ENTITY_ALREADY_EXISTS_ERROR_CODE = "EntityAlreadyExists";
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -35,18 +39,19 @@ public class CreateHandler extends BaseHandlerStd {
 
         logger.log(String.format("Requesting CreateOrganizationalUnit w/ name: %s and parentId: %s.", name, parentId));
         return ProgressEvent.progress(model, callbackContext)
-                .then(progress -> checkIfOrganizationalUnitExists(awsClientProxy, progress, orgsClient))
+                .then(progress -> callbackContext.isPreExistenceCheckComplete() ? progress : checkIfOrganizationalUnitExists(awsClientProxy, progress, orgsClient))
                 .then(progress -> {
                     if (progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isDidResourceAlreadyExist()) {
-                        return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists,
-                                String.format("Failing PreExistenceCheck: OrganizationalUnit with name [%s] already exists in parent [%s].", name, parentId));
+                        String message = String.format("Failing PreExistenceCheck: OrganizationalUnit with name [%s] already exists in parent [%s].", name, parentId);
+                        log.log(message);
+                        return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists, message);
                     }
                     return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::CreateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                             .translateToServiceRequest(x -> Translator.translateToCreateOrganizationalUnitRequest(x, request))
                             .makeServiceCall(this::createOrganizationalUnit)
                             .stabilize(this::stabilized)
                             .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
-                                    handleErrorInGeneral(organizationsRequest, e, proxyClient1, model1, context, logger, Constants.Action.CREATE_OU, Constants.Handler.CREATE))
+                                    handleErrorOnCreate(organizationsRequest, e, proxyClient1, model1, context, logger, Arrays.asList(ALREADY_EXISTS_ERROR_CODE, ENTITY_ALREADY_EXISTS_ERROR_CODE)))
                             .progress();
                 })
                 .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));

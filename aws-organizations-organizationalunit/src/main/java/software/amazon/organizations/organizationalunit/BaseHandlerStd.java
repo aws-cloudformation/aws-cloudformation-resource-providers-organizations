@@ -1,5 +1,7 @@
 package software.amazon.organizations.organizationalunit;
 
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedException;
 import software.amazon.awssdk.services.organizations.model.AccessDeniedForDependencyException;
@@ -27,7 +29,7 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
-
+import java.util.List;
 import java.util.Random;
 
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
@@ -117,6 +119,25 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         if ((handlerName != Constants.Handler.READ && handlerName != Constants.Handler.LIST)
             && isRetriableException(e)) {
             return handleRetriableException(request, proxyClient, callbackContext, logger, e, resourceModel, actionName, handlerName);
+        }
+        return handleError(request, e, proxyClient, resourceModel, callbackContext, logger);
+    }
+
+    public ProgressEvent<ResourceModel, CallbackContext> handleErrorOnCreate(
+        final OrganizationsRequest request,
+        final Exception e,
+        final ProxyClient<OrganizationsClient> proxyClient,
+        final ResourceModel resourceModel,
+        final CallbackContext callbackContext,
+        final OrgsLoggerWrapper logger,
+        final List<String> ignoreErrorCodes
+    ) {
+        if (e instanceof AwsServiceException) {
+            final AwsErrorDetails awsErrorDetails = ((AwsServiceException) e).awsErrorDetails();
+            final String errorCode = awsErrorDetails != null ? awsErrorDetails.errorCode() : "";
+            if (ignoreErrorCodes.contains(errorCode)) {
+                return ProgressEvent.progress(resourceModel, callbackContext);
+            }
         }
         return handleError(request, e, proxyClient, resourceModel, callbackContext, logger);
     }
