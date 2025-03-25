@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.organizations.model.CreatePolicyResponse;
 import software.amazon.awssdk.services.organizations.model.ConcurrentModificationException;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyRequest;
 import software.amazon.awssdk.services.organizations.model.DescribePolicyResponse;
+import software.amazon.awssdk.services.organizations.model.DuplicatePolicyException;
 import software.amazon.awssdk.services.organizations.model.ListPoliciesRequest;
 import software.amazon.awssdk.services.organizations.model.ListPoliciesResponse;
 import software.amazon.awssdk.services.organizations.model.ListTagsForResourceRequest;
@@ -62,6 +63,7 @@ public class CreateHandlerTest extends AbstractTestBase {
     @Mock
     private ProxyClient<OrganizationsClient> mockProxyClient;
     private CreateHandler createHandler;
+    final private String TEST_EXCEPTION_MESSAGE = "Test exception message";
 
     @BeforeEach
     public void setup() {
@@ -669,10 +671,9 @@ public class CreateHandlerTest extends AbstractTestBase {
                 .build();
 
         // Simulate createPolicy invocation throwing ServiceException
-        final String SERVICE_EXCEPTION_MESSAGE = "Test service exception message";
         when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class)))
                 .thenThrow(ServiceException.builder()
-                        .message(SERVICE_EXCEPTION_MESSAGE)
+                        .message(TEST_EXCEPTION_MESSAGE)
                         .build());
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
@@ -684,7 +685,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getId()).isNull();
         assertThat(response.getResourceModel().getName()).isEqualTo(model.getName());
         assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getMessage()).isEqualTo(SERVICE_EXCEPTION_MESSAGE);
+        assertThat(response.getMessage()).isEqualTo(TEST_EXCEPTION_MESSAGE);
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
 
         verify(mockProxyClient.client()).listPolicies(any(ListPoliciesRequest.class));
@@ -712,10 +713,10 @@ public class CreateHandlerTest extends AbstractTestBase {
                 .desiredResourceState(model)
                 .build();
 
-        // Simulate first invocation already successfully created policy, giving AlreadyExists error on second createPolicy invocation
+        // Simulate first invocation already successfully created policy, giving DuplicatePolicyException on second createPolicy invocation
         when(mockProxyClient.client().createPolicy(any(CreatePolicyRequest.class)))
-                .thenThrow(AwsServiceException.builder()
-                        .awsErrorDetails(AwsErrorDetails.builder().errorCode("AlreadyExists").build())
+                .thenThrow(DuplicatePolicyException.builder()
+                        .message(TEST_EXCEPTION_MESSAGE)
                         .build());
 
         final DescribePolicyResponse describePolicyResponse = getDescribePolicyResponse();

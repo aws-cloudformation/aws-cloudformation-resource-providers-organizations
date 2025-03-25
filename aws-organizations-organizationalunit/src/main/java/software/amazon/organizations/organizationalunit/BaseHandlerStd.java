@@ -38,6 +38,9 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
     private static final int BASE_DELAY = 15; // in seconds
     private static final int MAX_RETRY_ATTEMPT_FOR_RETRIABLE_EXCEPTION = 2;
 
+    protected static final String ALREADY_EXISTS_ERROR_CODE = "AlreadyExists";
+    protected static final String ENTITY_ALREADY_EXISTS_ERROR_CODE = "EntityAlreadyExists";
+
     @Override
     public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -132,12 +135,20 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
         final OrgsLoggerWrapper logger,
         final List<String> ignoreErrorCodes
     ) {
+        String errorCode = "";
         if (e instanceof AwsServiceException) {
             final AwsErrorDetails awsErrorDetails = ((AwsServiceException) e).awsErrorDetails();
-            final String errorCode = awsErrorDetails != null ? awsErrorDetails.errorCode() : "";
-            if (ignoreErrorCodes.contains(errorCode)) {
-                return ProgressEvent.progress(resourceModel, callbackContext);
+            if (awsErrorDetails != null) {
+                errorCode = awsErrorDetails.errorCode();
             }
+        }
+        if (e instanceof DuplicateOrganizationalUnitException) {
+            errorCode = ALREADY_EXISTS_ERROR_CODE;
+        }
+
+        // Swallow AlreadyExists and similar errors on createOU call
+        if (ignoreErrorCodes.contains(errorCode)) {
+            return ProgressEvent.progress(resourceModel, callbackContext);
         }
         return handleError(request, e, proxyClient, resourceModel, callbackContext, logger);
     }
