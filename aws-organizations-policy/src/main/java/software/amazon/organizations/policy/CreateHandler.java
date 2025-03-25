@@ -18,11 +18,15 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 
 public class CreateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
+
+    private static final String ALREADY_EXISTS_ERROR_CODE = "AlreadyExists";
+    private static final String ENTITY_ALREADY_EXISTS_ERROR_CODE = "EntityAlreadyExists";
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -51,12 +55,12 @@ public class CreateHandler extends BaseHandlerStd {
         logger.log(String.format("Entered %s create handler with account Id [%s], with Content [%s], Description [%s], Name [%s], Type [%s]",
             ResourceModel.TYPE_NAME, request.getAwsAccountId(), content, model.getDescription(), model.getName(), model.getType()));
         return ProgressEvent.progress(model, callbackContext)
-                .then(progress -> checkIfPolicyExists(awsClientProxy, progress, orgsClient))
+            .then(progress -> callbackContext.isPreExistenceCheckComplete() ? progress : checkIfPolicyExists(awsClientProxy, progress, orgsClient))
             .then(progress -> {
-                if(progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isDidResourceAlreadyExist())
-                {
-                    return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists,
-                        String.format("Policy already exists for policy name [%s].", model.getName()));
+                if (progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isDidResourceAlreadyExist()) {
+                    String message = String.format("Policy already exists for policy name [%s].", model.getName());
+                    log.log(message);
+                    return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists, message);
                 }
                 if (progress.getCallbackContext().isPolicyCreated()) {
                     // skip to attach policy
@@ -67,7 +71,7 @@ public class CreateHandler extends BaseHandlerStd {
                     .translateToServiceRequest(x -> Translator.translateToCreateRequest(x, request))
                     .makeServiceCall(this::createPolicy)
                     .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
-                                     handleError(organizationsRequest, e, proxyClient1, model1, context, logger))
+                            handleErrorOnCreate(organizationsRequest, e, proxyClient1, model1, context, logger, Arrays.asList(ALREADY_EXISTS_ERROR_CODE, ENTITY_ALREADY_EXISTS_ERROR_CODE)))
                     .done(CreatePolicyResponse -> {
                         logger.log(String.format("Created policy with Id: [%s] for policy name [%s].", CreatePolicyResponse.policy().policySummary().id(), model.getName()));
                         model.setId(CreatePolicyResponse.policy().policySummary().id());
