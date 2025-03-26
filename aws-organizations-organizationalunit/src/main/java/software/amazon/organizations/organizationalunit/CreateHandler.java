@@ -20,9 +20,6 @@ import java.util.Optional;
 public class CreateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
 
-    private static final String ALREADY_EXISTS_ERROR_CODE = "AlreadyExists";
-    private static final String ENTITY_ALREADY_EXISTS_ERROR_CODE = "EntityAlreadyExists";
-
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
         final ResourceHandlerRequest<ResourceModel> request,

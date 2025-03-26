@@ -9,6 +9,7 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitRequest;
 import software.amazon.awssdk.services.organizations.model.DescribeOrganizationalUnitResponse;
+import software.amazon.awssdk.services.organizations.model.DuplicateOrganizationalUnitException;
 import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentRequest;
 import software.amazon.awssdk.services.organizations.model.ListOrganizationalUnitsForParentResponse;
 import software.amazon.awssdk.services.organizations.model.CreateOrganizationalUnitRequest;
@@ -57,6 +58,7 @@ public class CreateHandlerTest extends AbstractTestBase {
     OrganizationsClient mockOrgsClient;
 
     private CreateHandler createHandler;
+    final private String TEST_EXCEPTION_MESSAGE = "Test exception message";
 
     @BeforeEach
     public void setup() {
@@ -319,10 +321,9 @@ public class CreateHandlerTest extends AbstractTestBase {
                 .build();
 
         // Simulate createOU invocation throwing ServiceException
-        final String SERVICE_EXCEPTION_MESSAGE = "Test service exception message";
         when(mockProxyClient.client().createOrganizationalUnit(any(CreateOrganizationalUnitRequest.class)))
                 .thenThrow(ServiceException.builder()
-                        .message(SERVICE_EXCEPTION_MESSAGE)
+                        .message(TEST_EXCEPTION_MESSAGE)
                         .build());
 
         final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
@@ -335,7 +336,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getName()).isEqualTo(model.getName());
         assertThat(response.getResourceModel().getParentId()).isEqualTo(model.getParentId());
         assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getMessage()).isEqualTo(SERVICE_EXCEPTION_MESSAGE);
+        assertThat(response.getMessage()).isEqualTo(TEST_EXCEPTION_MESSAGE);
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.ServiceInternalError);
 
         verify(mockProxyClient.client()).listOrganizationalUnitsForParent(any(ListOrganizationalUnitsForParentRequest.class));
@@ -363,10 +364,10 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ListParentsResponse listParentsResponse = getListParentsResponse();
         final ListTagsForResourceResponse listTagsForResourceResponse = TagTestResourcesHelper.buildEmptyTagsResponse();
 
-        // Simulate first invocation already successfully created OU, giving AlreadyExists error on second createOU invocation
+        // Simulate first invocation already successfully created OU, giving DuplicateOrganizationalUnitException on second createOU invocation
         when(mockProxyClient.client().createOrganizationalUnit(any(CreateOrganizationalUnitRequest.class)))
-                .thenThrow(AwsServiceException.builder()
-                        .awsErrorDetails(AwsErrorDetails.builder().errorCode("AlreadyExists").build())
+                .thenThrow(DuplicateOrganizationalUnitException.builder()
+                        .message(TEST_EXCEPTION_MESSAGE)
                         .build());
 
         when(mockProxyClient.client().describeOrganizationalUnit(any(DescribeOrganizationalUnitRequest.class))).thenReturn(describeOrganizationalUnitResponse);
