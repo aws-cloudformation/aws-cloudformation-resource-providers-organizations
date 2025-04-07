@@ -98,7 +98,16 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildEmptyTagsResponse();
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        ProgressEvent<ResourceModel, CallbackContext> response = null;
+        do {
+            final CallbackContext callbackContext = (response == null) ? new CallbackContext() : response.getCallbackContext();
+            response = createHandler.handleRequest(mockAwsClientProxy, request, callbackContext, mockProxyClient, logger);
+
+            if (response.getStatus().equals(OperationStatus.IN_PROGRESS)) {
+                assertThat(response.getCallbackDelaySeconds()).isEqualTo(CALLBACK_DELAY);
+            }
+
+        } while (response.getStatus().equals(OperationStatus.IN_PROGRESS));
 
         final ResourceModel finalModel = ResourceModel.builder()
             .targetIds(new HashSet<>())
@@ -156,7 +165,16 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildEmptyTagsResponse();
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        ProgressEvent<ResourceModel, CallbackContext> response = null;
+        do {
+            final CallbackContext callbackContext = (response == null) ? new CallbackContext() : response.getCallbackContext();
+            response = createHandler.handleRequest(mockAwsClientProxy, request, callbackContext, mockProxyClient, logger);
+
+            if (response.getStatus().equals(OperationStatus.IN_PROGRESS)) {
+                assertThat(response.getCallbackDelaySeconds()).isEqualTo(CALLBACK_DELAY);
+            }
+
+        } while (response.getStatus().equals(OperationStatus.IN_PROGRESS));
 
         final ResourceModel finalModel = ResourceModel.builder()
                                              .targetIds(new HashSet<>())
@@ -222,7 +240,16 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildEmptyTagsResponse();
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        ProgressEvent<ResourceModel, CallbackContext> response = null;
+        do {
+            final CallbackContext callbackContext = (response == null) ? new CallbackContext() : response.getCallbackContext();
+            response = createHandler.handleRequest(mockAwsClientProxy, request, callbackContext, mockProxyClient, logger);
+
+            if (response.getStatus().equals(OperationStatus.IN_PROGRESS)) {
+                assertThat(response.getCallbackDelaySeconds()).isEqualTo(CALLBACK_DELAY);
+            }
+
+        } while (response.getStatus().equals(OperationStatus.IN_PROGRESS));
 
         final ResourceModel finalModel = ResourceModel.builder()
             .targetIds(new HashSet<>())
@@ -289,7 +316,16 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildDefaultTagsResponse();
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        ProgressEvent<ResourceModel, CallbackContext> response = null;
+        do {
+            final CallbackContext callbackContext = (response == null) ? new CallbackContext() : response.getCallbackContext();
+            response = createHandler.handleRequest(mockAwsClientProxy, request, callbackContext, mockProxyClient, logger);
+
+            if (response.getStatus().equals(OperationStatus.IN_PROGRESS)) {
+                assertThat(response.getCallbackDelaySeconds()).isEqualTo(CALLBACK_DELAY);
+            }
+
+        } while (response.getStatus().equals(OperationStatus.IN_PROGRESS));
 
         final ResourceModel finalModel = generateFinalResourceModel(true, true);
 
@@ -343,21 +379,21 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().attachPolicy(any(AttachPolicyRequest.class))).thenThrow(ConcurrentModificationException.class);
 
         CallbackContext context = new CallbackContext();
-        ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        // retry attempt 1
-        assertThat(context.isPolicyCreated()).isEqualTo(true);
-        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.ATTACH_POLICY, PolicyConstants.Handler.CREATE)).isEqualTo(1);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
-        // retry attempt 2
-        response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
-        assertThat(context.isPolicyCreated()).isEqualTo(true);
-        assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.ATTACH_POLICY, PolicyConstants.Handler.CREATE)).isEqualTo(2);
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
-        assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
 
-        // CloudFormation retry
-        response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        ProgressEvent<ResourceModel, CallbackContext> response = null;
+        int expectedRetryCount = 0;
+        do {
+            final CallbackContext callbackContext = (response == null) ? context : response.getCallbackContext();
+            response = createHandler.handleRequest(mockAwsClientProxy, request, callbackContext, mockProxyClient, logger);
+
+            if (context.isPolicyCreated() && expectedRetryCount <= MAX_RETRY_ATTEMPT) {
+                assertThat(context.getCurrentRetryAttempt(PolicyConstants.Action.ATTACH_POLICY, PolicyConstants.Handler.CREATE)).isEqualTo(expectedRetryCount);
+                assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+                assertThat(response.getCallbackDelaySeconds()).isGreaterThan(0);
+                expectedRetryCount++;
+            }
+
+        } while (response.getStatus().equals(OperationStatus.IN_PROGRESS));
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -449,7 +485,16 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         when(mockProxyClient.client().attachPolicy(any(AttachPolicyRequest.class))).thenThrow(TargetNotFoundException.class);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        ProgressEvent<ResourceModel, CallbackContext> response = null;
+        do {
+            final CallbackContext callbackContext = (response == null) ? new CallbackContext() : response.getCallbackContext();
+            response = createHandler.handleRequest(mockAwsClientProxy, request, callbackContext, mockProxyClient, logger);
+
+            if (response.getStatus().equals(OperationStatus.IN_PROGRESS)) {
+                assertThat(response.getCallbackDelaySeconds()).isEqualTo(CALLBACK_DELAY);
+            }
+
+        } while (response.getStatus().equals(OperationStatus.IN_PROGRESS));
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -556,7 +601,16 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class)))
                 .thenReturn(listTagsResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        ProgressEvent<ResourceModel, CallbackContext> response = null;
+        do {
+            final CallbackContext callbackContext = (response == null) ? new CallbackContext() : response.getCallbackContext();
+            response = createHandler.handleRequest(mockAwsClientProxy, request, callbackContext, mockProxyClient, logger);
+
+            if (response.getStatus().equals(OperationStatus.IN_PROGRESS)) {
+                assertThat(response.getCallbackDelaySeconds()).isEqualTo(CALLBACK_DELAY);
+            }
+
+        } while (response.getStatus().equals(OperationStatus.IN_PROGRESS));
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
@@ -606,7 +660,16 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class)))
                 .thenReturn(listTagsResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        ProgressEvent<ResourceModel, CallbackContext> response = null;
+        do {
+            final CallbackContext callbackContext = (response == null) ? new CallbackContext() : response.getCallbackContext();
+            response = createHandler.handleRequest(mockAwsClientProxy, request, callbackContext, mockProxyClient, logger);
+
+            if (response.getStatus().equals(OperationStatus.IN_PROGRESS)) {
+                assertThat(response.getCallbackDelaySeconds()).isEqualTo(CALLBACK_DELAY);
+            }
+
+        } while (response.getStatus().equals(OperationStatus.IN_PROGRESS));
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
@@ -676,7 +739,16 @@ public class CreateHandlerTest extends AbstractTestBase {
                         .message(TEST_EXCEPTION_MESSAGE)
                         .build());
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+        ProgressEvent<ResourceModel, CallbackContext> response = null;
+        do {
+            final CallbackContext callbackContext = (response == null) ? new CallbackContext() : response.getCallbackContext();
+            response = createHandler.handleRequest(mockAwsClientProxy, request, callbackContext, mockProxyClient, logger);
+
+            if (response.getStatus().equals(OperationStatus.IN_PROGRESS)) {
+                assertThat(response.getCallbackDelaySeconds()).isEqualTo(CALLBACK_DELAY);
+            }
+
+        } while (response.getStatus().equals(OperationStatus.IN_PROGRESS));
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
@@ -781,7 +853,16 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ListTagsForResourceResponse listTagsResponse = TagTestResourceHelper.buildEmptyTagsResponse();
         when(mockProxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class))).thenReturn(listTagsResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = createHandler.handleRequest(mockAwsClientProxy, request, context, mockProxyClient, logger);
+        ProgressEvent<ResourceModel, CallbackContext> response = null;
+        do {
+            final CallbackContext callbackContext = (response == null) ? context : response.getCallbackContext();
+            response = createHandler.handleRequest(mockAwsClientProxy, request, callbackContext, mockProxyClient, logger);
+
+            if (response.getStatus().equals(OperationStatus.IN_PROGRESS)) {
+                assertThat(response.getCallbackDelaySeconds()).isEqualTo(CALLBACK_DELAY);
+            }
+
+        } while (response.getStatus().equals(OperationStatus.IN_PROGRESS));
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);

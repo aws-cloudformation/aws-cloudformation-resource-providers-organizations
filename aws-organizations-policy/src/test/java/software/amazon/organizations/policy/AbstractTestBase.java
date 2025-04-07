@@ -51,6 +51,8 @@ public class AbstractTestBase {
     protected static final String TEST_NEXT_TOKEN = "mockNextTokenItem";
     protected static final String POLICY_SCHEMA_SHA256_HEXSTRING = "4F8BADE6D11D6984EECB9B8561FCD73697E744E1A2AD44F069D73D08C495962B";
     protected static final String POLICY_JSON_SCHEMA_FILE_NAME = "aws-organizations-policy.json";
+    protected static final int CALLBACK_DELAY = 1;
+    protected static final int MAX_RETRY_ATTEMPT = 2;
 
     protected static final Credentials MOCK_CREDENTIALS;
     protected static final LoggerProxy loggerProxy;
