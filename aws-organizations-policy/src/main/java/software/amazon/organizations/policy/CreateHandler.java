@@ -24,6 +24,7 @@ import java.util.Set;
 
 public class CreateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
+    private static final int CALLBACK_DELAY = 1;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -73,7 +74,7 @@ public class CreateHandler extends BaseHandlerStd {
                         logger.log(String.format("Created policy with Id: [%s] for policy name [%s].", CreatePolicyResponse.policy().policySummary().id(), model.getName()));
                         model.setId(CreatePolicyResponse.policy().policySummary().id());
                         progress.getCallbackContext().setPolicyCreated(true);
-                        return ProgressEvent.progress(model, callbackContext);
+                        return ProgressEvent.defaultInProgressHandler(callbackContext, CALLBACK_DELAY, model);
                     });
                 }
             )
@@ -122,12 +123,20 @@ public class CreateHandler extends BaseHandlerStd {
 
             nextToken = currentProgress.getNextToken();
 
-        } while (nextToken != null);
+        } while (nextToken != null && !context.isDidResourceAlreadyExist());
 
         context.setPreExistenceCheckComplete(true);
+        int callbackDelaySeconds = 0;
+        if (context.isDidResourceAlreadyExist()) {
+            log.log("PreExistenceCheck complete! Requested resource was found.");
+        } else {
+            callbackDelaySeconds = CALLBACK_DELAY;
+            log.log("PreExistenceCheck complete! Requested resource was not found.");
+        }
         return ProgressEvent.<ResourceModel, CallbackContext>builder()
                 .resourceModel(model)
                 .callbackContext(context)
+                .callbackDelaySeconds(callbackDelaySeconds)
                 .status(OperationStatus.IN_PROGRESS)
                 .build();
     }
