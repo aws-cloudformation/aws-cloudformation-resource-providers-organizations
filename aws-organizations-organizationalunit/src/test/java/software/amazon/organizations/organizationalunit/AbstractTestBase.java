@@ -25,6 +25,7 @@ public class AbstractTestBase {
     protected static final String TEST_PARENT_ID = "r-hhhu";
     protected static final String OU_JSON_SCHEMA_FILE_NAME = "aws-organizations-organizationalunit.json";
     protected static final String OU_SCHEMA_SHA256_HEXSTRING = "CD9565D9E0859B36109E6106F61BFA9781C0366DD054511D31F30765FEC1933E";
+    protected static final int CALLBACK_DELAY = 1;
 
     protected static final Credentials MOCK_CREDENTIALS;
     protected static final LoggerProxy loggerProxy;
