@@ -55,7 +55,7 @@ public class CreateHandler extends BaseHandlerStd {
         return ProgressEvent.progress(model, callbackContext)
             .then(progress -> callbackContext.isPreExistenceCheckComplete() ? progress : checkIfPolicyExists(awsClientProxy, progress, orgsClient))
             .then(progress -> {
-                if (progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isDidResourceAlreadyExist()) {
+                if (progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isResourceAlreadyExists()) {
                     String message = String.format("Policy already exists for policy name [%s].", model.getName());
                     log.log(message);
                     return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists, message);
@@ -108,7 +108,7 @@ public class CreateHandler extends BaseHandlerStd {
 
                         if (existingPolicy.isPresent()) {
                             model.setId(existingPolicy.get().id());
-                            context.setDidResourceAlreadyExist(true);
+                            context.setResourceAlreadyExists(true);
                             log.log(String.format("Failing PreExistenceCheck: Policy [%s] already exists with Id: [%s]",
                                     model.getName(), model.getId()));
                         }
@@ -123,11 +123,11 @@ public class CreateHandler extends BaseHandlerStd {
 
             nextToken = currentProgress.getNextToken();
 
-        } while (nextToken != null && !context.isDidResourceAlreadyExist());
+        } while (nextToken != null && !context.isResourceAlreadyExists());
 
         context.setPreExistenceCheckComplete(true);
         int callbackDelaySeconds = 0;
-        if (context.isDidResourceAlreadyExist()) {
+        if (context.isResourceAlreadyExists()) {
             log.log("PreExistenceCheck complete! Requested resource was found.");
         } else {
             callbackDelaySeconds = CALLBACK_DELAY;
