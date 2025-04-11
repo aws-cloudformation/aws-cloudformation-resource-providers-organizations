@@ -19,6 +19,7 @@ import java.util.Optional;
 
 public class CreateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
+    private static final int CALLBACK_DELAY = 1;
 
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
         final AmazonWebServicesClientProxy awsClientProxy,
@@ -43,13 +44,22 @@ public class CreateHandler extends BaseHandlerStd {
                         log.log(message);
                         return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists, message);
                     }
+                    if (progress.getCallbackContext().isOuCreated()) {
+                        // skip to read handler
+                        log.log(String.format("OrganizationalUnit has already been created in previous handler invoke, ou id: [%s]. Skip to read handler.", model.getId()));
+                        return ProgressEvent.progress(model, callbackContext);
+                    }
                     return awsClientProxy.initiate("AWS-Organizations-OrganizationalUnit::CreateOrganizationalUnit", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
                             .translateToServiceRequest(x -> Translator.translateToCreateOrganizationalUnitRequest(x, request))
                             .makeServiceCall(this::createOrganizationalUnit)
                             .stabilize(this::stabilized)
                             .handleError((organizationsRequest, e, proxyClient1, model1, context) ->
                                     handleErrorOnCreate(organizationsRequest, e, proxyClient1, model1, context, logger, Arrays.asList(ALREADY_EXISTS_ERROR_CODE, ENTITY_ALREADY_EXISTS_ERROR_CODE)))
-                            .progress();
+                            .done(CreateOrganizationalUnitResponse -> {
+                                logger.log(String.format("Created OrganizationalUnit with Id: [%s]", CreateOrganizationalUnitResponse.organizationalUnit().id()));
+                                progress.getCallbackContext().setOuCreated(true);
+                                return ProgressEvent.defaultInProgressHandler(callbackContext, CALLBACK_DELAY, model);
+                            });
                 })
                 .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
@@ -94,12 +104,20 @@ public class CreateHandler extends BaseHandlerStd {
 
             nextToken = currentProgress.getNextToken();
 
-        } while (nextToken != null);
+        } while (nextToken != null && !context.isDidResourceAlreadyExist());
 
         context.setPreExistenceCheckComplete(true);
+        int callbackDelaySeconds = 0;
+        if (context.isDidResourceAlreadyExist()) {
+            log.log("PreExistenceCheck complete! Requested resource was found.");
+        } else {
+            callbackDelaySeconds = CALLBACK_DELAY;
+            log.log("PreExistenceCheck complete! Requested resource was not found.");
+        }
         return ProgressEvent.<ResourceModel, CallbackContext>builder()
                 .resourceModel(model)
                 .callbackContext(context)
+                .callbackDelaySeconds(callbackDelaySeconds)
                 .status(OperationStatus.IN_PROGRESS)
                 .build();
     }

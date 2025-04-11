@@ -21,4 +21,5 @@ public class CallbackContext extends StdCallbackContext {
     }
     private boolean isPreExistenceCheckComplete = false;
     private boolean didResourceAlreadyExist = false;
+    private boolean isOuCreated = false;
 }
