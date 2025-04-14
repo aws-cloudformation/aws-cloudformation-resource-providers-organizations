@@ -20,9 +20,9 @@ public class CallbackContext extends StdCallbackContext {
         this.actionToRetryAttemptMap.put(key, getCurrentRetryAttempt(actionName, handlerName)+1);
     }
     // used in CREATE handler
-    private boolean isAccountCreated = false;
-    private boolean isPreExistenceCheckComplete = false;
-    private boolean isDidResourceAlreadyExist = false;
+    private boolean accountCreated = false;
+    private boolean preExistenceCheckComplete = false;
+    private boolean resourceAlreadyExists = false;
     private String createAccountRequestId;
     private String failureReason;
 }

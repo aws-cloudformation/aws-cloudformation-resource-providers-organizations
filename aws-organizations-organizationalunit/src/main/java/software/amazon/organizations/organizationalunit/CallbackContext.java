@@ -19,7 +19,8 @@ public class CallbackContext extends StdCallbackContext {
         String key = actionName.toString() + handlerName.toString();
         this.actionToRetryAttemptMap.put(key, getCurrentRetryAttempt(actionName, handlerName)+1);
     }
-    private boolean isPreExistenceCheckComplete = false;
-    private boolean didResourceAlreadyExist = false;
-    private boolean isOuCreated = false;
+    // used in CREATE handler
+    private boolean preExistenceCheckComplete = false;
+    private boolean resourceAlreadyExists = false;
+    private boolean ouCreated = false;
 }

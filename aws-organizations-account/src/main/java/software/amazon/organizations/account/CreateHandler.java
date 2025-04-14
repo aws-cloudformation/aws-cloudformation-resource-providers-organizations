@@ -53,7 +53,7 @@ public class CreateHandler extends BaseHandlerStd {
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
                 .then(progress -> checkIfAccountExists(awsClientProxy, progress, orgsClient))
                 .then(progress -> {
-                    if (progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isDidResourceAlreadyExist()) {
+                    if (progress.getCallbackContext().isPreExistenceCheckComplete() && progress.getCallbackContext().isResourceAlreadyExists()) {
                         return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.AlreadyExists,
                                 String.format("Account with email [%s] already exists.", model.getEmail()));
                     }
@@ -100,7 +100,7 @@ public class CreateHandler extends BaseHandlerStd {
 
                         if (existingAccount.isPresent()) {
                             model.setAccountId(existingAccount.get().id());
-                            context.setDidResourceAlreadyExist(true);
+                            context.setResourceAlreadyExists(true);
                             log.log(String.format("Failing PreExistenceCheck: Account with email [%s] already exists with Id: [%s]", model.getEmail(), model.getAccountId()));
                         }
 

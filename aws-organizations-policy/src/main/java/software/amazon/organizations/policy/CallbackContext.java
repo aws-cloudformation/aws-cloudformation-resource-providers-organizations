@@ -20,11 +20,11 @@ public class CallbackContext extends StdCallbackContext {
         this.actionToRetryAttemptMap.put(key, getCurrentRetryAttempt(actionName, handlerName)+1);
     }
     // used in CREATE handler re-invoking
-    private boolean isPolicyCreated = false;
-    private boolean isPreExistenceCheckComplete = false;
-    private boolean didResourceAlreadyExist = false;
+    private boolean policyCreated = false;
+    private boolean preExistenceCheckComplete = false;
+    private boolean resourceAlreadyExists = false;
     // used in DELETE handler re-invoking
-    private boolean isPolicyDetachedInDelete = false;
+    private boolean policyDetachedInDelete = false;
     // used in UPDATE handler re-invoking
-    private boolean isPolicyUpdated = false;
+    private boolean policyUpdated = false;
 }

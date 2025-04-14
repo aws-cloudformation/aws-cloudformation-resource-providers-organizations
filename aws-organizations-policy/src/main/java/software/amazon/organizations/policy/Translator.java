@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
 /**
  * This class is a centralized placeholder for
  * - api request construction
@@ -98,10 +97,12 @@ public class Translator {
     static Collection<Tag> translateTagsForTagResourceRequest(Set<software.amazon.organizations.policy.Tag> tags, Map<String, String> desiredResourceTags) {
         Map<String, String> tagsToReturn = new HashMap<>();
 
+        // Add stack level tags
         if (desiredResourceTags != null) {
             tagsToReturn.putAll(desiredResourceTags);
         }
 
+        // Add resource level tags
         if (tags != null) {
             tags.forEach(tag -> tagsToReturn.put(tag.getKey(), tag.getValue()));
         }
