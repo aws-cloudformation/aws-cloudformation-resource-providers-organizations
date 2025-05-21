@@ -235,6 +235,97 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
+    public void handleRequest_SourceAndDestinationEmpty_Success() {
+        final ResourceModel previousResourceModel = generatePreviousResourceModel(null).toBuilder()
+                .parentIds(TEST_EMPTY_PARENT_IDS)
+                .build();
+        final ResourceModel model = generateUpdatedResourceModel(null).toBuilder()
+                .parentIds(TEST_EMPTY_PARENT_IDS)
+                .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .previousResourceState(previousResourceModel)
+                .desiredResourceState(model)
+                .build();
+
+        // Read Handler Mocks
+        whenReadMockSetup(request, null);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response =
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        // Verify Response
+        verifyHandlerSuccess(response, request);
+        verifyReadHandler();
+
+        // Verify account was not moved
+        verify(mockProxyClient.client(), never()).listRoots(any(ListRootsRequest.class));
+        verify(mockProxyClient.client(), never()).moveAccount(any(MoveAccountRequest.class));
+
+        tearDown();
+    }
+
+    @Test
+    public void handleRequest_SourceTargetEmpty_Success() {
+        final ResourceModel previousResourceModel = generatePreviousResourceModel(null).toBuilder()
+                .parentIds(TEST_EMPTY_PARENT_IDS)
+                .build();
+        final ResourceModel model = generateUpdatedResourceModel(null);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .previousResourceState(previousResourceModel)
+                .desiredResourceState(model)
+                .build();
+
+        ListRootsResponse listRootsResponse = getListRootsResponse();
+        MoveAccountResponse moveAccountResponse = getMoveAccountResponse();
+
+        when(mockProxyClient.client().listRoots(any(ListRootsRequest.class))).thenReturn(listRootsResponse);
+        when(mockProxyClient.client().moveAccount(any(MoveAccountRequest.class))).thenReturn(moveAccountResponse);
+        whenReadMockSetup(request, null);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response =
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        // Verify Response
+        verifyHandlerSuccess(response, request);
+        verify(mockProxyClient.client()).moveAccount(any(MoveAccountRequest.class));
+        verify(mockProxyClient.client()).listRoots(any(ListRootsRequest.class));
+
+        tearDown();
+    }
+
+    @Test
+    public void handleRequest_DestinationTargetEmpty_Success() {
+        final ResourceModel previousResourceModel = generatePreviousResourceModel(null);
+        final ResourceModel model = generateUpdatedResourceModel(null).toBuilder()
+                .parentIds(TEST_EMPTY_PARENT_IDS)
+                .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .previousResourceState(previousResourceModel)
+                .desiredResourceState(model)
+                .build();
+
+        ListRootsResponse listRootsResponse = getListRootsResponse();
+        MoveAccountResponse moveAccountResponse = getMoveAccountResponse();
+
+        when(mockProxyClient.client().listRoots(any(ListRootsRequest.class))).thenReturn(listRootsResponse);
+        when(mockProxyClient.client().moveAccount(any(MoveAccountRequest.class))).thenReturn(moveAccountResponse);
+        whenReadMockSetup(request, null);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response =
+                updateHandler.handleRequest(mockAwsClientProxy, request, new CallbackContext(), mockProxyClient, logger);
+
+        // Verify Response
+        verifyHandlerSuccess(response, request);
+        verify(mockProxyClient.client()).moveAccount(any(MoveAccountRequest.class));
+        verify(mockProxyClient.client()).listRoots(any(ListRootsRequest.class));
+
+        tearDown();
+    }
+
+    @Test
     public void handleRequest_MoveAccountThrowsDuplicateAccountException_Success() {
         final ResourceModel previousResourceModel = generatePreviousResourceModel(null);
         final ResourceModel model = generateUpdatedResourceModel(null);

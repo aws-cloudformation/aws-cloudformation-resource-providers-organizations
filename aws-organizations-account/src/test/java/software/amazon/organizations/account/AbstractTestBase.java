@@ -35,6 +35,7 @@ public class AbstractTestBase {
     protected static final Set<String> TEST_PARENT_IDS = ImmutableSet.of(TEST_DESTINATION_PARENT_ID);
     protected static final Set<String> TEST_PARENT_UPDATED_IDS = ImmutableSet.of(TEST_DESTINATION_UPDATED_PARENT_ID);
     protected static final Set<String> TEST_MULTIPLE_PARENT_IDS = ImmutableSet.of(TEST_SOURCE_PARENT_ID, TEST_DESTINATION_PARENT_ID);
+    protected static final Set<String> TEST_EMPTY_PARENT_IDS = ImmutableSet.of();
     protected static final String EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS";
     protected static final String ACCOUNT_LIMIT_EXCEEDED = "ACCOUNT_LIMIT_EXCEEDED";
     protected static final String INVALID_EMAIL = "INVALID_EMAIL";
