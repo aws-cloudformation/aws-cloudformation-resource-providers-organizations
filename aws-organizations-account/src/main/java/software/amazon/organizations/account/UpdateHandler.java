@@ -2,6 +2,7 @@ package software.amazon.organizations.account;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
 import software.amazon.awssdk.services.organizations.model.DuplicateAccountException;
 import software.amazon.awssdk.services.organizations.model.InvalidInputException;
@@ -72,6 +73,9 @@ public class UpdateHandler extends BaseHandlerStd {
         Set<String> parentIds = model.getParentIds();
         String accountId = model.getAccountId();
         String rootID = null;
+
+        previousParentIds = CollectionUtils.isEmpty(previousParentIds) ? null : previousParentIds;
+        parentIds = CollectionUtils.isEmpty(parentIds) ? null : parentIds;
 
         if (previousParentIds != null ^ parentIds != null) {
             logger.log(String.format("%s is missing a parentId for account [%s]. Retrieving root as parent", previousParentIds == null ? "Previous model" : "New model", accountId));
