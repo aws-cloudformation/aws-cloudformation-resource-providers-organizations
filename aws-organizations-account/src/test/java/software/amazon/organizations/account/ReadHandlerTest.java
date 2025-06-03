@@ -93,7 +93,9 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getJoinedTimestamp()).isEqualTo(TEST_JOINED_TIMESTAMP.toString());
         assertThat(response.getResourceModel().getEmail()).isEqualTo(TEST_ACCOUNT_EMAIL);
         assertThat(response.getResourceModel().getParentIds()).isEqualTo(ImmutableSet.of(TEST_DESTINATION_PARENT_ID));
-        assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
+        assertThat(TagTestResourcesHelper.tagsEqual(
+                TagsHelper.convertAccountTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourcesHelper.defaultTags)).isTrue();
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
@@ -144,7 +146,6 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
         assertThat(response.getResourceModel()).isNotNull();
-        assertThat(TagTestResourcesHelper.tagsEqual(response.getResourceModel().getTags(), TagTestResourcesHelper.defaultTags));
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getErrorCode()).isEqualTo(HandlerErrorCode.NotFound);
 
