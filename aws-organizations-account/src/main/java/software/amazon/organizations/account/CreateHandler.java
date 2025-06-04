@@ -62,7 +62,7 @@ public class CreateHandler extends BaseHandlerStd {
                         return ProgressEvent.progress(model, callbackContext);
                     }
                     return awsClientProxy.initiate("AWS-Organizations-Account::CreateAccount", orgsClient, progress.getResourceModel(), progress.getCallbackContext())
-                            .translateToServiceRequest(Translator::translateToCreateAccountRequest)
+                            .translateToServiceRequest(x -> Translator.translateToCreateAccountRequest(x, request))
                             .makeServiceCall(this::createAccount)
                             .handleError((organizationsRequest, e, proxyClient1, model1, context) -> handleError(organizationsRequest, request, e, proxyClient1, model1, context, logger))
                             .done(CreateAccountResponse -> {

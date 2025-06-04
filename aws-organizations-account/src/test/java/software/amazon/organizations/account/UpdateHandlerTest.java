@@ -33,6 +33,7 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,23 +97,27 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_OnlyTags_Success() {
+    public void handleRequest_WithResourceAndStackTags_Success() {
         final ResourceModel previousResourceModel = generatePreviousResourceModel(TagTestResourcesHelper.defaultTags);
         final ResourceModel model = generatePreviousResourceModel(TagTestResourcesHelper.updatedTags);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
                 .previousResourceState(previousResourceModel)
                 .desiredResourceState(model)
+                .previousResourceTags(TagTestResourcesHelper.defaultStackTags)
+                .desiredResourceTags(TagTestResourcesHelper.updatedStackTags)
                 .build();
 
-        final TagResourceRequest expectedTagResourceRequest = TagResourceRequest.builder()
-                .tags(TagTestResourcesHelper.expectedTagsToAddOrUpdate)
-                .resourceId(TEST_ACCOUNT_ID)
-                .build();
-        final UntagResourceRequest expectedUntagResourceRequest = UntagResourceRequest.builder()
-                .tagKeys(TagTestResourcesHelper.expectedTagsToRemove)
-                .resourceId(TEST_ACCOUNT_ID)
-                .build();
+        final Set<Tag> existingTags = TagsHelper.mergeTags(
+                TagsHelper.convertAccountTagToOrganizationTag(previousResourceModel.getTags()),
+                request.getPreviousResourceTags()
+        );
+        final Set<Tag> requestedTags = TagsHelper.mergeTags(
+                TagsHelper.convertAccountTagToOrganizationTag(model.getTags()),
+                request.getDesiredResourceTags()
+        );
+        final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(existingTags, requestedTags);
+        final Set<String> tagsToRemove = TagsHelper.getTagKeysToRemove(existingTags, requestedTags);
 
         // Read Handler Mocks
         whenReadMockSetup(request, TagTestResourcesHelper.updatedTags);
@@ -125,15 +130,21 @@ public class UpdateHandlerTest extends AbstractTestBase {
         verifyReadHandler();
 
         // Verify Tags
+        assertThat(TagTestResourcesHelper.tagsEqual(
+                TagsHelper.convertAccountTagToOrganizationTag(response.getResourceModel().getTags()),
+                TagTestResourcesHelper.updatedTags)).isTrue();
+
+        assertThat(TagTestResourcesHelper.correctTagsInTagAndUntagRequests(tagsToAddOrUpdate, tagsToRemove)).isTrue();
+
         ArgumentCaptor<UntagResourceRequest> untagResourceRequestArgumentCaptor = ArgumentCaptor.forClass(UntagResourceRequest.class);
         verify(mockProxyClient.client()).untagResource(untagResourceRequestArgumentCaptor.capture());
-        assertEquals(expectedUntagResourceRequest.tagKeys(), untagResourceRequestArgumentCaptor.getValue().tagKeys());
-        assertEquals(expectedUntagResourceRequest.resourceId(), untagResourceRequestArgumentCaptor.getValue().resourceId());
+        assertEquals(new ArrayList<>(tagsToRemove), untagResourceRequestArgumentCaptor.getValue().tagKeys());
+        assertEquals(TEST_ACCOUNT_ID, untagResourceRequestArgumentCaptor.getValue().resourceId());
 
         ArgumentCaptor<TagResourceRequest> tagResourceRequestArgumentCaptor = ArgumentCaptor.forClass(TagResourceRequest.class);
         verify(mockProxyClient.client()).tagResource(tagResourceRequestArgumentCaptor.capture());
-        assertEquals(expectedTagResourceRequest.tags(), tagResourceRequestArgumentCaptor.getValue().tags());
-        assertEquals(expectedTagResourceRequest.resourceId(), tagResourceRequestArgumentCaptor.getValue().resourceId());
+        assertEquals(new ArrayList<>(tagsToAddOrUpdate), tagResourceRequestArgumentCaptor.getValue().tags());
+        assertEquals(TEST_ACCOUNT_ID, tagResourceRequestArgumentCaptor.getValue().resourceId());
 
         // Verify account was not moved
         verify(mockProxyClient.client(), never()).listRoots(any(ListRootsRequest.class));

@@ -1,6 +1,5 @@
 package software.amazon.organizations.account;
 
-import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import software.amazon.awssdk.services.organizations.OrganizationsClient;
@@ -23,7 +22,6 @@ import software.amazon.organizations.utils.OrgsLoggerWrapper;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class UpdateHandler extends BaseHandlerStd {
     private OrgsLoggerWrapper log;
@@ -40,23 +38,35 @@ public class UpdateHandler extends BaseHandlerStd {
         final ResourceModel previousModel = request.getPreviousResourceState();
         final ResourceModel model = request.getDesiredResourceState();
 
-        if (!StringUtils.equalsIgnoreCase(model.getRoleName(), previousModel.getRoleName())) {
-            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
-                "You cannot update IAM role name.");
+        if (previousModel != null) {
+            if (!StringUtils.equalsIgnoreCase(model.getRoleName(), previousModel.getRoleName())) {
+                return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
+                        "You cannot update IAM role name.");
+            } else if (!StringUtils.equalsIgnoreCase(model.getAccountName(), previousModel.getAccountName())
+                    || !StringUtils.equalsIgnoreCase(model.getEmail(), previousModel.getEmail())) {
+                return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
+                        "To modify the account name or account email attributes, you must sign in as the root user and modify the values on the account settings page in the AWS Management Console.");
+            }
         }
-        else if (!StringUtils.equalsIgnoreCase(model.getAccountName(), previousModel.getAccountName())
-                || !StringUtils.equalsIgnoreCase(model.getEmail(), previousModel.getEmail())) {
-            return ProgressEvent.failed(model, callbackContext, HandlerErrorCode.InvalidRequest,
-                "To modify the account name or account email attributes, you must sign in as the root user and modify the values on the account settings page in the AWS Management Console.");
+
+        // Check to see if previous model exist before calling getTags()
+        Set<Tag> existingTags;
+        if (previousModel != null) {
+            existingTags = TagsHelper.mergeTags(
+                    TagsHelper.convertAccountTagToOrganizationTag(previousModel.getTags()),
+                    request.getPreviousResourceTags());
+        } else {
+            existingTags = new HashSet<>();
         }
+
+        Set<Tag> requestedTags = TagsHelper.mergeTags(
+                TagsHelper.convertAccountTagToOrganizationTag(model.getTags()),
+                request.getDesiredResourceTags());
 
         logger.log(String.format("Requesting Account Update w/ id: %s", model.getAccountId()));
         return ProgressEvent.progress(model, callbackContext)
                 .then(progress -> moveAccount(awsClientProxy, request, previousModel, model, callbackContext, orgsClient, logger))
-                .then(progress -> handleTagging(awsClientProxy, request, model, callbackContext,
-                        convertAccountTagToOrganizationTag(model.getTags()),
-                        convertAccountTagToOrganizationTag(previousModel.getTags()),
-                        model.getAccountId(), orgsClient, logger))
+                .then(progress -> handleTagging(awsClientProxy, request, model, callbackContext, requestedTags, existingTags, model.getAccountId(), orgsClient, logger))
                 .then(progress -> new ReadHandler().handleRequest(awsClientProxy, request, callbackContext, orgsClient, logger));
     }
 
@@ -129,17 +139,17 @@ public class UpdateHandler extends BaseHandlerStd {
             final ResourceHandlerRequest<ResourceModel> request,
             final ResourceModel model,
             final CallbackContext callbackContext,
-            final Set<Tag> desiredTags,
-            final Set<Tag> previousTags,
+            final Set<Tag> requestedTags,
+            final Set<Tag> existingTags,
             final String accountId,
             final ProxyClient<OrganizationsClient> orgsClient,
             final OrgsLoggerWrapper logger
     ) {
-        // Includes all old tags that do not exist in new tag list
-        final Set<String> tagsToRemove = getTagKeysToRemove(previousTags, desiredTags);
+        // Includes all existing tags that are not present in requested tag list
+        final Set<String> tagsToRemove = TagsHelper.getTagKeysToRemove(existingTags, requestedTags);
 
-        // Excluded all old tags that do exist in new tag list
-        final Set<Tag> tagsToAddOrUpdate = getTagsToAddOrUpdate(previousTags, desiredTags);
+        // Includes all requested tags that are not present in existing tag list
+        final Set<Tag> tagsToAddOrUpdate = TagsHelper.getTagsToAddOrUpdate(existingTags, requestedTags);
 
         // Delete tags only if tagsToRemove is not empty
         if (!tagsToRemove.isEmpty()) {
@@ -164,35 +174,6 @@ public class UpdateHandler extends BaseHandlerStd {
         }
 
         return ProgressEvent.progress(model, callbackContext);
-    }
-
-    static Set<software.amazon.awssdk.services.organizations.model.Tag> convertAccountTagToOrganizationTag(final Set<software.amazon.organizations.account.Tag> tags) {
-        Set<software.amazon.awssdk.services.organizations.model.Tag> tagsToReturn = new HashSet<>();
-        if (tags == null) return tagsToReturn;
-        for (software.amazon.organizations.account.Tag inputTag : tags) {
-            software.amazon.awssdk.services.organizations.model.Tag tag = software.amazon.awssdk.services.organizations.model.Tag.builder()
-                    .key(inputTag.getKey())
-                    .value(inputTag.getValue())
-                    .build();
-            tagsToReturn.add(tag);
-        }
-        return tagsToReturn;
-    }
-
-    private Set<String> getTagKeysToRemove(
-            Set<Tag> oldTags, Set<Tag> newTags) {
-        final Set<String> oldTagKeys = getTagKeySet(oldTags);
-        final Set<String> newTagKeys = getTagKeySet(newTags);
-        return Sets.difference(oldTagKeys, newTagKeys);
-    }
-
-    private Set<String> getTagKeySet(Set<Tag> oldTags) {
-        return oldTags.stream().map(Tag::key).collect(Collectors.toSet());
-    }
-
-    private Set<Tag> getTagsToAddOrUpdate(
-            Set<Tag> oldTags, Set<Tag> newTags) {
-        return Sets.difference(newTags, oldTags);
     }
 
     protected MoveAccountResponse moveAccount(final MoveAccountRequest moveAccountRequest, final ProxyClient<OrganizationsClient> orgsClient) {
